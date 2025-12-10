@@ -7,7 +7,7 @@ import LoadingMessage from '../components/LoadingMessage';
 import { useFeaturedCourses } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
-// Import hero images
+// Import desktop hero images
 import heroImage1 from '../assets/images/pexels-davidmcbee-730547.jpg';
 import heroImage2 from '../assets/images/pexels-dvaughnbell-2068664.jpg';
 import heroImage3 from '../assets/images/pexels-karola-g-5980876.jpg';
@@ -16,12 +16,20 @@ import heroImage5 from '../assets/images/pexels-michael-steinberg-95604-318820.j
 import heroImage6 from '../assets/images/pexels-n-voitkevich-6120218.jpg';
 import heroImage7 from '../assets/images/pexels-pixabay-259091.jpg';
 
+// Import mobile hero images
+import mobileImage1 from '../assets/images/mobile1.jpg';
+import mobileImage2 from '../assets/images/mobile2.jpg';
+import mobileImage3 from '../assets/images/mobile3.jpg';
+import mobileImage4 from '../assets/images/mobile4.jpg';
+import mobileImage5 from '../assets/images/mobile5.jpg';
+import mobileImage6 from '../assets/images/mobile6.jpg';
+
 
 const HomePage = () => {
   const { t } = useTranslation();
   
-  // Hero images array
-  const heroImages = [
+  // Desktop hero images array
+  const desktopHeroImages = [
     heroImage1,
     heroImage2,
     heroImage3,
@@ -31,12 +39,71 @@ const HomePage = () => {
     heroImage7
   ];
   
+  // Mobile hero images array
+  const mobileHeroImages = [
+    mobileImage1,
+    mobileImage2,
+    mobileImage3,
+    mobileImage4,
+    mobileImage5,
+    mobileImage6
+  ];
+  
+  // Detect if screen is mobile (< 768px) with debounced resize handler
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+  
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    const checkMobile = () => {
+      const newIsMobile = window.innerWidth < 768;
+      setIsMobile(prev => {
+        // Only update if changed to avoid unnecessary re-renders
+        if (prev !== newIsMobile) {
+          return newIsMobile;
+        }
+        return prev;
+      });
+    };
+    
+    // Debounce resize handler to avoid excessive updates
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkMobile, 150); // 150ms debounce
+    };
+    
+    // Check on mount
+    checkMobile();
+    
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+  
+  // Use appropriate images based on screen size - memoized to prevent recalculation
+  const heroImages = useMemo(() => {
+    return isMobile ? mobileHeroImages : desktopHeroImages;
+  }, [isMobile]);
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isScrollingDown, setIsScrollingDown] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0])); // Track loaded images
+  
+  // Reset image index when switching between mobile/desktop
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setLoadedImages(new Set([0]));
+  }, [isMobile]);
   
   // Use React Query for fetching featured courses
   const { data: featuredCourses = [], isLoading: loading, error } = useFeaturedCourses();
