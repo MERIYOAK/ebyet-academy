@@ -19,7 +19,6 @@ import heroImage7 from '../assets/images/pexels-pixabay-259091.jpg';
 
 const HomePage = () => {
   const { t } = useTranslation();
-  console.log('🏠 HomePage component rendering');
   
   // Hero images array
   const heroImages = [
@@ -37,30 +36,39 @@ const HomePage = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0])); // Track loaded images
   
   // Use React Query for fetching featured courses
   const { data: featuredCourses = [], isLoading: loading, error } = useFeaturedCourses();
 
   // Detect scroll direction - fade out when scrolling down, fade in from top when scrolling up
   useEffect(() => {
+    let ticking = false;
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      if (currentScrollY > 50) {
-        setHasScrolled(true);
-      } else {
-        setHasScrolled(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          if (currentScrollY > 50) {
+            setHasScrolled(true);
+          } else {
+            setHasScrolled(false);
+          }
+          
+          if (currentScrollY > lastScrollY && currentScrollY > 50) {
+            // Scrolling down and past 50px
+            setIsScrollingDown(true);
+          } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
+            // Scrolling up or at top
+            setIsScrollingDown(false);
+          }
+          
+          setLastScrollY(currentScrollY);
+          ticking = false;
+        });
+        ticking = true;
       }
-      
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // Scrolling down and past 50px
-        setIsScrollingDown(true);
-      } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
-        // Scrolling up or at top
-        setIsScrollingDown(false);
-      }
-      
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -115,6 +123,18 @@ const HomePage = () => {
     }
   ];
 
+  // Preload next image
+  useEffect(() => {
+    const nextIndex = (currentImageIndex + 1) % heroImages.length;
+    if (!loadedImages.has(nextIndex)) {
+      const img = new Image();
+      img.src = heroImages[nextIndex];
+      img.onload = () => {
+        setLoadedImages(prev => new Set([...prev, nextIndex]));
+      };
+    }
+  }, [currentImageIndex, heroImages, loadedImages]);
+
   // Auto-rotate images
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -142,24 +162,9 @@ const HomePage = () => {
     setCurrentImageIndex(index);
   };
 
-  // Log loading state changes
-  useEffect(() => {
-    if (loading) {
-      console.log('🔄 HomePage loading featured courses');
-    } else if (error) {
-      console.error('❌ HomePage load error:', error);
-    } else {
-      console.log('✅ HomePage featured courses loaded:', featuredCourses.length);
-    }
-  }, [loading, error, featuredCourses.length]);
 
   const featuredGrid = useMemo(() => {
-    console.log('🎨 HomePage featuredGrid rendering with:');
-    console.log(`   - Loading: ${loading}`);
-    console.log(`   - Featured courses count: ${featuredCourses.length}`);
-    
     if (loading) {
-      console.log('⏳ HomePage rendering loading state');
       return (
         <div>
           <LoadingMessage 
@@ -176,7 +181,6 @@ const HomePage = () => {
     }
     
     if (error) {
-      console.log('❌ HomePage rendering error state');
       return (
         <div className="text-center py-12">
           <div className="text-red-600 mb-4">
@@ -188,7 +192,6 @@ const HomePage = () => {
     }
     
     if (!featuredCourses.length) {
-      console.log('📭 HomePage rendering empty state');
       return (
         <div className="text-gray-500 text-center px-4 py-12">
           <p className="text-lg">{t('home.no_courses_available', 'No courses yet. Check back soon.')}</p>
@@ -197,7 +200,6 @@ const HomePage = () => {
     }
     
     // Rendering featured course cards
-    console.log('✅ HomePage rendering featured course cards');
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {featuredCourses.map((c) => {
@@ -295,29 +297,41 @@ const HomePage = () => {
 
         {/* Image Slideshow Container */}
         <div className="relative w-full h-full min-h-screen">
-          {/* Images with fade transition */}
-          {heroImages.map((image, index) => (
-            <div
-                  key={index}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
-                index === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
-            >
-              <img
-                src={image}
-                alt={`Hero slide ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading={index === 0 ? 'eager' : 'lazy'}
-              />
-              {/* Elegant gradient overlay - fades from top and bottom */}
-              <div 
-                className="absolute inset-0"
-                style={{
-                  background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0.5) 20%, rgba(0, 0, 0, 0.3) 35%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.2) 55%, rgba(0, 0, 0, 0.3) 65%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.7) 90%, rgba(0, 0, 0, 0.95) 100%)'
-                }}
-              />
-            </div>
-          ))}
+          {/* Images with fade transition - only render current and next */}
+          {heroImages.map((image, index) => {
+            // Only render current image, previous image (for fade out), and next image (preloaded)
+            const isCurrent = index === currentImageIndex;
+            const isPrevious = index === (currentImageIndex - 1 + heroImages.length) % heroImages.length;
+            const isNext = index === (currentImageIndex + 1) % heroImages.length;
+            const shouldRender = isCurrent || isPrevious || (isNext && loadedImages.has(index));
+            
+            if (!shouldRender) return null;
+            
+            return (
+              <div
+                key={index}
+                className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                  isCurrent ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+                style={{ willChange: isCurrent || isPrevious ? 'opacity' : 'auto' }}
+              >
+                <img
+                  src={image}
+                  alt={`Hero slide ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
+                {/* Elegant gradient overlay - fades from top and bottom */}
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0.5) 20%, rgba(0, 0, 0, 0.3) 35%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.2) 55%, rgba(0, 0, 0, 0.3) 65%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.7) 90%, rgba(0, 0, 0, 0.95) 100%)'
+                  }}
+                />
+              </div>
+            );
+          })}
 
           {/* Navigation Dots */}
           <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 lg:bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap justify-center max-w-[90vw]">
@@ -343,7 +357,9 @@ const HomePage = () => {
                 background: 'rgba(255, 255, 255, 0.08)',
                 backdropFilter: 'blur(25px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(25px) saturate(180%)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                willChange: 'transform, opacity',
+                transform: 'translateZ(0)', // Force GPU acceleration
               }}
             >
               {/* Hero Title */}

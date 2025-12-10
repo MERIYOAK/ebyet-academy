@@ -34,24 +34,32 @@ const UserNavbar: React.FC = () => {
 
   // Detect scroll direction - fade out when scrolling down, fade in from top when scrolling up
   useEffect(() => {
+    let ticking = false;
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      if (currentScrollY > 50) {
-        setHasScrolled(true);
-      } else {
-        setHasScrolled(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          if (currentScrollY > 50) {
+            setHasScrolled(true);
+          } else {
+            setHasScrolled(false);
+          }
+          
+          if (currentScrollY > lastScrollY && currentScrollY > 50) {
+            // Scrolling down and past 50px
+            setIsScrollingDown(true);
+          } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
+            // Scrolling up or at top
+            setIsScrollingDown(false);
+          }
+          
+          setLastScrollY(currentScrollY);
+          ticking = false;
+        });
+        ticking = true;
       }
-      
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // Scrolling down and past 50px
-        setIsScrollingDown(true);
-      } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
-        // Scrolling up or at top
-        setIsScrollingDown(false);
-      }
-      
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -328,21 +336,22 @@ const UserNavbar: React.FC = () => {
               msOverflowStyle: 'none',
             }}
           >
-            {/* Rotating Background Images */}
-            {navImages.map((image, index) => (
+            {/* Rotating Background Images - only render current */}
+            {isMenuOpen && (
               <div
-                key={index}
+                key={currentNavImageIndex}
                 className="absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out"
                 style={{
-                  backgroundImage: `url(${image})`,
+                  backgroundImage: `url(${navImages[currentNavImageIndex]})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
-                  opacity: index === currentNavImageIndex ? 0.15 : 0,
+                  opacity: 0.15,
                   filter: 'blur(3px)',
+                  willChange: 'opacity',
                 }}
               />
-            ))}
+            )}
             
             {/* Dark Dimming Overlay */}
             <div 
