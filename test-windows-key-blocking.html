@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Key Blocking Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #27ae60; }
+        .warning { background: #f39c12; }
+        .error { background: #e74c3c; }
+        .info { background: #3498db; }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        video {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 8px;
+        }
+        .blocking-indicator {
+            background: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn.danger {
+            background: #e74c3c;
+        }
+        .btn.danger:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Windows Key Blocking Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>This test verifies that Windows key combinations are blocked when the video is playing:</p>
+        <ol>
+            <li><strong>Start the video</strong> by clicking play</li>
+            <li><strong>While video is playing</strong>, try pressing Windows key combinations:</li>
+            <ul>
+                <li>Win (alone)</li>
+                <li>Win+R (Run dialog)</li>
+                <li>Win+Alt+R (Game Bar recording)</li>
+                <li>Win+G (Game Bar)</li>
+                <li>Win+E (File Explorer)</li>
+                <li>Win+D (Desktop)</li>
+            </ul>
+            <li><strong>Pause the video</strong> and try the same combinations</li>
+            <li><strong>Check the log</strong> to see which keys were blocked</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Video Player</h2>
+        <video id="testVideo" controls>
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        
+        <div class="controls">
+            <button class="btn" onclick="playVideo()">▶️ Play</button>
+            <button class="btn" onclick="pauseVideo()">⏸️ Pause</button>
+            <button class="btn danger" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Blocking Status</h2>
+        <div id="blockingStatus" class="blocking-indicator" style="display: none;">
+            🔒 WINDOWS KEY BLOCKING ACTIVE - Video is playing
+        </div>
+        <div id="status" class="status info">Video paused - Windows key blocking inactive</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Key Press Log</h2>
+        <div id="log" class="log">Press Windows key combinations to test blocking...\n</div>
+    </div>
+
+    <script>
+        const video = document.getElementById('testVideo');
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        const blockingStatus = document.getElementById('blockingStatus');
+        let keyPressCount = 0;
+        let blockedCount = 0;
+
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function updateBlockingStatus(isPlaying) {
+            if (isPlaying) {
+                blockingStatus.style.display = 'block';
+                updateStatus('Video playing - Windows key blocking ACTIVE', 'error');
+            } else {
+                blockingStatus.style.display = 'none';
+                updateStatus('Video paused - Windows key blocking inactive', 'info');
+            }
+        }
+
+        function playVideo() {
+            video.play();
+            updateBlockingStatus(true);
+            logMessage('🎬 Video started - Windows key blocking activated');
+        }
+
+        function pauseVideo() {
+            video.pause();
+            updateBlockingStatus(false);
+            logMessage('⏸️ Video paused - Windows key blocking deactivated');
+        }
+
+        function clearLog() {
+            log.textContent = 'Log cleared.\n';
+            keyPressCount = 0;
+            blockedCount = 0;
+        }
+
+        function handleKeyDown(e) {
+            keyPressCount++;
+            const keyCombo = e.key + (e.ctrlKey ? '+Ctrl' : '') + (e.shiftKey ? '+Shift' : '') + (e.altKey ? '+Alt' : '') + (e.metaKey ? '+Win' : '');
+            
+            // Block ALL Windows key combinations when video is playing
+            if (video.paused === false && e.metaKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                blockedCount++;
+                
+                logMessage(`🚫 BLOCKED: ${keyCombo} (Windows key blocked during playback)`, 'error');
+                updateStatus(`Windows key blocked! (${blockedCount} blocked, ${keyPressCount} total)`, 'error');
+                return false;
+            }
+            
+            // Log all other key presses
+            if (e.metaKey) {
+                logMessage(`✅ ALLOWED: ${keyCombo} (Video paused)`, 'success');
+            } else {
+                logMessage(`📝 Key: ${keyCombo}`, 'info');
+            }
+        }
+
+        // Add event listeners
+        document.addEventListener('keydown', handleKeyDown, true); // Use capture phase for higher priority
+        
+        // Video event listeners
+        video.addEventListener('play', () => {
+            updateBlockingStatus(true);
+            logMessage('🎬 Video started - Windows key blocking activated');
+        });
+        
+        video.addEventListener('pause', () => {
+            updateBlockingStatus(false);
+            logMessage('⏸️ Video paused - Windows key blocking deactivated');
+        });
+
+        // Initialize
+        logMessage('🔒 Windows key blocking test initialized');
+        logMessage('📋 Instructions:');
+        logMessage('1. Click Play to start video');
+        logMessage('2. Try Windows key combinations while playing');
+        logMessage('3. Pause video and try again');
+        logMessage('4. Check which keys were blocked');
+    </script>
+</body>
+</html>

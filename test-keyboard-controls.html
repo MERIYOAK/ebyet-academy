@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Controls Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .control-item {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #555;
+        }
+        .key {
+            background: #555;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #27ae60; }
+        .warning { background: #f39c12; }
+        .error { background: #e74c3c; }
+        .info { background: #3498db; }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        video {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Keyboard Controls Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Video Player</h2>
+        <p>Use the keyboard controls below to test the video player:</p>
+        <video id="testVideo" controls>
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div class="test-section">
+        <h2>Available Keyboard Controls</h2>
+        <div class="controls-grid">
+            <div class="control-item">
+                <div><span class="key">Space</span> or <span class="key">K</span></div>
+                <div>Play/Pause</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">M</span></div>
+                <div>Mute/Unmute</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">F</span></div>
+                <div>Fullscreen</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">←</span> or <span class="key">J</span></div>
+                <div>Seek Backward 10s</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">→</span> or <span class="key">L</span></div>
+                <div>Seek Forward 10s</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">↑</span></div>
+                <div>Volume Up 10%</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">↓</span></div>
+                <div>Volume Down 10%</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">0</span></div>
+                <div>Seek to Beginning</div>
+            </div>
+            <div class="control-item">
+                <div><span class="key">9</span></div>
+                <div>Seek to 90%</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Status</h2>
+        <div id="status" class="status info">Ready to test keyboard controls...</div>
+        <div id="lastAction" class="status warning" style="display: none;">No actions yet</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Action Log</h2>
+        <div id="log" class="log">Press any key to test the controls...\n</div>
+    </div>
+
+    <script>
+        const video = document.getElementById('testVideo');
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        const lastAction = document.getElementById('lastAction');
+        let actionCount = 0;
+
+        function logAction(action, key) {
+            actionCount++;
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${action} (${key})\n`;
+            log.scrollTop = log.scrollHeight;
+            
+            lastAction.textContent = `Last Action: ${action} (${key})`;
+            lastAction.style.display = 'block';
+            
+            status.textContent = `Actions performed: ${actionCount}`;
+            status.className = 'status success';
+        }
+
+        function handleKeyDown(e) {
+            // Don't handle if modifier keys are pressed
+            if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) {
+                return;
+            }
+
+            const video = document.getElementById('testVideo');
+            if (!video) return;
+
+            switch (e.key.toLowerCase()) {
+                case ' ':
+                    e.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                        logAction('Play', 'Space');
+                    } else {
+                        video.pause();
+                        logAction('Pause', 'Space');
+                    }
+                    break;
+
+                case 'k':
+                    e.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                        logAction('Play', 'K');
+                    } else {
+                        video.pause();
+                        logAction('Pause', 'K');
+                    }
+                    break;
+
+                case 'm':
+                    e.preventDefault();
+                    video.muted = !video.muted;
+                    logAction(video.muted ? 'Mute' : 'Unmute', 'M');
+                    break;
+
+                case 'f':
+                    e.preventDefault();
+                    if (!document.fullscreenElement) {
+                        video.requestFullscreen?.();
+                        logAction('Enter Fullscreen', 'F');
+                    } else {
+                        document.exitFullscreen?.();
+                        logAction('Exit Fullscreen', 'F');
+                    }
+                    break;
+
+                case 'arrowleft':
+                case 'j':
+                    e.preventDefault();
+                    video.currentTime = Math.max(0, video.currentTime - 10);
+                    logAction('Seek Backward 10s', e.key === 'ArrowLeft' ? '←' : 'J');
+                    break;
+
+                case 'arrowright':
+                case 'l':
+                    e.preventDefault();
+                    video.currentTime = Math.min(video.duration, video.currentTime + 10);
+                    logAction('Seek Forward 10s', e.key === 'ArrowRight' ? '→' : 'L');
+                    break;
+
+                case 'arrowup':
+                    e.preventDefault();
+                    const newVolumeUp = Math.min(1, video.volume + 0.1);
+                    video.volume = newVolumeUp;
+                    logAction(`Volume Up to ${Math.round(newVolumeUp * 100)}%`, '↑');
+                    break;
+
+                case 'arrowdown':
+                    e.preventDefault();
+                    const newVolumeDown = Math.max(0, video.volume - 0.1);
+                    video.volume = newVolumeDown;
+                    logAction(`Volume Down to ${Math.round(newVolumeDown * 100)}%`, '↓');
+                    break;
+
+                case '0':
+                    e.preventDefault();
+                    video.currentTime = 0;
+                    logAction('Seek to Beginning', '0');
+                    break;
+
+                case '9':
+                    e.preventDefault();
+                    video.currentTime = video.duration * 0.9;
+                    logAction('Seek to 90%', '9');
+                    break;
+            }
+        }
+
+        // Add event listener
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Initialize
+        log.textContent += 'Keyboard controls initialized. Try pressing the keys above!\n';
+        status.textContent = 'Keyboard controls active - try pressing Space, M, F, or arrow keys!';
+        status.className = 'status success';
+    </script>
+</body>
+</html>

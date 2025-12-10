@@ -1,0 +1,39 @@
+{
+  "name": "YT Academy - Master YouTube Success",
+  "short_name": "YT Academy",
+  "description": "Transform your YouTube channel into a profitable business with our comprehensive video courses. Learn from industry experts and grow your subscriber base with proven strategies.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "https://persi-academy.onrender.com/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://persi-academy.onrender.com/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://persi-academy.onrender.com/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://persi-edu-platform.s3.us-east-1.amazonaws.com/persi-academy/Ig-images/ig-image.jpeg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    }
+  ]
+}

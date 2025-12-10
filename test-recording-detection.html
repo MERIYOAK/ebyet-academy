@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recording Detection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #c0392b;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #27ae60; }
+        .warning { background: #f39c12; }
+        .error { background: #e74c3c; }
+        .info { background: #3498db; }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Recording Detection Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>This page tests the enhanced recording detection system. Try the following:</p>
+        <ol>
+            <li><strong>Press Win+Alt+R</strong> - Should trigger immediate alert</li>
+            <li><strong>Press Win+Alt+G</strong> - Should trigger immediate alert</li>
+            <li><strong>Press Win+G</strong> - Should trigger immediate alert</li>
+            <li><strong>Open Windows Game Bar</strong> - Should be detected</li>
+            <li><strong>Try screen recording</strong> - Should be blocked</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Detection Status</h2>
+        <div id="status" class="status info">Initializing detection system...</div>
+        <div id="violations" class="status warning" style="display: none;">No violations detected</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button class="test-button" onclick="testKeyboardDetection()">Test Keyboard Detection</button>
+        <button class="test-button" onclick="testGameBarDetection()">Test Game Bar Detection</button>
+        <button class="test-button" onclick="testWebRTCDetection()">Test WebRTC Detection</button>
+        <button class="test-button" onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Detection Log</h2>
+        <div id="log" class="log">Waiting for detection events...\n</div>
+    </div>
+
+    <script>
+        let detectionCount = 0;
+        let lastDetectionTime = 0;
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        const violations = document.getElementById('violations');
+
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function detectRecordingAttempt(source, details) {
+            const now = Date.now();
+            
+            // Prevent spam detection (only trigger once per 2 seconds)
+            if (now - lastDetectionTime < 2000) {
+                return;
+            }
+            
+            lastDetectionTime = now;
+            detectionCount++;
+            
+            logMessage(`🚨 RECORDING DETECTED from ${source}: ${details}`);
+            updateStatus(`Recording detected! (${detectionCount} detections)`, 'error');
+            
+            // Show violations
+            violations.style.display = 'block';
+            violations.textContent = `Violations: ${detectionCount} - Latest: ${source}`;
+            
+            // Show immediate alert
+            alert(`🚫 RECORDING DETECTED AND BLOCKED! 🚫\n\nRecording attempt detected via: ${source}\n\nDetails: ${details}\n\nThis is a test - in the real video player, the video would be paused and obfuscated.`);
+        }
+
+        // Enhanced keyboard shortcut detection
+        function handleKeyDown(e) {
+            const keyCombo = e.key + (e.ctrlKey ? '+Ctrl' : '') + (e.shiftKey ? '+Shift' : '') + (e.altKey ? '+Alt' : '') + (e.metaKey ? '+Win' : '');
+            
+            // Enhanced Game Bar shortcut detection
+            const isGameBarShortcut = (
+                // Win+Alt+R (Start/Stop recording) - PRIMARY TARGET
+                (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) ||
+                // Win+Alt+G (Record last 30 seconds)
+                (e.metaKey && e.altKey && (e.key === 'g' || e.key === 'G')) ||
+                // Win+Alt+PrtScn (Take screenshot)
+                (e.metaKey && e.altKey && e.key === 'PrintScreen') ||
+                // Win+Alt+T (Show/hide recording timer)
+                (e.metaKey && e.altKey && (e.key === 't' || e.key === 'T')) ||
+                // Win+G (Open Game Bar)
+                (e.metaKey && (e.key === 'g' || e.key === 'G')) ||
+                // Alternative Alt+R (some systems)
+                (e.altKey && (e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.shiftKey)
+            );
+
+            if (isGameBarShortcut) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                detectRecordingAttempt('Keyboard Shortcut', `Key combination: ${keyCombo}`);
+                return false;
+            }
+        }
+
+        // DOM-based Game Bar detection
+        function detectGameBarElements() {
+            const gameBarSelectors = [
+                '[class*="gamebar"]',
+                '[class*="xbox"]',
+                '[id*="gamebar"]',
+                '[id*="xbox"]',
+                '[class*="game-dvr"]',
+                '[class*="recording"]',
+                '[class*="capture"]',
+                '[data-testid*="gamebar"]',
+                '[aria-label*="Game Bar"]',
+                '[aria-label*="recording"]'
+            ];
+
+            for (const selector of gameBarSelectors) {
+                const elements = document.querySelectorAll(selector);
+                if (elements.length > 0) {
+                    detectRecordingAttempt('Game Bar DOM Elements', `Found ${elements.length} Game Bar elements`);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Storage-based Game Bar detection
+        function detectGameBarStorage() {
+            const gameBarKeys = ['gamebar', 'xbox', 'game-dvr', 'gamebar-overlay', 'recording', 'capture'];
+            for (const key of gameBarKeys) {
+                if (localStorage.getItem(key) || sessionStorage.getItem(key)) {
+                    detectRecordingAttempt('Game Bar Storage', `Game Bar storage key found: ${key}`);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // WebRTC detection
+        function detectWebRTCStreams() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
+                navigator.mediaDevices.getDisplayMedia = function(...args) {
+                    detectRecordingAttempt('WebRTC Screen Sharing', 'getDisplayMedia API called');
+                    return originalGetDisplayMedia.apply(this, args);
+                };
+            }
+        }
+
+        // Test functions
+        function testKeyboardDetection() {
+            logMessage('Testing keyboard detection...');
+            updateStatus('Testing keyboard detection...', 'warning');
+        }
+
+        function testGameBarDetection() {
+            logMessage('Testing Game Bar detection...');
+            detectGameBarElements();
+            detectGameBarStorage();
+        }
+
+        function testWebRTCDetection() {
+            logMessage('Testing WebRTC detection...');
+            detectWebRTCStreams();
+        }
+
+        function clearLog() {
+            log.textContent = 'Log cleared.\n';
+        }
+
+        // Initialize detection system
+        function initializeDetection() {
+            logMessage('🔒 Initializing enhanced recording detection...');
+            updateStatus('Detection system active', 'success');
+            
+            // Set up event listeners
+            document.addEventListener('keydown', handleKeyDown, true);
+            
+            // Initialize detection methods
+            detectWebRTCStreams();
+            
+            // Periodic checks
+            setInterval(() => {
+                detectGameBarElements();
+                detectGameBarStorage();
+            }, 1000);
+            
+            // DOM mutation observer
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                const element = node;
+                                const className = element.className?.toString().toLowerCase() || '';
+                                const id = element.id?.toLowerCase() || '';
+                                
+                                if (className.includes('gamebar') || 
+                                    className.includes('xbox') || 
+                                    className.includes('recording') ||
+                                    className.includes('capture') ||
+                                    id.includes('gamebar') || 
+                                    id.includes('xbox') ||
+                                    id.includes('recording') ||
+                                    id.includes('capture')) {
+                                    detectRecordingAttempt('DOM Mutation', `Game Bar element added to DOM: ${element.tagName}`);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+            logMessage('✅ Detection system initialized with multiple methods');
+            logMessage('Try pressing Win+Alt+R to test detection!');
+        }
+
+        // Start the detection system
+        initializeDetection();
+    </script>
+</body>
+</html>

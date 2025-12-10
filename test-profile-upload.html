@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Upload Test</title>
+</head>
+<body>
+    <h1>Profile Upload Test</h1>
+    <p>This will help us debug the profile image upload issue.</p>
+    
+    <div>
+        <h3>1. Check if backend is running:</h3>
+        <button onclick="testBackend()">Test Backend Connection</button>
+        <div id="backend-status"></div>
+    </div>
+    
+    <div>
+        <h3>2. Test profile update without image:</h3>
+        <button onclick="testProfileUpdate()">Test Profile Update</button>
+        <div id="profile-status"></div>
+    </div>
+    
+    <div>
+        <h3>3. Test image upload:</h3>
+        <input type="file" id="testImage" accept="image/*">
+        <button onclick="testImageUpload()">Test Image Upload</button>
+        <div id="image-status"></div>
+    </div>
+
+    <script>
+        async function testBackend() {
+            const statusDiv = document.getElementById('backend-status');
+            statusDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/health');
+                const result = await response.json();
+                statusDiv.innerHTML = `<pre>✅ Backend is running: ${JSON.stringify(result, null, 2)}</pre>`;
+            } catch (error) {
+                statusDiv.innerHTML = `<pre>❌ Backend error: ${error.message}</pre>`;
+            }
+        }
+        
+        async function testProfileUpdate() {
+            const statusDiv = document.getElementById('profile-status');
+            statusDiv.innerHTML = 'Testing...';
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                statusDiv.innerHTML = '❌ No token found - please log in first';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    statusDiv.innerHTML = `<pre>✅ User data: ${JSON.stringify(result.data, null, 2)}</pre>`;
+                } else {
+                    const error = await response.json();
+                    statusDiv.innerHTML = `<pre>❌ Error: ${JSON.stringify(error, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<pre>❌ Error: ${error.message}</pre>`;
+            }
+        }
+        
+        async function testImageUpload() {
+            const statusDiv = document.getElementById('image-status');
+            const fileInput = document.getElementById('testImage');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                statusDiv.innerHTML = '❌ Please select an image file first';
+                return;
+            }
+            
+            statusDiv.innerHTML = 'Testing...';
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                statusDiv.innerHTML = '❌ No token found - please log in first';
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('firstName', 'Test');
+                formData.append('lastName', 'User');
+                formData.append('profilePhoto', file);
+                
+                const response = await fetch('http://localhost:5000/api/auth/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    statusDiv.innerHTML = `<pre>✅ Upload successful: ${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    const error = await response.json();
+                    statusDiv.innerHTML = `<pre>❌ Upload failed: ${JSON.stringify(error, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<pre>❌ Error: ${error.message}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>
