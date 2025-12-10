@@ -49,7 +49,9 @@ export class CacheMigration {
     try {
       const allKeys = Object.keys(localStorage);
       const validCacheKeys = [
-        'qendiel-cache-',
+        'ibyet-cache-',
+        'ebyet-cache-', // Legacy support
+        'qendiel-cache-', // Legacy support
         'videoUrlCache',
         'i18nextLng',
         'theme',
@@ -89,8 +91,8 @@ export class CacheMigration {
   } {
     try {
       const allKeys = Object.keys(localStorage);
-      const cacheKeys = allKeys.filter(key => key.startsWith('qendiel-cache'));
-      const otherKeys = allKeys.filter(key => !key.startsWith('qendiel-cache'));
+      const cacheKeys = allKeys.filter(key => key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache')); // Include legacy
+      const otherKeys = allKeys.filter(key => !key.startsWith('ibyet-cache') && !key.startsWith('ebyet-cache') && !key.startsWith('qendiel-cache'));
       
       // Calculate approximate cache size
       let cacheSize = 0;
@@ -121,15 +123,15 @@ export class CacheMigration {
   // Force cache refresh (useful for testing)
   static forceCacheRefresh(): void {
     try {
-      // Clear all qendiel cache
+      // Clear all cache (both new and legacy)
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
-        if (key.startsWith('qendiel-cache')) {
+        if (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache')) {
           localStorage.removeItem(key);
         }
       });
       
-      console.log('🔄 Cache refreshed - all qendiel cache entries cleared');
+      console.log('🔄 Cache refreshed - all cache entries cleared');
     } catch (error) {
       console.warn('⚠️ Failed to refresh cache:', error);
     }

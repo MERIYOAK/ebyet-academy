@@ -127,7 +127,7 @@ export class CacheTester {
       
       // Check localStorage
       const cacheKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('qendiel-cache')
+        key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache') // Legacy support
       );
       
       console.log(`Found ${cacheKeys.length} cache entries in localStorage:`);
@@ -161,7 +161,7 @@ export class CacheTester {
       // Clear all cache
       queryClient.clear();
       const cacheKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('qendiel-cache')
+        key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache') // Legacy support
       );
       cacheKeys.forEach(key => localStorage.removeItem(key));
       

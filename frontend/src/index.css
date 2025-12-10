@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hero Header Title Styles */
+.home-header__title {
+  font-size: clamp(2rem, 5vw + 1rem, 5.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5),
+               0 4px 40px rgba(0, 0, 0, 0.3),
+               0 0 60px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+
+.text-85 {
+  font-size: clamp(2rem, 5vw + 1rem, 5.5rem);
+}
+
+/* Responsive adjustments for hero title */
+@media (max-width: 640px) {
+  .home-header__title {
+    font-size: clamp(1.5rem, 6vw + 0.5rem, 3rem);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .home-header__title {
+    font-size: clamp(2.5rem, 4vw + 1rem, 4.5rem);
+  }
+}
+
 /* Custom Logo Animations */
 @keyframes logo-bounce {
   0% {
@@ -45,6 +73,111 @@
   }
 }
 
+@keyframes logo-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes logo-border-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3),
+                0 0 20px rgba(59, 130, 246, 0.2),
+                inset 0 0 10px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
+                0 0 40px rgba(59, 130, 246, 0.4),
+                0 0 60px rgba(147, 197, 253, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+}
+
+@keyframes logo-text-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
+                 0 0 20px rgba(255, 255, 255, 0.3),
+                 0 0 30px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.7),
+                 0 0 30px rgba(255, 255, 255, 0.5),
+                 0 0 45px rgba(59, 130, 246, 0.4),
+                 0 0 60px rgba(147, 197, 253, 0.3);
+  }
+}
+
+@keyframes logo-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes logo-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 3s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Button Hover Effects */
+.button-primary {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-primary:hover {
+  transform: scale(1.1) translateY(-2px);
+}
+
+.button-primary:active {
+  transform: scale(1.05) translateY(0);
+}
+
+.button-secondary {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-secondary:hover {
+  transform: scale(1.1) translateY(-2px);
+  letter-spacing: 0.05em;
+}
+
+.button-secondary:active {
+  transform: scale(1.05) translateY(0);
+}
+
 /* Logo Container Styles */
 .logo-container {
   perspective: 1000px;
@@ -71,6 +204,42 @@
 
 .animate-logo-float {
   animation: logo-float 3s ease-in-out infinite;
+}
+
+.animate-logo-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: logo-shimmer 3s ease-in-out infinite;
+}
+
+.animate-logo-border-glow {
+  animation: logo-border-glow 2s ease-in-out infinite;
+}
+
+.animate-logo-text-glow {
+  animation: logo-text-glow 2s ease-in-out infinite;
+}
+
+.animate-logo-pulse {
+  animation: logo-pulse 2s ease-in-out infinite;
+}
+
+.animate-logo-gradient-shift {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(147, 197, 253, 0.1) 25%,
+    rgba(59, 130, 246, 0.1) 50%,
+    rgba(147, 197, 253, 0.1) 75%,
+    rgba(59, 130, 246, 0.1) 100%
+  );
+  background-size: 200% 200%;
+  animation: logo-gradient-shift 4s ease infinite;
 }
 
 /* Responsive Animation Adjustments */
@@ -135,6 +304,21 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes fadeInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

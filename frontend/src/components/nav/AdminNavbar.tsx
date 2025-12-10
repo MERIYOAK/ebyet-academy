@@ -53,8 +53,8 @@ const AdminNavbar: React.FC = () => {
             <Link to="/admin/dashboard" className="flex items-center space-x-3 transition-transform duration-200 hover:scale-105">
               <div className="relative logo-container">
                 <img 
-                  src="/LOGO.jpg" 
-                  alt="QENDIEL Academy Logo" 
+                  src="/LOGO.png" 
+                  alt="IBYET Academy Logo" 
                   className="h-6 w-auto sm:h-8 sm:w-auto object-contain rounded-lg logo-3d animate-logo-bounce transition-all duration-500 hover:scale-110 hover:rotate-2"
                   style={{
                     filter: 'drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3))',

@@ -30,8 +30,8 @@
     "made_by": "This website is made by -> "
   },
   "home": {
-    "hero_title": "Your Gateway to Professional Excellence",
-    "hero_subtitle": "Master essential skills with expert-led courses in technology, media, and digital content creation",
+    "hero_title": "Master Trading & Investing",
+    "hero_subtitle": "Learn professional trading strategies, market analysis, and investment techniques from industry experts. Build your financial future with comprehensive courses designed for traders and investors.",
     "get_started": "Get Started",
     "learn_more": "Learn More",
     "featured_courses": "Featured Courses",
@@ -346,7 +346,7 @@
     "more_tags": "more",
     "lessons": "lessons",
     "students": "students",
-    "by_instructor": "by QENDIEL Academy",
+    "by_instructor": "by IBYET Academy",
     "thumbnail_placeholder": "Course Thumbnail",
     "error": "Error"
   },
@@ -497,7 +497,7 @@
     "share_text": "I just completed the course \"{{courseTitle}}\"! View my certificate here:"
   },
   "brand": {
-    "name": "QENDIEL Academy"
+    "name": "IBYET Academy"
   },
   "cookie": {
     "banner_message": "We use cookies to enhance your experience. Do you accept?",

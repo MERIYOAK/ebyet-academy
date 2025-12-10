@@ -28,7 +28,7 @@ const CacheDebugger: React.FC = () => {
 
       // Get localStorage cache info
       const localStorageKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('qendiel-cache') || key.startsWith('kandel-academy-cache')
+        key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache') || key.startsWith('kandel-academy-cache') // Legacy support
       );
       
       const localStorageData = localStorageKeys.map(key => {

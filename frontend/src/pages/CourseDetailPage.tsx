@@ -881,7 +881,7 @@ const CourseDetailPage = () => {
                 </div>
                 <div>
                   <p className="text-red-200 text-sm font-medium">{t('course_detail.created_by')}</p>
-                  <p className="font-bold text-xl text-white">{course.instructor || 'QENDIEL Academy'}</p>
+                  <p className="font-bold text-xl text-white">{course.instructor || 'IBYET Academy'}</p>
                   <p className="text-red-200 text-sm">
                     {t('course_detail.last_updated')} {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString('en-US', { 
                       year: 'numeric', 

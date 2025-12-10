@@ -14,10 +14,11 @@ const UserLayout: React.FC = () => {
       <main className="flex-grow">
         <Outlet />
       </main>
-      <Footer className="relative z-30" openCookieSettingsRef={openCookieSettingsRef} />
-      <CookieConsent onOpenSettingsRef={openCookieSettingsRef} />
-      <ScrollToTop />
-      <FloatingContactButton />
+      {/* TEMPORARILY HIDDEN */}
+      {/* <Footer className="relative z-30" openCookieSettingsRef={openCookieSettingsRef} /> */}
+      {/* <CookieConsent onOpenSettingsRef={openCookieSettingsRef} /> */}
+      {/* <ScrollToTop /> */}
+      {/* <FloatingContactButton /> */}
     </div>
   );
 };

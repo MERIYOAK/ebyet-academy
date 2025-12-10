@@ -130,7 +130,7 @@ const CertificateVerificationPage = () => {
 
   const shareImage = 'https://persi-edu-platform.s3.us-east-1.amazonaws.com/persi-academy/Ig-images/congratulations.jpeg';
   const pageTitle = 'Congratulations on Your Certificate!';
-  const pageDescription = 'Celebrate your achievement with QENDIEL Academy. View and share your certificate now.';
+  const pageDescription = 'Celebrate your achievement with IBYET Academy. View and share your certificate now.';
   const certificateUrl = typeof window !== 'undefined' && urlCertificateId
     ? `${window.location.origin}/verify/${urlCertificateId}`
     : `${window.location.origin}/verify`;

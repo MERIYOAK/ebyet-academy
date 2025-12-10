@@ -113,7 +113,7 @@ export class CachePersistence {
   } {
     try {
       const allKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('qendiel-cache')
+        key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache') // Legacy support
       );
       
       const entries = allKeys.map(key => {
@@ -126,7 +126,7 @@ export class CachePersistence {
         }
         
         return {
-          key: key.replace('qendiel-cache-', ''),
+          key: key.replace('ibyet-cache-', '').replace('ebyet-cache-', '').replace('qendiel-cache-', ''), // Support all
           size: value ? value.length : 0,
           hasData: !!parsedValue?.data,
           timestamp: parsedValue?.timestamp ? new Date(parsedValue.timestamp).toLocaleString() : 'N/A'

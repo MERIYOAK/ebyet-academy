@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Star, Award, Zap, Target, TrendingUp } from 'lucide-react';
@@ -7,110 +7,61 @@ import LoadingMessage from '../components/LoadingMessage';
 import { useFeaturedCourses } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
-// Video file paths (from public folder)
-const video1 = '/videos/3029420-hd_1920_1080_24fps (1) (1).mp4';
-const video2 = '/videos/3945008-uhd_3840_2160_30fps (1) (1).mp4';
-const video3 = '/videos/6794223-uhd_3840_2160_30fps (1) (1).mp4';
-const video4 = '/videos/853779-hd_1920_1080_25fps (2).mp4';
-const video5 = '/videos/2450251-uhd_3840_2160_30fps (1) (1).mp4';
-const video6 = '/videos/855388-uhd_3840_2160_25fps (1) (1).mp4';
+// Import hero images
+import heroImage1 from '../assets/images/pexels-davidmcbee-730547.jpg';
+import heroImage2 from '../assets/images/pexels-dvaughnbell-2068664.jpg';
+import heroImage3 from '../assets/images/pexels-karola-g-5980876.jpg';
+import heroImage4 from '../assets/images/pexels-kindelmedia-7054384.jpg';
+import heroImage5 from '../assets/images/pexels-michael-steinberg-95604-318820.jpg';
+import heroImage6 from '../assets/images/pexels-n-voitkevich-6120218.jpg';
+import heroImage7 from '../assets/images/pexels-pixabay-210607.jpg';
+import heroImage8 from '../assets/images/pexels-pixabay-259091.jpg';
+import heroImage9 from '../assets/images/pexels-tima-miroshnichenko-7567565.jpg';
+import heroImage10 from '../assets/images/pexels-tima-miroshnichenko-7567606.jpg';
 
 
 const HomePage = () => {
   const { t } = useTranslation();
   console.log('🏠 HomePage component rendering');
   
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [prevVideoIndex, setPrevVideoIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  // Hero images array
+  const heroImages = [
+    heroImage1,
+    heroImage2,
+    heroImage3,
+    heroImage4,
+    heroImage5,
+    heroImage6,
+    heroImage7,
+    heroImage8,
+    heroImage9,
+    heroImage10
+  ];
+  
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isScrollingDown, setIsScrollingDown] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
-  
-  // All videos in sequence
-  const videos = [video1, video2, video3, video4, video5, video6];
-  
-  // Determine current state: which video is full screen and overlays
-  const getVideoState = (index: number) => {
-    if (index === 0) {
-      // Video 1: Full screen only
-      return { fullScreen: videos[0], squareVideo: null, rightHalf: null, leftHalf: null };
-    } else if (index === 1) {
-      // Video 2: Full screen only
-      return { fullScreen: videos[1], squareVideo: null, rightHalf: null, leftHalf: null };
-    } else if (index === 2) {
-      // Video 3: Square in center, Video 2 still full screen
-      return { fullScreen: videos[1], squareVideo: videos[2], rightHalf: null, leftHalf: null };
-    } else if (index === 3) {
-      // Video 4: Right half of screen, Video 2 and Video 3 still there
-      return { fullScreen: videos[1], squareVideo: videos[2], rightHalf: videos[3], leftHalf: null };
-    } else if (index === 4) {
-      // Video 5: Left half of screen, all previous videos still there
-      return { fullScreen: videos[1], squareVideo: videos[2], rightHalf: videos[3], leftHalf: videos[4] };
-    } else if (index === 5) {
-      // Video 6: Square in center, Video 1 as full screen background
-      return { fullScreen: videos[0], squareVideo: videos[5], rightHalf: null, leftHalf: null };
-    } else {
-      // Pattern repeats: alternating collapse/expand and new video
-      // Even indices (6, 8, 10...): Previous full screen collapses to square, previous square becomes full screen
-      // Odd indices (7, 9, 11...): New video comes as full screen, previous square stays
-      const cycleIndex = index - 6; // Start from 0 for the repeating pattern
-      
-      if (cycleIndex % 2 === 0) {
-        // Collapse: Previous full screen → square, Previous square → full screen
-        // Index 6: Video 1 (full) → square, Video 6 (square) → full screen
-        // Index 8: Video 2 (full) → square, Video 1 (square) → full screen
-        // Index 10: Video 3 (full) → square, Video 2 (square) → full screen
-        const step = cycleIndex / 2;
-        // At step 0: Video 1 was full, Video 6 was square → swap
-        // At step 1: Video 2 was full, Video 1 was square → swap
-        // At step 2: Video 3 was full, Video 2 was square → swap
-        const wasFullScreenIndex = step % videos.length; // Was full screen, now becomes square
-        const wasSquareIndex = (step === 0 ? 5 : step - 1) % videos.length; // Was square, now becomes full screen
-        return { 
-          fullScreen: videos[wasSquareIndex], 
-          squareVideo: videos[wasFullScreenIndex], 
-          rightHalf: null, 
-          leftHalf: null 
-        };
-      } else {
-        // New video: New video comes as full screen, previous square stays
-        // Index 7: Video 2 (full), Video 1 (square from index 6)
-        // Index 9: Video 3 (full), Video 2 (square from index 8)
-        // Index 11: Video 4 (full), Video 3 (square from index 10)
-        const step = Math.floor(cycleIndex / 2);
-        // After swap at index 6, square is Video 1, so at index 7, Video 2 comes as full
-        // After swap at index 8, square is Video 2, so at index 9, Video 3 comes as full
-        const newFullScreenIndex = (step + 1) % videos.length; // New video as full screen
-        const squareVideoIndex = step % videos.length; // Previous square stays (from the swap)
-        return { 
-          fullScreen: videos[newFullScreenIndex], 
-          squareVideo: videos[squareVideoIndex], 
-          rightHalf: null, 
-          leftHalf: null 
-        };
-      }
-    }
-  };
-  
-  const currentState = getVideoState(currentVideoIndex);
-  const prevState = getVideoState(prevVideoIndex);
-  
-  // Determine if we're in a collapse/expand transition (even indices >= 6)
-  const isCollapseExpand = currentVideoIndex >= 6 && (currentVideoIndex - 6) % 2 === 0;
-  const isNewVideoEnter = currentVideoIndex >= 6 && (currentVideoIndex - 6) % 2 === 1;
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [hasScrolled, setHasScrolled] = useState(false);
   
   // Use React Query for fetching featured courses
   const { data: featuredCourses = [], isLoading: loading, error } = useFeaturedCourses();
 
-  // Detect scroll direction - fade out when scrolling down
+  // Detect scroll direction - fade out when scrolling down, fade in from top when scrolling up
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
+      if (currentScrollY > 50) {
+        setHasScrolled(true);
+      } else {
+        setHasScrolled(false);
+      }
+      
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         // Scrolling down and past 50px
         setIsScrollingDown(true);
-      } else {
+      } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
         // Scrolling up or at top
         setIsScrollingDown(false);
       }
@@ -170,21 +121,32 @@ const HomePage = () => {
     }
   ];
 
-  // Auto-rotate videos
+  // Auto-rotate images
   useEffect(() => {
+    if (!isAutoPlaying) return;
+    
     const interval = setInterval(() => {
-      setPrevVideoIndex(currentVideoIndex);
-      setIsTransitioning(true);
-      // Immediately update index for seamless transition
-      setCurrentVideoIndex((prev) => prev + 1);
-      // Keep transition state very short for crossfade
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 500); // Reduced from 1000ms to 500ms for faster transition
-    }, 3000); // Change every 3 seconds
+      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000); // Change every 5 seconds
 
     return () => clearInterval(interval);
-  }, [currentVideoIndex]);
+  }, [isAutoPlaying, heroImages.length]);
+
+  // Navigation functions
+  const goToNext = () => {
+    setIsAutoPlaying(false);
+    setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+  };
+
+  const goToPrevious = () => {
+    setIsAutoPlaying(false);
+    setCurrentImageIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
+  };
+
+  const goToSlide = (index: number) => {
+    setIsAutoPlaying(false);
+    setCurrentImageIndex(index);
+  };
 
   // Log loading state changes
   useEffect(() => {
@@ -266,349 +228,202 @@ const HomePage = () => {
     );
   }, [featuredCourses, loading, error, t]);
 
-  const fullScreenVideoRef = useRef<HTMLVideoElement>(null);
-  const prevFullScreenVideoRef = useRef<HTMLVideoElement>(null);
-  const squareVideoRef = useRef<HTMLVideoElement>(null);
-  const rightHalfVideoRef = useRef<HTMLVideoElement>(null);
-  const leftHalfVideoRef = useRef<HTMLVideoElement>(null);
-
-  // Handle video transitions - ensure continuous playback
-  useEffect(() => {
-    // Preload and play full screen video immediately
-    if (fullScreenVideoRef.current && currentState.fullScreen) {
-      const video = fullScreenVideoRef.current;
-      // Check if source actually changed by comparing the src string
-      const currentSrc = video.src;
-      
-      // Only reset if source changed (check ends of URL to handle different formats)
-      if (!currentSrc.includes(currentState.fullScreen.split('/').pop() || '')) {
-        video.currentTime = 0;
-      }
-      
-      // Ensure video is playing
-      if (video.paused || video.ended) {
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Retry play if it fails
-            setTimeout(() => video.play().catch(console.error), 100);
-          });
-        }
-      }
-    }
-    
-    // Keep previous video playing during transition for crossfade
-    if (prevFullScreenVideoRef.current && prevState.fullScreen && isTransitioning) {
-      const video = prevFullScreenVideoRef.current;
-      if (video.paused || video.ended) {
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(console.error);
-        }
-      }
-    }
-    
-    // Square video
-    if (currentState.squareVideo && squareVideoRef.current) {
-      const video = squareVideoRef.current;
-      if (video.paused || video.ended) {
-        // Delay square video appearance only for initial appearance
-        const delay = currentVideoIndex < 6 ? 2000 : 0;
-        setTimeout(() => {
-          if (squareVideoRef.current) {
-            const playPromise = squareVideoRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise.catch(() => {
-                setTimeout(() => squareVideoRef.current?.play().catch(console.error), 100);
-              });
-            }
-          }
-        }, delay);
-      }
-    }
-    
-    // Right half video
-    if (currentState.rightHalf && rightHalfVideoRef.current) {
-      const video = rightHalfVideoRef.current;
-      if (video.paused || video.ended) {
-        const delay = currentVideoIndex === 3 ? 4000 : 0;
-        setTimeout(() => {
-          if (rightHalfVideoRef.current) {
-            const playPromise = rightHalfVideoRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise.catch(() => {
-                setTimeout(() => rightHalfVideoRef.current?.play().catch(console.error), 100);
-              });
-            }
-          }
-        }, delay);
-      }
-    }
-    
-    // Left half video
-    if (currentState.leftHalf && leftHalfVideoRef.current) {
-      const video = leftHalfVideoRef.current;
-      if (video.paused || video.ended) {
-        const delay = currentVideoIndex === 4 ? 6000 : 0;
-        setTimeout(() => {
-          if (leftHalfVideoRef.current) {
-            const playPromise = leftHalfVideoRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise.catch(() => {
-                setTimeout(() => leftHalfVideoRef.current?.play().catch(console.error), 100);
-              });
-            }
-          }
-        }, delay);
-      }
-    }
-  }, [currentVideoIndex, currentState, prevState, isTransitioning]);
-
-  // Ensure videos keep playing continuously - handle pause events
-  useEffect(() => {
-    const handleVideoPlay = (e: Event) => {
-      const video = e.target as HTMLVideoElement;
-      if (video.paused) {
-        video.play().catch(console.error);
-      }
-    };
-
-    const videos = [
-      fullScreenVideoRef.current,
-      prevFullScreenVideoRef.current,
-      squareVideoRef.current,
-      rightHalfVideoRef.current,
-      leftHalfVideoRef.current
-    ].filter(Boolean) as HTMLVideoElement[];
-
-    videos.forEach(video => {
-      video.addEventListener('pause', handleVideoPlay);
-      video.addEventListener('ended', () => {
-        video.currentTime = 0;
-        video.play().catch(console.error);
-      });
-    });
-
-    return () => {
-      videos.forEach(video => {
-        video.removeEventListener('pause', handleVideoPlay);
-        video.removeEventListener('ended', () => {});
-      });
-    };
-  }, [currentVideoIndex]);
 
   return (
     <div>
-      {/* Video Hero Section */}
+      {/* Image Hero Slideshow Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
-        {/* EBYET Academy Label - Top Left */}
+        {/* IBYET Academy Label - Top Left */}
         <Link
           to="/"
-          className={`fixed top-8 left-12 sm:top-10 sm:left-16 z-[98] flex items-center gap-2 transition-all duration-500 ease-in-out ${
-            isScrollingDown ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
+          className={`fixed top-4 left-4 sm:top-8 sm:left-12 md:top-10 md:left-16 z-[98] flex items-center gap-1 sm:gap-2 group ${
+            isScrollingDown 
+              ? 'opacity-0 pointer-events-none' 
+              : 'opacity-100'
           }`}
-          style={{ 
+          style={{
             fontFamily: "'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            transform: 'scale(1.5)',
-            transformOrigin: 'top left'
+            transform: isScrollingDown 
+              ? 'scale(1.2) translateY(-20px)' 
+              : 'scale(1.2) translateY(0)',
+            transformOrigin: 'top left',
+            transition: isScrollingDown 
+              ? 'opacity 0.3s ease-in, transform 0.3s ease-in' 
+              : hasScrolled && !isScrollingDown && lastScrollY > 50
+              ? 'none'
+              : 'opacity 0.3s ease-out, transform 0.3s ease-out',
+            animation: hasScrolled && !isScrollingDown && lastScrollY > 50 
+              ? 'fadeInFromTop 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards' 
+              : 'none'
           }}
-          aria-label="EBYET Academy"
+          aria-label="IBYET Academy"
         >
-          <span className="border-2 border-white backdrop-blur-sm text-white px-4 sm:px-5 md:px-6 py-1 sm:py-1.5 md:py-2 rounded-md font-bold text-base sm:text-lg md:text-xl lg:text-2xl shadow-lg tracking-tight ">
-            EBYET
+          {/* IBYET - with border and glow effects */}
+          <span 
+            className={`relative border border-white sm:border-2 backdrop-blur-sm text-white px-2 py-0.5 sm:px-4 sm:px-5 md:px-6 sm:py-1 sm:py-1.5 md:py-2 rounded-md font-bold text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl shadow-lg tracking-tight overflow-hidden ${
+              !isScrollingDown ? 'animate-logo-border-glow animate-logo-pulse' : ''
+            }`}
+            style={{
+              animationDelay: hasScrolled && !isScrollingDown && lastScrollY > 50 ? '0.8s' : '0s'
+            }}
+          >
+            {/* Shimmer effect overlay */}
+            <span className="absolute inset-0 animate-logo-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Gradient background */}
+            <span className="absolute inset-0 animate-logo-gradient-shift opacity-20 rounded-md" />
+            {/* Text with glow */}
+            <span 
+              className={`relative z-10 ${!isScrollingDown ? 'animate-logo-text-glow' : ''}`}
+              style={{
+                animationDelay: hasScrolled && !isScrollingDown && lastScrollY > 50 ? '0.8s' : '0s'
+              }}
+            >
+              IBYET
+            </span>
+            {/* Animated border glow */}
+            <span className="absolute -inset-0.5 rounded-md bg-gradient-to-r from-blue-400/50 via-cyan-400/50 to-blue-400/50 blur-sm opacity-50 animate-logo-border-glow -z-10" />
           </span>
-          <span className="text-white font-bold text-base sm:text-lg md:text-xl lg:text-2xl drop-shadow-lg tracking-tight">
-            Academy
+          
+          {/* Academy - with floating animation and glow */}
+          <span 
+            className={`text-white font-bold text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl drop-shadow-lg tracking-tight relative group-hover:scale-105 transition-transform duration-300 ${
+              !isScrollingDown ? 'animate-logo-float animate-logo-text-glow' : ''
+            }`}
+            style={{
+              animationDelay: hasScrolled && !isScrollingDown && lastScrollY > 50 ? '0.8s' : '0s'
+            }}
+          >
+            {/* Subtle glow effect */}
+            <span className="absolute inset-0 bg-gradient-to-r from-white/30 via-blue-200/30 to-white/30 blur-md opacity-50 animate-logo-text-glow -z-10" />
+            <span className="relative z-10">Academy</span>
           </span>
         </Link>
 
-        {/* Previous Full Screen Video (for crossfade) */}
-        {isTransitioning && prevState.fullScreen && prevState.fullScreen !== currentState.fullScreen && (
-          <video
-            ref={prevFullScreenVideoRef}
-            key={`prev-full-${prevVideoIndex}`}
-            className="absolute inset-0 w-full h-full object-cover"
-            src={prevState.fullScreen}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            onPause={(e) => {
-              const video = e.currentTarget;
-              if (!video.ended) {
-                video.play().catch(console.error);
-              }
-            }}
-            style={{
-              zIndex: 1,
-              opacity: 1,
-              animation: 'fadeOut 0.5s ease-in-out forwards' // Faster fade out
-            }}
-          />
-        )}
-
-        {/* Current Full Screen Video Background */}
-        <video
-          ref={fullScreenVideoRef}
-          key={`full-${currentVideoIndex}`}
-          className="absolute inset-0 w-full h-full object-cover"
-          src={currentState.fullScreen}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          onLoadedData={(e) => {
-            const video = e.currentTarget;
-            if (video.paused) {
-              video.play().catch(console.error);
-            }
-          }}
-          onPause={(e) => {
-            const video = e.currentTarget;
-            if (!video.ended) {
-              video.play().catch(console.error);
-            }
-          }}
-          style={{
-            zIndex: 2,
-            opacity: 1, // Always visible - no darkening
-            animation: isTransitioning 
-              ? (isCollapseExpand ? 'expandToFullScreen 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : (isNewVideoEnter ? 'newVideoEnter 0.5s ease-in-out forwards' : 'fadeIn 0.5s ease-in-out forwards'))
-              : 'none'
-          }}
-        />
-
-        {/* Square Video - Center (only when squareVideo is set) */}
-        {currentState.squareVideo && (
-          <div 
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ zIndex: 10 }}
-          >
-            <div 
-              className="relative w-2/3 h-2/3 max-w-[800px] max-h-[800px] aspect-square"
-              style={{
-                animation: isCollapseExpand && isTransitioning
-                  ? 'collapseToSquare 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-                  : currentVideoIndex < 6
-                  ? 'squareVideoEnter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 2s both'
-                  : 'none',
-                opacity: 1 // Always visible - no darkening
-              }}
+        {/* Image Slideshow Container */}
+        <div className="relative w-full h-full min-h-screen">
+          {/* Images with fade transition */}
+          {heroImages.map((image, index) => (
+            <div
+                  key={index}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                index === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
             >
-              <video
-                ref={squareVideoRef}
-                key={`square-${currentVideoIndex}`}
-                className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-2xl"
-                src={currentState.squareVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                onLoadedData={(e) => {
-                  const video = e.currentTarget;
-                  if (video.paused) {
-                    video.play().catch(console.error);
-                  }
-                }}
-                onPause={(e) => {
-                  const video = e.currentTarget;
-                  if (!video.ended) {
-                    video.play().catch(console.error);
-                  }
+              <img
+                src={image}
+                alt={`Hero slide ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+              {/* Elegant gradient overlay - fades from top and bottom */}
+              <div 
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0.5) 20%, rgba(0, 0, 0, 0.3) 35%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.2) 55%, rgba(0, 0, 0, 0.3) 65%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.7) 90%, rgba(0, 0, 0, 0.95) 100%)'
                 }}
               />
             </div>
-          </div>
-        )}
+          ))}
 
-        {/* Right Half Video (Video 4) */}
-        {currentState.rightHalf && (
-          <div 
-            className="absolute inset-0 flex items-center justify-end"
-            style={{ zIndex: 11 }}
-          >
+          {/* Navigation Dots */}
+          <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 lg:bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap justify-center max-w-[90vw]">
+            {heroImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`transition-all duration-300 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 ${
+                  index === currentImageIndex
+                    ? 'w-6 h-1.5 sm:w-8 sm:h-2 md:w-10 md:h-3 bg-white shadow-lg'
+                    : 'w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-3 md:h-3 bg-white/50 hover:bg-white/75'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Hero Title and Description - Left Half, Floating Above Images */}
+          <div className="absolute left-3 right-3 sm:left-6 sm:right-auto sm:max-w-[85%] md:left-8 md:max-w-[75%] lg:left-12 lg:max-w-[65%] xl:left-16 xl:max-w-[55%] top-[50%] sm:top-[55%] -translate-y-1/2 z-30">
             <div 
-              className="relative w-1/2 h-full"
+              className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 xl:px-10 xl:py-8 shadow-2xl"
               style={{
-                animation: 'squareVideoEnter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 4s both',
-                opacity: isTransitioning ? 0 : 1
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(25px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(25px) saturate(180%)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
               }}
             >
-              <video
-                ref={rightHalfVideoRef}
-                key={`right-half-${currentVideoIndex}`}
-                className="absolute inset-0 w-full h-full object-cover"
-                src={currentState.rightHalf}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                onLoadedData={(e) => {
-                  const video = e.currentTarget;
-                  if (video.paused) {
-                    video.play().catch(console.error);
-                  }
+              {/* Hero Title */}
+              <h1 
+                className="font-bold leading-tight mb-2 sm:mb-3 md:mb-4 lg:mb-5 drop-shadow-2xl text-left"
+                style={{
+                  fontSize: 'clamp(1.25rem, 4vw + 0.5rem, 3.5rem)',
+                  background: 'linear-gradient(135deg, #d4af37 0%, #ffd700 20%, #ffed4e 40%, #ffd700 60%, #d4af37 80%, #b8860b 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  backgroundSize: '200% 200%',
+                  animation: 'gradient-shift 3s ease infinite',
+                  filter: 'drop-shadow(0 2px 20px rgba(212, 175, 55, 0.8)) drop-shadow(0 4px 40px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.4))',
                 }}
-                onPause={(e) => {
-                  const video = e.currentTarget;
-                  if (!video.ended) {
-                    video.play().catch(console.error);
-                  }
-                }}
-              />
+              >
+                {t('home.hero_title')}
+              </h1>
+              
+              {/* Hero Description */}
+              <p className="text-white text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-medium leading-relaxed sm:leading-relaxed drop-shadow-lg text-left mb-3 sm:mb-4 md:mb-5 lg:mb-6">
+                {t('home.hero_subtitle')}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
+                <div
+                  onClick={(e) => e.preventDefault()}
+                  className="group relative px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-3.5 lg:px-10 lg:py-4 bg-white text-blue-600 font-bold text-[10px] sm:text-xs md:text-sm lg:text-base rounded-lg sm:rounded-xl overflow-hidden transition-all duration-500 hover:scale-110 hover:shadow-2xl text-center button-primary cursor-not-allowed opacity-70"
+                  style={{
+                    boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
+                  }}
+                >
+                  {/* Animated gradient background */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[length:200%_100%] animate-gradient-shift" />
+                  
+                  {/* Shimmer effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  
+                  {/* Glow effect */}
+                  <span className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 rounded-xl opacity-0 group-hover:opacity-50 blur-md transition-opacity duration-500 -z-10" />
+                  
+                  <span className="relative z-10 flex items-center justify-center gap-1 sm:gap-2 text-blue-600 group-hover:text-white transition-colors duration-300">
+                    {t('home.get_started')}
+                    <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 transition-all duration-300 group-hover:translate-x-2 group-hover:scale-110" />
+                  </span>
+                </div>
+                
+                <div
+                  onClick={(e) => e.preventDefault()}
+                  className="group relative px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-3.5 lg:px-10 lg:py-4 bg-white/10 backdrop-blur-sm border-2 border-white/40 text-white font-bold text-[10px] sm:text-xs md:text-sm lg:text-base rounded-lg sm:rounded-xl overflow-hidden transition-all duration-500 hover:bg-white/25 hover:border-white/70 hover:scale-110 hover:shadow-2xl text-center button-secondary cursor-not-allowed opacity-70"
+                >
+                  {/* Animated gradient border */}
+                  <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 via-white/40 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-sm" />
+                  
+                  {/* Shimmer effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  
+                  {/* Pulsing glow */}
+                  <span className="absolute -inset-1 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 blur-lg transition-opacity duration-500 animate-pulse -z-10" />
+                  
+                  {/* Inner glow */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/15 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl" />
+                  
+                  <span className="relative z-10 transition-all duration-300 group-hover:tracking-wide">{t('home.learn_more')}</span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Left Half Video (Video 5) */}
-        {currentState.leftHalf && (
-          <div 
-            className="absolute inset-0 flex items-center justify-start"
-            style={{ zIndex: 12 }}
-          >
-            <div 
-              className="relative w-1/2 h-full"
-              style={{
-                animation: 'squareVideoEnter 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 6s both',
-                opacity: isTransitioning ? 0 : 1
-              }}
-            >
-              <video
-                ref={leftHalfVideoRef}
-                key={`left-half-${currentVideoIndex}`}
-                className="absolute inset-0 w-full h-full object-cover"
-                src={currentState.leftHalf}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                onLoadedData={(e) => {
-                  const video = e.currentTarget;
-                  if (video.paused) {
-                    video.play().catch(console.error);
-                  }
-                }}
-                onPause={(e) => {
-                  const video = e.currentTarget;
-                  if (!video.ended) {
-                    video.play().catch(console.error);
-                  }
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Removed overlay to prevent darkening */}
+        </div>
       </section>
 
-      {/* Featured Courses */}
-      <section className="py-12 sm:py-16 md:py-20 bg-white">
+      {/* TEMPORARILY HIDDEN - Featured Courses */}
+      {/* <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
@@ -629,10 +444,10 @@ const HomePage = () => {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* Benefits Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
+      {/* TEMPORARILY HIDDEN - Benefits Section */}
+      {/* <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
@@ -658,10 +473,10 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* FAQ Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
+      {/* TEMPORARILY HIDDEN - FAQ Section */}
+      {/* <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
@@ -702,10 +517,10 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* Testimonials */}
-      <section className="py-12 sm:py-16 md:py-20 bg-white">
+      {/* TEMPORARILY HIDDEN - Testimonials */}
+      {/* <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
@@ -745,10 +560,10 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* CTA Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-600 text-white">
+      {/* TEMPORARILY HIDDEN - CTA Section */}
+      {/* <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-600 text-white">
         <div className="max-w-4xl mx-auto text-center px-3 sm:px-4 md:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
             {t('home.cta_title')}
@@ -771,7 +586,7 @@ const HomePage = () => {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

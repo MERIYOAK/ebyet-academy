@@ -27,7 +27,7 @@ export const queryClient = new QueryClient({
 });
 
 // Custom persistence utilities for enhanced caching
-const CACHE_KEY = 'qendiel-cache';
+const CACHE_KEY = 'ibyet-cache';
 const CACHE_VERSION = 'v1.0.0';
 const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 

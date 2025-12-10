@@ -74,7 +74,7 @@ const PrivacyPolicyPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Introduction</h2>
             <div className="prose prose-gray max-w-none">
               <p className="text-gray-600 mb-4">
-                At QENDIEL Academy ("we," "our," or "us"), we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services.
+                At IBYET Academy ("we," "our," or "us"), we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services.
               </p>
               <p className="text-gray-600 mb-4">
                 By using our platform, you consent to the data practices described in this policy. If you do not agree with our policies and practices, please do not use our services.

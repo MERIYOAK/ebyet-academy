@@ -1,8 +1,8 @@
-# Qendiel Academy Caching System
+# IBYET Academy Caching System
 
 ## Overview
 
-The Qendiel Academy website now features a robust, production-ready caching system that significantly improves performance and user experience. The system combines React Query for in-memory caching with localStorage for persistent storage, ensuring data is available instantly on repeat visits while maintaining freshness through background revalidation.
+The IBYET Academy website now features a robust, production-ready caching system that significantly improves performance and user experience. The system combines React Query for in-memory caching with localStorage for persistent storage, ensuring data is available instantly on repeat visits while maintaining freshness through background revalidation.
 
 ## 🚀 Key Features
 
