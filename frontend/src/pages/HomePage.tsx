@@ -14,10 +14,7 @@ import heroImage3 from '../assets/images/pexels-karola-g-5980876.jpg';
 import heroImage4 from '../assets/images/pexels-kindelmedia-7054384.jpg';
 import heroImage5 from '../assets/images/pexels-michael-steinberg-95604-318820.jpg';
 import heroImage6 from '../assets/images/pexels-n-voitkevich-6120218.jpg';
-import heroImage7 from '../assets/images/pexels-pixabay-210607.jpg';
-import heroImage8 from '../assets/images/pexels-pixabay-259091.jpg';
-import heroImage9 from '../assets/images/pexels-tima-miroshnichenko-7567565.jpg';
-import heroImage10 from '../assets/images/pexels-tima-miroshnichenko-7567606.jpg';
+import heroImage7 from '../assets/images/pexels-pixabay-259091.jpg';
 
 
 const HomePage = () => {
@@ -32,10 +29,7 @@ const HomePage = () => {
     heroImage4,
     heroImage5,
     heroImage6,
-    heroImage7,
-    heroImage8,
-    heroImage9,
-    heroImage10
+    heroImage7
   ];
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

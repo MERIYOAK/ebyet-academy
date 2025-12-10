@@ -13,10 +13,7 @@ import navImage3 from '../../assets/images/pexels-karola-g-5980876.jpg';
 import navImage4 from '../../assets/images/pexels-kindelmedia-7054384.jpg';
 import navImage5 from '../../assets/images/pexels-michael-steinberg-95604-318820.jpg';
 import navImage6 from '../../assets/images/pexels-n-voitkevich-6120218.jpg';
-import navImage7 from '../../assets/images/pexels-pixabay-210607.jpg';
-import navImage8 from '../../assets/images/pexels-pixabay-259091.jpg';
-import navImage9 from '../../assets/images/pexels-tima-miroshnichenko-7567565.jpg';
-import navImage10 from '../../assets/images/pexels-tima-miroshnichenko-7567606.jpg';
+import navImage7 from '../../assets/images/pexels-pixabay-259091.jpg';
 
 
 const UserNavbar: React.FC = () => {
@@ -33,7 +30,7 @@ const UserNavbar: React.FC = () => {
   const isAuthenticated = !!localStorage.getItem('token');
 
   // Navbar background images
-  const navImages = [navImage1, navImage2, navImage3, navImage4, navImage5, navImage6, navImage7, navImage8, navImage9, navImage10];
+  const navImages = [navImage1, navImage2, navImage3, navImage4, navImage5, navImage6, navImage7];
 
   // Detect scroll direction - fade out when scrolling down, fade in from top when scrolling up
   useEffect(() => {
@@ -141,10 +138,10 @@ const UserNavbar: React.FC = () => {
           
           if (userResult.data.profilePhotoKey) {
             const photoResponse = await fetch(buildApiUrl('/api/auth/users/me/photo'), {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
             if (photoResponse.ok) {
               const photoResult = await photoResponse.json();
@@ -172,8 +169,8 @@ const UserNavbar: React.FC = () => {
           isScrollingDown 
             ? 'opacity-0 -translate-y-4 pointer-events-none' 
             : 'opacity-100 translate-y-0'
-        }`}
-        style={{
+      }`}
+      style={{
           transform: isScrollingDown 
             ? 'translateY(-20px)' 
             : 'translateY(0)',
@@ -228,12 +225,12 @@ const UserNavbar: React.FC = () => {
                   {t('language.english')}
                 </button>
               </div>
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
 
         {/* Hamburger Menu Button */}
-        <button
+            <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="group p-2 sm:p-2.5 md:p-3 text-white hover:text-blue-100 transition-all duration-500 ease-in-out bg-white/10 backdrop-blur-sm rounded-full shadow-lg hover:shadow-2xl hover:scale-110 hover:rotate-90 border border-white/50 sm:border-2 hover:border-white hover:bg-white/20"
           aria-label="Toggle menu"
@@ -271,26 +268,30 @@ const UserNavbar: React.FC = () => {
           }
         }}
       >
-        <div className="h-full w-full flex flex-col lg:flex-row">
+        <div className="h-full w-full flex flex-col lg:flex-row overflow-hidden">
           {/* Left Side - Main Navigation with Glassy Background */}
           <div 
-            className="flex-1 flex flex-col justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 py-8 sm:py-12 md:py-16 lg:py-0 border-t lg:border-t-0 lg:border-r border-gray-700/30 relative"
+            className="flex-1 flex flex-col justify-start lg:justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 py-6 sm:py-8 md:py-12 lg:py-0 border-t lg:border-t-0 lg:border-r border-gray-700/30 relative overflow-y-auto scrollbar-hide"
             style={{
               background: 'rgba(15, 23, 42, 0.85)',
               backdropFilter: 'blur(30px) saturate(180%)',
               WebkitBackdropFilter: 'blur(30px) saturate(180%)',
               boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+              minHeight: '50%',
+              maxHeight: '100%',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
             }}
           >
-            <nav className="space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
+            <nav className="space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8 pt-8 sm:pt-10 md:pt-12 lg:pt-16 xl:pt-20">
               {mainNavigation.map((item, index) => (
                 <div
-                  key={item.name}
+                key={item.name}
                   onClick={(e) => e.preventDefault()}
                   className={`group relative block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight transition-all duration-500 ease-out hover:translate-x-2 hover:scale-[1.02] hover:tracking-wide cursor-not-allowed opacity-70 ${
-                    isActive(item.href)
-                      ? 'text-blue-700'
-                      : 'text-blue-600 hover:text-blue-700'
+                  isActive(item.href)
+                      ? 'text-white'
+                      : 'text-white/80 hover:text-white'
                   }`}
                   style={{
                     animationDelay: `${index * 0.1}s`,
@@ -301,14 +302,14 @@ const UserNavbar: React.FC = () => {
                 >
                   {/* Hover underline effect */}
                   <span className="relative inline-block">
-                    {item.name}
+                {item.name}
                     <span 
-                      className="absolute bottom-0 left-0 w-0 h-[3px] bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500 ease-out group-hover:w-full"
+                      className="absolute bottom-0 left-0 w-0 h-[3px] bg-gradient-to-r from-white/80 to-white transition-all duration-500 ease-out group-hover:w-full"
                     />
                   </span>
                   
                   {/* Subtle glow effect on hover */}
-                  <span className="absolute inset-0 opacity-0 group-hover:opacity-20 blur-xl bg-blue-400 transition-opacity duration-500" />
+                  <span className="absolute inset-0 opacity-0 group-hover:opacity-20 blur-xl bg-white transition-opacity duration-500" />
                 </div>
               ))}
             </nav>
@@ -316,9 +317,15 @@ const UserNavbar: React.FC = () => {
 
           {/* Right Side - Secondary Navigation & Auth with Background Image */}
           <div 
-            className="flex-1 flex flex-col justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 py-8 sm:py-12 md:py-16 lg:py-0 relative overflow-hidden"
+            className="flex-1 flex flex-col justify-start lg:justify-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 py-6 sm:py-8 md:py-12 lg:py-0 relative overflow-y-auto scrollbar-hide"
             style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.15) 100%)',
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(0, 0, 0, 0.85) 100%)',
+              backdropFilter: 'blur(30px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+              minHeight: '50%',
+              maxHeight: '100%',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
             }}
           >
             {/* Rotating Background Images */}
@@ -331,15 +338,15 @@ const UserNavbar: React.FC = () => {
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
-                  opacity: index === currentNavImageIndex ? 0.25 : 0,
+                  opacity: index === currentNavImageIndex ? 0.15 : 0,
                   filter: 'blur(3px)',
                 }}
               />
             ))}
             
-            {/* Light Dimming Overlay */}
+            {/* Dark Dimming Overlay */}
             <div 
-              className="absolute inset-0 bg-black/15 z-[1]"
+              className="absolute inset-0 bg-black/40 z-[1]"
               style={{
                 opacity: isMenuOpen ? 1 : 0,
                 transition: 'opacity 0.5s ease-out',
@@ -347,11 +354,11 @@ const UserNavbar: React.FC = () => {
             />
             
             {/* Content with relative positioning to appear above overlay */}
-            <div className="space-y-4 sm:space-y-6 md:space-y-8 relative z-10">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8 relative z-10 pt-2 sm:pt-4 lg:pt-0 pb-4 sm:pb-6 lg:pb-0">
               {/* Login/Register Section - At the Top */}
               {!isAuthenticated && (
                 <div 
-                  className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 pb-4 sm:pb-6 md:pb-8 border-b border-white/20"
+                  className="flex flex-row gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 md:pb-6 border-b border-white/20"
                   style={{
                     opacity: isMenuOpen ? 1 : 0,
                     transform: isMenuOpen ? 'translateY(0) translateX(0)' : 'translateY(20px) translateX(-10px)',
@@ -360,7 +367,7 @@ const UserNavbar: React.FC = () => {
                 >
                   <div
                     onClick={(e) => e.preventDefault()}
-                    className="group relative block text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white transition-all duration-500 py-2 px-3 sm:py-3 sm:px-5 rounded-lg text-center sm:text-left cursor-not-allowed overflow-hidden"
+                    className="group relative flex-1 block text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-white transition-all duration-500 py-2 px-2 sm:py-3 sm:px-5 rounded-lg text-center cursor-not-allowed overflow-hidden"
                   >
                     {/* Animated gradient background */}
                     <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/30 to-white/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out" />
@@ -374,7 +381,7 @@ const UserNavbar: React.FC = () => {
                   </div>
                   <div
                     onClick={(e) => e.preventDefault()}
-                    className="group relative block text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white transition-all duration-500 py-2 px-3 sm:py-3 sm:px-5 rounded-lg text-center sm:text-left cursor-not-allowed overflow-hidden"
+                    className="group relative flex-1 block text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-white transition-all duration-500 py-2 px-2 sm:py-3 sm:px-5 rounded-lg text-center cursor-not-allowed overflow-hidden"
                   >
                     {/* Animated gradient background */}
                     <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/30 to-white/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out" />
@@ -390,7 +397,7 @@ const UserNavbar: React.FC = () => {
               )}
 
               {/* Secondary Links */}
-              <nav className="space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6">
+              <nav className="space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
                 {secondaryNavigation.map((item, index) => {
                   const baseDelay = isAuthenticated ? 0.1 : 0.3; // Adjust based on whether login/register is shown
                   return (
@@ -443,9 +450,9 @@ const UserNavbar: React.FC = () => {
                 </div>
               </nav>
 
-              {/* Social Media Links */}
+              {/* Social Media Links - Hidden on mobile */}
               <div 
-                className="flex items-center space-x-3 sm:space-x-5 md:space-x-6"
+                className="hidden md:flex items-center space-x-3 sm:space-x-5 md:space-x-6"
                 style={{
                   opacity: isMenuOpen ? 1 : 0,
                   transition: `opacity 0.5s ease-out ${(mainNavigation.length + secondaryNavigation.length + 1) * 0.1}s`,
@@ -479,10 +486,10 @@ const UserNavbar: React.FC = () => {
                   <span className="absolute inset-0 border-2 border-white/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-[0_0_20px_rgba(255,255,255,0.6)]" />
                 </div>
               </div>
-
+            
               {/* Divider */}
               <div 
-                className="border-t border-white/20 my-8 sm:my-10"
+                className="border-t border-white/20 my-4 sm:my-6 md:my-8 lg:my-10"
                 style={{
                   opacity: isMenuOpen ? 1 : 0,
                   transition: `opacity 0.5s ease-out ${(mainNavigation.length + secondaryNavigation.length + 2) * 0.1}s`,
@@ -498,12 +505,12 @@ const UserNavbar: React.FC = () => {
                   transition: `opacity 0.6s ease-out ${(mainNavigation.length + secondaryNavigation.length + 2) * 0.1}s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${(mainNavigation.length + secondaryNavigation.length + 2) * 0.1}s`,
                 }}
               >
-                {isAuthenticated ? (
+              {isAuthenticated ? (
                   <>
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                       <AvatarMenu variant="user" profileImageUrl={profileImageUrl} />
                     </div>
-                    <Link
+                                       <Link
                       to="/dashboard"
                       onClick={handleLinkClick}
                       className="group relative block text-lg sm:text-xl lg:text-2xl font-semibold text-white/90 hover:text-white transition-all duration-500 py-3 px-5 -mx-5 rounded-lg"
@@ -511,8 +518,8 @@ const UserNavbar: React.FC = () => {
                       <span className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out blur-sm" />
                       <span className="absolute inset-0 border border-white/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       <span className="relative z-10 tracking-wide group-hover:tracking-wider transition-all duration-300">{t('navbar.dashboard')}</span>
-                    </Link>
-                    <Link
+                   </Link>
+                                       <Link
                       to="/profile"
                       onClick={handleLinkClick}
                       className="group relative block text-lg sm:text-xl lg:text-2xl font-semibold text-white/90 hover:text-white transition-all duration-500 py-3 px-5 -mx-5 rounded-lg"
@@ -520,8 +527,8 @@ const UserNavbar: React.FC = () => {
                       <span className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out blur-sm" />
                       <span className="absolute inset-0 border border-white/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       <span className="relative z-10 tracking-wide group-hover:tracking-wider transition-all duration-300">{t('navbar.profile')}</span>
-                    </Link>
-                    <Link
+                   </Link>
+                                       <Link
                       to="/certificates"
                       onClick={handleLinkClick}
                       className="group relative block text-lg sm:text-xl lg:text-2xl font-semibold text-white/90 hover:text-white transition-all duration-500 py-3 px-5 -mx-5 rounded-lg"
@@ -529,8 +536,8 @@ const UserNavbar: React.FC = () => {
                       <span className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out blur-sm" />
                       <span className="absolute inset-0 border border-white/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       <span className="relative z-10 tracking-wide group-hover:tracking-wider transition-all duration-300">{t('navbar.my_certificates')}</span>
-                    </Link>
-                    <button
+                   </Link>
+                                       <button
                       onClick={() => {
                         localStorage.removeItem('token');
                         handleLinkClick();
@@ -541,11 +548,11 @@ const UserNavbar: React.FC = () => {
                       <span className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/15 to-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out blur-sm" />
                       <span className="absolute inset-0 border border-white/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       <span className="relative z-10 tracking-wide group-hover:tracking-wider transition-all duration-300">{t('navbar.logout')}</span>
-                    </button>
+                   </button>
                   </>
                 ) : null}
-              </div>
-            </div>
+                 </div>
+                </div>
           </div>
         </div>
       </div>
@@ -553,4 +560,4 @@ const UserNavbar: React.FC = () => {
   );
 };
 
-export default UserNavbar;
+export default UserNavbar; 
