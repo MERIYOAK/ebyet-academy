@@ -28,6 +28,10 @@ import mobileImage6 from '../assets/images/mobile6.jpg';
 const HomePage = () => {
   const { t } = useTranslation();
   
+  // Announcements state
+  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+  const [isAnnouncementAutoPlaying, setIsAnnouncementAutoPlaying] = useState(true);
+  
   // Desktop hero images array
   const desktopHeroImages = [
     heroImage1,
@@ -58,7 +62,7 @@ const HomePage = () => {
   });
   
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     
     const checkMobile = () => {
       const newIsMobile = window.innerWidth < 768;
@@ -213,6 +217,17 @@ const HomePage = () => {
     return () => clearInterval(interval);
   }, [isAutoPlaying, heroImages.length]);
 
+  // Auto-rotate announcements
+  useEffect(() => {
+    if (!isAnnouncementAutoPlaying) return;
+    
+    const interval = setInterval(() => {
+      setCurrentAnnouncementIndex((prev) => (prev + 1) % 3);
+    }, 5000); // Change every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isAnnouncementAutoPlaying]);
+
   // Navigation functions
   const goToNext = () => {
     setIsAutoPlaying(false);
@@ -294,6 +309,27 @@ const HomePage = () => {
 
   return (
     <div>
+      {/* Dark Gradient Overlay - Top Fade for Logo and Navbar Visibility */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-[97] pointer-events-none transition-opacity duration-300 ${
+          isScrollingDown 
+            ? 'opacity-0' 
+            : 'opacity-100'
+        }`}
+        style={{
+          height: '200px',
+          background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.7) 15%, rgba(0, 0, 0, 0.5) 35%, rgba(0, 0, 0, 0.3) 55%, rgba(0, 0, 0, 0.15) 75%, rgba(0, 0, 0, 0.05) 90%, transparent 100%)',
+          transition: isScrollingDown 
+            ? 'opacity 0.3s ease-in' 
+            : hasScrolled && !isScrollingDown && lastScrollY > 50
+            ? 'none'
+            : 'opacity 0.3s ease-out',
+          animation: hasScrolled && !isScrollingDown && lastScrollY > 50 
+            ? 'fadeInFromTop 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards' 
+            : 'none'
+        }}
+      />
+      
       {/* Image Hero Slideshow Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
         {/* IBYET Academy Label - Top Left */}
@@ -323,7 +359,7 @@ const HomePage = () => {
         >
           {/* IBYET - with border and glow effects */}
           <span 
-            className={`relative border border-white sm:border-2 backdrop-blur-sm text-white px-2 py-0.5 sm:px-4 sm:px-5 md:px-6 sm:py-1 sm:py-1.5 md:py-2 rounded-md font-bold text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl shadow-lg tracking-tight overflow-hidden ${
+            className={`relative border border-white sm:border-2 bg-black/30 backdrop-blur-md text-white px-2 py-0.5 sm:px-4 sm:px-5 md:px-6 sm:py-1 sm:py-1.5 md:py-2 rounded-md font-bold text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl shadow-lg tracking-tight overflow-hidden ${
               !isScrollingDown ? 'animate-logo-border-glow animate-logo-pulse' : ''
             }`}
             style={{
@@ -499,29 +535,103 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* TEMPORARILY HIDDEN - Featured Courses */}
-      {/* <section className="py-12 sm:py-16 md:py-20 bg-white">
+      {/* Announcements Section with Slideshow */}
+      <section 
+        className="relative w-full overflow-hidden"
+        style={{
+          height: '50vh',
+          minHeight: '400px',
+          background: 'rgba(0, 0, 0, 1)',
+          marginTop: '-1px', // Overlap by 1px to eliminate border line
+        }}
+        onMouseEnter={() => setIsAnnouncementAutoPlaying(false)}
+        onMouseLeave={() => setIsAnnouncementAutoPlaying(true)}
+      >
+        <div className="h-full w-full flex items-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 relative">
+          {/* Announcements Slideshow - Left Edge of Right Half */}
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              className={`absolute w-full md:w-1/2 ml-auto space-y-3 sm:space-y-4 md:space-y-5 text-left transition-opacity duration-1000 ease-in-out ${
+                index === currentAnnouncementIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+              style={{
+                willChange: index === currentAnnouncementIndex ? 'opacity' : 'auto',
+              }}
+            >
+              {/* Date */}
+              <div 
+                className="text-white/60 text-xs sm:text-sm md:text-base font-medium"
+                style={{
+                  textShadow: '0 1px 5px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                {t(`home.announcement${index + 1}_date`, `Announcement ${index + 1} Date`)}
+              </div>
+              
+              {/* Announcement Title */}
+              <h2 
+                className="text-white font-bold leading-tight"
+                style={{
+                  fontSize: 'clamp(1.5rem, 3vw + 0.5rem, 2.5rem)',
+                  textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                {t(`home.announcement${index + 1}_title`, `Announcement ${index + 1} Title`)}
+              </h2>
+              
+              {/* Announcement Content */}
+              <p 
+                className="text-white/90 leading-relaxed"
+                style={{
+                  fontSize: 'clamp(1rem, 2vw + 0.25rem, 1.5rem)',
+                  textShadow: '0 1px 10px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                {t(`home.announcement${index + 1}_content`, `Announcement ${index + 1} Content`)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Featured Courses */}
+      <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
-              {t('home.featured_courses_title')}
+              {t('home.courses_title', 'Courses')}
             </h2>
             <p className="text-sm sm:text-base md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              {t('home.featured_courses_subtitle')}
+              {t('home.courses_subtitle', 'Explore our collection of courses designed to accelerate your professional development')}
             </p>
           </div>
           {featuredGrid}
           <div className="text-center mt-8 sm:mt-12">
             <Link
               to="/courses"
-              className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-sm sm:text-base md:text-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="group relative inline-flex items-center space-x-2 bg-white text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all duration-500 hover:scale-110 hover:shadow-2xl overflow-hidden"
+              style={{
+                boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
+              }}
             >
-              <span>{t('home.view_all_courses')}</span>
-              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              {/* Animated gradient background */}
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[length:200%_100%] animate-gradient-shift" />
+              
+              {/* Shimmer effect */}
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+              
+              {/* Glow effect */}
+              <span className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 rounded-xl opacity-0 group-hover:opacity-50 blur-md transition-opacity duration-500 -z-10" />
+              
+              <span className="relative z-10 flex items-center justify-center gap-1 sm:gap-2 text-blue-600 group-hover:text-white transition-colors duration-300">
+                {t('home.view_all_courses')}
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 group-hover:translate-x-2 group-hover:scale-110" />
+              </span>
             </Link>
           </div>
         </div>
-      </section> */}
+      </section>
 
       {/* TEMPORARILY HIDDEN - Benefits Section */}
       {/* <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">

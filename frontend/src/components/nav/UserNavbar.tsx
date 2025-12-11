@@ -6,14 +6,10 @@ import { Menu, X, Shield, Youtube, Facebook, Instagram, Globe, ChevronDown } fro
 import AvatarMenu from './AvatarMenu';
 import { getCurrentLanguage, changeLanguage } from '../../i18n';
 
-// Import hero images for navbar background
-import navImage1 from '../../assets/images/pexels-davidmcbee-730547.jpg';
-import navImage2 from '../../assets/images/pexels-dvaughnbell-2068664.jpg';
-import navImage3 from '../../assets/images/pexels-karola-g-5980876.jpg';
-import navImage4 from '../../assets/images/pexels-kindelmedia-7054384.jpg';
-import navImage5 from '../../assets/images/pexels-michael-steinberg-95604-318820.jpg';
-import navImage6 from '../../assets/images/pexels-n-voitkevich-6120218.jpg';
-import navImage7 from '../../assets/images/pexels-pixabay-259091.jpg';
+// Import images for navbar background
+// Desktop uses mobile images, mobile uses desktop images (vice versa)
+import mobileImage1 from '../../assets/images/mobile1.jpg';
+import heroImage1 from '../../assets/images/pexels-davidmcbee-730547.jpg';
 
 
 const UserNavbar: React.FC = () => {
@@ -24,13 +20,41 @@ const UserNavbar: React.FC = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const [currentNavImageIndex, setCurrentNavImageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const isAuthenticated = !!localStorage.getItem('token');
 
-  // Navbar background images
-  const navImages = [navImage1, navImage2, navImage3, navImage4, navImage5, navImage6, navImage7];
+  // Detect screen size for background image selection
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkMobile, 150);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Select background image: desktop uses mobile image, mobile uses desktop image
+  const navbarBackgroundImage = useMemo(() => {
+    return isMobile ? heroImage1 : mobileImage1;
+  }, [isMobile]);
 
   // Detect scroll direction - fade out when scrolling down, fade in from top when scrolling up
   useEffect(() => {
@@ -90,17 +114,6 @@ const UserNavbar: React.FC = () => {
       setIsLangMenuOpen(false);
     }
   }, [isMenuOpen]);
-
-  // Rotate navbar background images when menu is open
-  useEffect(() => {
-    if (!isMenuOpen) return;
-    
-    const interval = setInterval(() => {
-      setCurrentNavImageIndex((prev) => (prev + 1) % navImages.length);
-    }, 4000); // Change every 4 seconds
-
-    return () => clearInterval(interval);
-  }, [isMenuOpen, navImages.length]);
 
   // Main navigation links (displayed on left side of overlay)
   const mainNavigation = useMemo(() => ([
@@ -194,7 +207,7 @@ const UserNavbar: React.FC = () => {
               e.stopPropagation();
               setIsLangMenuOpen(!isLangMenuOpen);
             }}
-            className="flex items-center space-x-1 px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:text-blue-100 hover:bg-white/10 backdrop-blur-sm rounded-full shadow-lg transition-all duration-300 border border-white/30"
+            className="flex items-center space-x-1 px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:text-blue-100 bg-black/30 hover:bg-black/50 backdrop-blur-md rounded-full shadow-lg transition-all duration-300 border border-white/30"
             aria-label="Toggle language"
           >
             <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -240,7 +253,7 @@ const UserNavbar: React.FC = () => {
         {/* Hamburger Menu Button */}
             <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="group p-2 sm:p-2.5 md:p-3 text-white hover:text-blue-100 transition-all duration-500 ease-in-out bg-white/10 backdrop-blur-sm rounded-full shadow-lg hover:shadow-2xl hover:scale-110 hover:rotate-90 border border-white/50 sm:border-2 hover:border-white hover:bg-white/20"
+          className="group p-2 sm:p-2.5 md:p-3 text-white hover:text-blue-100 transition-all duration-500 ease-in-out bg-black/30 hover:bg-black/50 backdrop-blur-md rounded-full shadow-lg hover:shadow-2xl hover:scale-110 hover:rotate-90 border border-white/50 sm:border-2 hover:border-white"
           aria-label="Toggle menu"
           style={{
             width: '36px',
@@ -336,19 +349,17 @@ const UserNavbar: React.FC = () => {
               msOverflowStyle: 'none',
             }}
           >
-            {/* Rotating Background Images - only render current */}
+            {/* Static Background Image - faded fashion */}
             {isMenuOpen && (
               <div
-                key={currentNavImageIndex}
-                className="absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out"
+                className="absolute inset-0 z-0 transition-opacity duration-500 ease-in-out"
                 style={{
-                  backgroundImage: `url(${navImages[currentNavImageIndex]})`,
+                  backgroundImage: `url(${navbarBackgroundImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
                   opacity: 0.15,
                   filter: 'blur(3px)',
-                  willChange: 'opacity',
                 }}
               />
             )}

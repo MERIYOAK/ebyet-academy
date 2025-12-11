@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 import { useTranslation } from 'react-i18next';
 
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Users, Star, Play, ShoppingCart, CheckCircle, Loader } from 'lucide-react';
+import { Clock, Users, Star, Play, ShoppingCart, CheckCircle, Loader, BookOpen } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
 
 interface CourseCardProps {
@@ -137,7 +137,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
       return (
         <button
           disabled
-          className="w-full bg-gray-400 text-white font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 xxs:space-x-2 cursor-not-allowed text-sm xxs:text-base"
+          className="group/btn relative w-full bg-white text-blue-600 font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 xxs:space-x-2 cursor-not-allowed text-sm xxs:text-base overflow-hidden"
+          style={{
+            boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
+          }}
         >
           <Loader className="h-4 w-4 xxs:h-5 xxs:w-5 animate-spin" />
           <span>{t('course_card.processing')}</span>
@@ -147,29 +150,55 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
     if (purchaseStatus === 'error') {
       return (
-        <div className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 xxs:space-x-2 text-sm xxs:text-base">
+        <div className="w-full bg-white text-red-600 font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 xxs:space-x-2 text-sm xxs:text-base">
           <span>{t('course_card.error')}: {errorMessage}</span>
         </div>
       );
     }
 
     return (
-             <button
-         onClick={handleBuyClick}
-         className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-2xl hover:shadow-3xl flex items-center justify-center space-x-1 xxs:space-x-2 text-sm xxs:text-base shadow-red-500/40 hover:shadow-red-600/60 border border-red-500/20"
-       >
-        <ShoppingCart className="h-4 w-4 xxs:h-5 xxs:w-5" />
-        <span>{t('course_card.buy_now')} - ${price}</span>
+      <button
+        onClick={handleBuyClick}
+        className="group/btn relative w-full bg-white text-blue-600 font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-500 transform hover:scale-110 overflow-hidden flex items-center justify-center space-x-1 xxs:space-x-2 text-sm xxs:text-base"
+        style={{
+          boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
+        }}
+      >
+        {/* Animated gradient background on hover */}
+        <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
+        {/* Shimmer effect */}
+        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-in-out" />
+        <ShoppingCart className="h-4 w-4 xxs:h-5 xxs:w-5 relative z-10 group-hover/btn:text-white transition-colors duration-300" />
+        <span className="relative z-10 group-hover/btn:text-white transition-colors duration-300">{t('course_card.buy_now')} - ${price}</span>
       </button>
     );
   };
 
   return (
-    <div className={`bg-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:-translate-y-4 hover:rotate-1 overflow-hidden group flex flex-col ${className} shadow-gray-300/60 hover:shadow-gray-400/80 border border-gray-200 sm:border-gray-100/50 ring-1 ring-gray-200 sm:ring-0`}>
-             <div className="relative overflow-hidden h-36 xxs:h-40 sm:h-48 shadow-inner">
+    <div 
+      className={`rounded-2xl overflow-hidden group flex flex-col relative hover:-translate-y-2 transition-all duration-500 max-w-sm mx-auto ${className}`}
+      style={{
+        background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        border: '1px solid rgba(59, 130, 246, 0.3)',
+        boxShadow: '0 10px 40px rgba(30, 58, 138, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1)',
+        transition: 'all 0.5s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 16px 60px rgba(30, 58, 138, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.2)';
+        e.currentTarget.style.border = '1px solid rgba(59, 130, 246, 0.5)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 10px 40px rgba(30, 58, 138, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1)';
+        e.currentTarget.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+      }}
+    >
+      {/* Image Section */}
+      <div className="relative overflow-hidden h-48 sm:h-56">
         {imgLoading && (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-            <div className="text-gray-500 text-sm xxs:text-base">{t('course_card.loading')}</div>
+          <div className="w-full h-full bg-gray-800/50 flex items-center justify-center">
+            <div className="text-white/70 text-sm xxs:text-base">{t('course_card.loading')}</div>
           </div>
         )}
         <img
@@ -181,78 +210,103 @@ const CourseCard: React.FC<CourseCardProps> = ({
           style={{ display: imgLoading ? 'none' : 'block' }}
         />
         {imgError && (
-          <div className="absolute top-2 left-2 bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+          <div className="absolute top-2 left-2 bg-red-500/80 text-white px-2 py-1 rounded text-xs backdrop-blur-sm">
             {t('course_card.image_error')}
           </div>
         )}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                         <Link 
-               to={`/course/${id}`}
-               className="bg-white rounded-full p-2 xxs:p-3 shadow-2xl hover:shadow-3xl hover:bg-gray-100 hover:scale-125 transition-all duration-500 cursor-pointer shadow-gray-400/60 hover:shadow-gray-500/80 transform hover:-translate-y-1"
-               onClick={(e) => e.stopPropagation()}
-             >
-              <Play className="h-5 w-5 xxs:h-6 xxs:w-6 text-red-600" />
+        
+        {/* Bestseller Tag */}
+        <div className="absolute top-3 left-3">
+          <span className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-sm">
+            Bestseller
+          </span>
+        </div>
+
+        {/* Hover Overlay with Buttons */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-3">
+            <Link 
+              to={`/course/${id}`}
+              className="group/btn relative bg-white text-blue-600 rounded-full p-3 shadow-2xl hover:scale-110 transition-all duration-500 overflow-hidden cursor-pointer"
+              style={{
+                boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Animated gradient background on hover */}
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
+              {/* Shimmer effect */}
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-in-out" />
+              <Play className="h-6 w-6 relative z-10 group-hover/btn:text-white transition-colors duration-300" />
             </Link>
+            <button
+              onClick={handleBuyClick}
+              disabled={isLoading || purchaseStatus === 'loading'}
+              className="group/btn relative bg-white text-blue-600 rounded-full p-3 shadow-2xl hover:scale-110 transition-all duration-500 overflow-hidden cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
+              }}
+            >
+              {/* Animated gradient background on hover */}
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
+              {/* Shimmer effect */}
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-in-out" />
+              {isLoading || purchaseStatus === 'loading' ? (
+                <Loader className="h-6 w-6 relative z-10 group-hover/btn:text-white transition-colors duration-300 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-6 w-6 relative z-10 group-hover/btn:text-white transition-colors duration-300" />
+              )}
+            </button>
           </div>
         </div>
-                 <div className="absolute top-3 xxs:top-4 right-3 xxs:right-4">
-           <span className="bg-red-600 text-white px-2 xxs:px-3 py-1 rounded-full text-xs xxs:text-sm font-semibold shadow-lg transform rotate-3 hover:rotate-0 transition-all duration-300">
-             ${price}
-           </span>
-         </div>
       </div>
 
-             <div className="p-4 xxs:p-6 flex flex-col flex-grow bg-white sm:bg-gradient-to-b sm:from-white sm:to-gray-50/30">
-                 <div className="flex items-center justify-between mb-2">
-           <div className="flex items-center space-x-1 text-gray-500 text-xs xxs:text-sm">
-             <Users className="h-3 w-3 xxs:h-4 xxs:w-4" />
-             <span>{students.toLocaleString()} {t('course_card.students')}</span>
-           </div>
-         </div>
-
-                 <h3 className="text-base xxs:text-lg sm:text-xl font-bold text-gray-800 mb-2 line-clamp-2 h-12 xxs:h-14 sm:h-16 group-hover:text-red-600 transition-all duration-300 drop-shadow-sm group-hover:drop-shadow-md">
-           {title}
-         </h3>
-
-        <p className="text-gray-600 text-xs xxs:text-sm mb-3 xxs:mb-4 line-clamp-3 flex-grow">
-          {description}
-        </p>
-
-        {/* Course Tags */}
+      {/* Content Section */}
+      <div className="p-4 xxs:p-6 flex flex-col flex-grow">
+        {/* Category Tag */}
         {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 xxs:gap-2 mb-3 xxs:mb-4">
-            {tags.slice(0, 3).map((tag, index) => (
-                             <span
-                 key={index}
-                 className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-               >
-                {tag}
-              </span>
-            ))}
-                         {tags.length > 3 && (
-               <span className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5">
-                 +{tags.length - 3} {t('course_card.more_tags')}
-               </span>
-             )}
+          <div className="mb-2">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm border border-white/30">
+              {tags[0]}
+            </span>
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-3 xxs:mb-4">
-          <div className="flex items-center space-x-1 text-gray-500 text-xs xxs:text-sm">
-            <Clock className="h-3 w-3 xxs:h-4 xxs:w-4" />
-            <span>{lessons} {t('course_card.lessons')}</span>
+        {/* Title */}
+        <h3 className="text-lg xxs:text-xl sm:text-2xl font-bold text-white mb-3 line-clamp-2 drop-shadow-lg">
+          {title}
+        </h3>
+
+        {/* Rating */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1">
+            {[...Array(4)].map((_, i) => (
+              <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            ))}
+            <Star className="h-4 w-4 text-yellow-400/50" />
           </div>
-          <span className="text-xs xxs:text-sm text-gray-500">{formattedDuration}</span>
+          <span className="text-white/90 text-sm">4.0 (75 {t('course_card.review') || 'Review'})</span>
         </div>
 
-        <div className="space-y-2 xxs:space-y-3">
+        {/* Price and Lessons */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl xxs:text-3xl font-bold text-white">${price}</span>
+            <span className="text-white/60 text-sm line-through">${Math.round(price * 0.75)}</span>
+          </div>
+          <div className="flex items-center gap-1 text-white/90 text-sm">
+            <BookOpen className="h-4 w-4" />
+            <span>{lessons} {t('course_card.lessons')}</span>
+          </div>
+        </div>
+
+        {/* Hidden buttons that appear on hover - shown in image overlay instead */}
+        <div className="hidden">
           {renderActionButton()}
-          
-                     <Link
-             to={`/course/${id}`}
-             className="w-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-xl text-center block text-sm xxs:text-base shadow-gray-400/40 hover:shadow-gray-500/60 border border-gray-200/50"
-           >
+          <Link
+            to={`/course/${id}`}
+            className="w-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 font-semibold py-2 xxs:py-3 px-4 xxs:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-xl text-center block text-sm xxs:text-base shadow-gray-400/40 hover:shadow-gray-500/60 border border-gray-200/50"
+          >
             {t('course_card.view_details')}
           </Link>
         </div>
