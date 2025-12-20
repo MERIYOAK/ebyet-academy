@@ -77,11 +77,11 @@ const PaymentFailurePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 pt-24 pb-12">
+    <div className="min-h-screen bg-gray-900 pt-24 pb-12">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-yellow-500 to-orange-600 px-8 py-12 text-center">
+          <div className="bg-gradient-to-r from-orange-600 to-red-600 px-8 py-12 text-center">
             <div className="bg-white bg-opacity-20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="h-16 w-16 text-white" />
             </div>
@@ -95,15 +95,15 @@ const PaymentFailurePage = () => {
 
           <div className="p-8">
             {/* Status Message */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('payment_failure.whats_happening')}</h2>
-              <p className="text-gray-600 mb-4">
+            <div className="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
+              <h2 className="text-2xl font-bold text-white mb-4">{t('payment_failure.whats_happening')}</h2>
+              <p className="text-gray-300 mb-4">
                 {t('payment_failure.description')}
               </p>
               
               {checkResult && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <p className="text-blue-800">{checkResult}</p>
+                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4 mb-4">
+                  <p className="text-blue-300">{checkResult}</p>
                 </div>
               )}
             </div>
@@ -113,7 +113,7 @@ const PaymentFailurePage = () => {
               <button
                 onClick={handleCheckPaymentStatus}
                 disabled={isChecking}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 disabled:shadow-none"
               >
                 {isChecking ? (
                   <RefreshCw className="h-5 w-5 animate-spin" />
@@ -125,7 +125,7 @@ const PaymentFailurePage = () => {
 
               <button
                 onClick={handleManualRedirect}
-                className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white px-6 py-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl hover:shadow-orange-500/20"
               >
                 <XCircle className="h-5 w-5" />
                 <span>{t('payment_failure.go_to_cancel_page')}</span>
@@ -133,19 +133,19 @@ const PaymentFailurePage = () => {
 
               <Link
                 to="/dashboard"
-                className="block w-full bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 text-center"
+                className="block w-full bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 text-center border border-gray-600"
               >
 {t('payment_failure.go_to_dashboard')}
               </Link>
             </div>
 
             {/* Help Section */}
-            <div className="mt-8 bg-yellow-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('payment_failure.need_help')}</h3>
-              <p className="text-gray-600 text-sm mb-4">
+            <div className="mt-8 bg-yellow-500/20 rounded-lg p-6 border border-yellow-500/30">
+              <h3 className="text-lg font-semibold text-white mb-2">{t('payment_failure.need_help')}</h3>
+              <p className="text-gray-300 text-sm mb-4">
                 {t('payment_failure.help_description')}
               </p>
-              <ul className="text-gray-600 text-sm space-y-1">
+              <ul className="text-gray-300 text-sm space-y-1">
                 <li>• {t('payment_failure.check_email')}</li>
                 <li>• {t('payment_failure.contact_support')}</li>
                 <li>• {t('payment_failure.try_again')}</li>

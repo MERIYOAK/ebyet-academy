@@ -18,77 +18,77 @@ const HelpCenterPage = () => {
   const faqData: FAQItem[] = [
     // Getting Started
     {
-      question: "How do I create an account?",
-      answer: "Creating an account is simple! Click the 'Sign Up' button in the top navigation, fill in your details, and verify your email address. You'll receive a confirmation email with a verification link.",
+      question: t('help_center_faq.create_account_question'),
+      answer: t('help_center_faq.create_account_answer'),
       category: "getting-started"
     },
     {
-      question: "How do I purchase a course?",
-      answer: "Browse our course catalog, select the course you want, and click 'Buy Now'. You'll be redirected to our secure Stripe checkout. After successful payment, the course will be immediately available in your dashboard.",
+      question: t('help_center_faq.purchase_course_question'),
+      answer: t('help_center_faq.purchase_course_answer'),
       category: "getting-started"
     },
     {
-      question: "Can I access courses on mobile devices?",
-      answer: "Yes! Our platform is fully responsive and works on all devices including smartphones, tablets, and desktop computers. You can watch videos, track progress, and access all features from any device.",
+      question: t('help_center_faq.mobile_access_question'),
+      answer: t('help_center_faq.mobile_access_answer'),
       category: "getting-started"
     },
     // Course Access
     {
-      question: "How long do I have access to purchased courses?",
-      answer: "You retain ongoing access to purchased courses as long as your account remains in good standing. You can rewatch lessons anytime from your dashboard.",
+      question: t('help_center_faq.course_access_duration_question'),
+      answer: t('help_center_faq.course_access_duration_answer'),
       category: "course-access"
     },
     {
-      question: "Can I download course videos?",
-      answer: "Currently, we don't support video downloads to ensure content protection. However, you can access all videos online from any device with an internet connection.",
+      question: t('help_center_faq.download_videos_question'),
+      answer: t('help_center_faq.download_videos_answer'),
       category: "course-access"
     },
     {
-      question: "What happens if I lose internet connection while watching?",
-      answer: "Our video player automatically saves your progress. When you reconnect, you can resume from where you left off. Your progress is synced across all devices.",
+      question: t('help_center_faq.internet_connection_question'),
+      answer: t('help_center_faq.internet_connection_answer'),
       category: "course-access"
     },
     // Technical Issues
     {
-      question: "Videos are not loading properly. What should I do?",
-      answer: "Try refreshing the page, clearing your browser cache, or switching to a different browser. If the issue persists, check your internet connection and contact our support team.",
+      question: t('help_center_faq.videos_not_loading_question'),
+      answer: t('help_center_faq.videos_not_loading_answer'),
       category: "technical"
     },
     {
-      question: "I can't log into my account. What should I do?",
-      answer: "First, try resetting your password using the 'Forgot Password' link. If that doesn't work, check if your email is verified. Contact support if you continue having issues.",
+      question: t('help_center_faq.login_issues_question'),
+      answer: t('help_center_faq.login_issues_answer'),
       category: "technical"
     },
     {
-      question: "The video player is not working correctly.",
-      answer: "Try updating your browser to the latest version, disable browser extensions that might interfere, or switch to a different browser. Most issues are resolved by using Chrome, Firefox, or Safari.",
+      question: t('help_center_faq.video_player_issues_question'),
+      answer: t('help_center_faq.video_player_issues_answer'),
       category: "technical"
     },
     // Certificates
     {
-      question: "How do I get a certificate of completion?",
-      answer: "Certificates are automatically generated when you fully complete a course (all lessons completed and required watch time reached). You can download certificates from the 'My Certificates' section in your dashboard.",
+      question: t('help_center_faq.certificate_question'),
+      answer: t('help_center_faq.certificate_answer'),
       category: "certificates"
     },
     {
-      question: "Can I share my certificates on social media?",
-      answer: "Absolutely! Your certificates can be shared on LinkedIn, social media, or included in your resume. They include a verification link for employers to confirm authenticity.",
+      question: t('help_center_faq.share_certificate_question'),
+      answer: t('help_center_faq.share_certificate_answer'),
       category: "certificates"
     },
     // Payments & Refunds
     {
-      question: "What payment methods do you accept?",
-      answer: "We accept major credit and debit cards (Visa, MasterCard, American Express). All payments are processed securely through Stripe.",
+      question: t('help_center_faq.payment_methods_question'),
+      answer: t('help_center_faq.payment_methods_answer'),
       category: "payments"
     },
     {
-      question: "Are all purchases final?",
-      answer: "Yes, all purchases are final. We encourage you to review course details and preview content before making a purchase to ensure it meets your needs.",
+      question: t('help_center_faq.purchases_final_question'),
+      answer: t('help_center_faq.purchases_final_answer'),
       category: "payments"
     },
     {
-      question: "Is my payment information secure?",
-      answer: "Yes, we use industry-standard SSL encryption and Stripe for payment processing. We never store your credit card information on our servers.",
+      question: t('help_center_faq.payment_security_question'),
+      answer: t('help_center_faq.payment_security_answer'),
       category: "payments"
     }
   ];
@@ -115,13 +115,13 @@ const HelpCenterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-900 pt-16">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
+      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Help Center</h1>
-            <p className="text-xl text-red-100 max-w-3xl mx-auto">
+            <p className="text-xl text-cyan-100 max-w-3xl mx-auto">
               Find answers to common questions, get technical support, and learn how to make the most of your {config.APP_NAME} experience.
             </p>
           </div>
@@ -131,49 +131,49 @@ const HelpCenterPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-700">
             <div className="flex items-center mb-4">
-              <Mail className="h-8 w-8 text-red-500 mr-3" />
-              <h3 className="text-lg font-semibold">Email Support</h3>
+              <Mail className="h-8 w-8 text-cyan-400 mr-3" />
+              <h3 className="text-lg font-semibold text-white">{t('help.contact_support')}</h3>
             </div>
-            <p className="text-gray-600 mb-4">Get detailed help from our support team</p>
+            <p className="text-gray-300 mb-4">{t('help.get_help')}</p>
             <a 
               href={`mailto:${config.SUPPORT_EMAIL}`}
-              className="text-red-600 hover:text-red-700 font-medium"
+              className="text-cyan-400 hover:text-cyan-300 font-medium"
             >
               {config.SUPPORT_EMAIL}
             </a>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-700">
             <div className="flex items-center mb-4">
-              <MessageCircle className="h-8 w-8 text-red-500 mr-3" />
-              <h3 className="text-lg font-semibold">Live Chat</h3>
+              <MessageCircle className="h-8 w-8 text-cyan-400 mr-3" />
+              <h3 className="text-lg font-semibold text-white">Live Chat</h3>
             </div>
-            <p className="text-gray-600 mb-4">Chat with our support team in real-time</p>
+            <p className="text-gray-300 mb-4">Chat with our support team in real-time</p>
             <a
               href={`https://wa.me/${config.SUPPORT_WHATSAPP.replace(/[^\d]/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-red-600 hover:text-red-700 font-medium"
+              className="text-cyan-400 hover:text-cyan-300 font-medium"
             >
               WhatsApp Chat
             </a>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-700">
             <div className="flex items-center mb-4">
-              <Clock className="h-8 w-8 text-red-500 mr-3" />
-              <h3 className="text-lg font-semibold">Response Time</h3>
+              <Clock className="h-8 w-8 text-cyan-400 mr-3" />
+              <h3 className="text-lg font-semibold text-white">{t('contact.working_hours')}</h3>
             </div>
-            <p className="text-gray-600 mb-4">We typically respond within 24 hours</p>
-            <span className="text-green-600 font-medium">Business hours support</span>
+            <p className="text-gray-300 mb-4">{t('contact.monday_friday')}</p>
+            <span className="text-green-400 font-medium">{t('contact.stats.support_24_7')}</span>
           </div>
         </div>
 
         {/* Category Filter */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
               const Icon = category.icon;
@@ -183,8 +183,8 @@ const HelpCenterPage = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
                     selectedCategory === category.id
-                      ? 'bg-red-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                   }`}
                 >
                   <Icon className="h-4 w-4 mr-2" />
@@ -198,21 +198,21 @@ const HelpCenterPage = () => {
         {/* FAQ Section */}
         <div className="space-y-4">
           {filteredFaqs.map((faq, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div key={index} className="bg-gray-800 rounded-lg shadow-sm border border-gray-700">
               <button
                 onClick={() => toggleFaq(index)}
-                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-700 transition-colors duration-200"
               >
-                <h3 className="text-lg font-medium text-gray-900">{faq.question}</h3>
+                <h3 className="text-lg font-medium text-white">{faq.question}</h3>
                 {openFaqs.includes(index) ? (
-                  <ChevronUp className="h-5 w-5 text-gray-500" />
+                  <ChevronUp className="h-5 w-5 text-gray-400" />
                 ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                  <ChevronDown className="h-5 w-5 text-gray-400" />
                 )}
               </button>
               {openFaqs.includes(index) && (
                 <div className="px-6 pb-4">
-                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                  <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
                 </div>
               )}
             </div>
@@ -220,24 +220,24 @@ const HelpCenterPage = () => {
         </div>
 
         {/* Contact Section */}
-        <div className="mt-16 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8">
+        <div className="mt-16 bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Still Need Help?</h2>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Can't find what you're looking for? Our support team is here to help you with any questions or issues you might have.
+            <h2 className="text-2xl font-bold text-white mb-4">{t('help.get_help')}</h2>
+            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+              {t('help.contact_support')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/contact"
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
               >
-                Contact Support
+                {t('help.contact_support')}
               </Link>
               <a
                 href={`mailto:${config.SUPPORT_EMAIL}`}
-                className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
+                className="border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
               >
-                Send Email
+                {t('contact.send_message')}
               </a>
             </div>
           </div>

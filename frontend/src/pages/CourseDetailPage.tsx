@@ -1,12 +1,264 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Clock, Users, Play, CheckCircle, Award, Download, BookOpen, ShoppingCart, Loader, ArrowLeft, Eye, Lock } from 'lucide-react';
+import { Clock, Users, Play, CheckCircle, Award, Download, BookOpen, ShoppingCart, Loader, Eye, Lock, X } from 'lucide-react';
 import VideoPlaylist from '../components/VideoPlaylist';
 import VideoProgressBar from '../components/VideoProgressBar';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import { buildApiUrl } from '../config/environment';
 import DRMVideoService from '../services/drmVideoService';
+import { parseDurationToSeconds } from '../utils/durationFormatter';
+
+// TEMPORARY: Sample courses for frontend (will be replaced with backend later)
+const sampleCourses: Record<string, Course> = {
+  'sample-course-1': {
+    _id: 'sample-course-1',
+    title: 'Introduction to Stock Market Investing',
+    description: 'Learn the fundamentals of stock market investing, including how to analyze stocks, build a diversified portfolio, and make informed investment decisions. Perfect for beginners who want to start their investment journey.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
+    price: 49.99,
+    category: 'investing',
+    level: 'beginner',
+    totalEnrollments: 1250,
+    tags: ['Investing', 'Stocks', 'Beginner'],
+    instructor: 'Expert Instructor',
+    totalVideos: 4,
+    videos: [
+      { _id: 'v1', title: 'Introduction to Stock Market', description: 'Learn the basics of stock market investing', duration: 930 },
+      { _id: 'v2', title: 'Understanding Stocks and Shares', description: 'Deep dive into how stocks work', duration: 1365 },
+      { _id: 'v3', title: 'Building Your First Portfolio', description: 'Step-by-step guide to creating a portfolio', duration: 1100 },
+      { _id: 'v4', title: 'Risk Management Strategies', description: 'Learn how to manage investment risks', duration: 1510 }
+    ]
+  },
+  'sample-course-2': {
+    _id: 'sample-course-2',
+    title: 'Advanced Trading Strategies',
+    description: 'Master advanced trading techniques including day trading, swing trading, and options strategies. Learn technical analysis, risk management, and how to develop your own trading system.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+    price: 79.99,
+    category: 'trading',
+    level: 'advanced',
+    totalEnrollments: 890,
+    tags: ['Trading', 'Advanced', 'Strategies'],
+    instructor: 'Professional Trader',
+    totalVideos: 4,
+    videos: [
+      { _id: 'v1', title: 'Advanced Technical Analysis', description: 'Master complex chart patterns', duration: 1815 },
+      { _id: 'v2', title: 'Day Trading Strategies', description: 'Learn profitable day trading techniques', duration: 1720 },
+      { _id: 'v3', title: 'Swing Trading Mastery', description: 'Capture multi-day price movements', duration: 2120 },
+      { _id: 'v4', title: 'Options Trading Fundamentals', description: 'Understanding options and derivatives', duration: 1970 }
+    ]
+  },
+  'sample-course-3': {
+    _id: 'sample-course-3',
+    title: 'Cryptocurrency Investment Guide',
+    description: 'Comprehensive guide to cryptocurrency investing. Learn about Bitcoin, Ethereum, altcoins, DeFi, NFTs, and how to safely store and trade digital assets. Stay ahead in the crypto market.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=600&fit=crop',
+    price: 59.99,
+    category: 'investing',
+    level: 'intermediate',
+    totalEnrollments: 2100,
+    tags: ['Cryptocurrency', 'Bitcoin', 'Blockchain'],
+    instructor: 'Crypto Expert',
+    totalVideos: 4,
+    videos: [
+      { _id: 'v1', title: 'Introduction to Cryptocurrency', description: 'Understanding digital currencies', duration: 1125 },
+      { _id: 'v2', title: 'Bitcoin and Ethereum Basics', description: 'Learn about the major cryptocurrencies', duration: 1470 },
+      { _id: 'v3', title: 'Altcoins and DeFi', description: 'Exploring alternative cryptocurrencies', duration: 1215 },
+      { _id: 'v4', title: 'NFTs and Digital Assets', description: 'Understanding non-fungible tokens', duration: 1320 }
+    ]
+  },
+  'sample-course-4': {
+    _id: 'sample-course-4',
+    title: 'Real Estate Investment Fundamentals',
+    description: 'Discover how to build wealth through real estate investing. Learn about property analysis, financing options, rental properties, and real estate investment strategies for long-term wealth building.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
+    price: 69.99,
+    category: 'investing',
+    level: 'beginner',
+    totalEnrollments: 1560,
+    tags: ['Real Estate', 'Property', 'Investment'],
+    instructor: 'Real Estate Expert',
+    totalVideos: 7,
+    videos: [
+      { _id: 'v1', title: 'Introduction to Real Estate Investing', description: 'Getting started with property investment', duration: 1520 },
+      { _id: 'v2', title: 'Property Analysis Techniques', description: 'How to evaluate investment properties', duration: 1725 },
+      { _id: 'v3', title: 'Financing Your Investments', description: 'Understanding mortgage and financing options', duration: 1390 },
+      { _id: 'v4', title: 'Rental Property Management', description: 'Managing your rental properties effectively', duration: 1590 },
+      { _id: 'v5', title: 'Real Estate Investment Strategies', description: 'Long-term wealth building through property', duration: 1490 },
+      { _id: 'v6', title: 'Tax Benefits and Legal Considerations', description: 'Maximizing tax advantages', duration: 1635 },
+      { _id: 'v7', title: 'Scaling Your Real Estate Portfolio', description: 'Growing your property investments', duration: 1360 }
+    ]
+  },
+  'sample-course-5': {
+    _id: 'sample-course-5',
+    title: 'Portfolio Management Mastery',
+    description: 'Learn professional portfolio management techniques. Understand asset allocation, diversification strategies, risk assessment, and how to optimize your investment portfolio for maximum returns.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
+    price: 89.99,
+    category: 'investing',
+    level: 'intermediate',
+    totalEnrollments: 980,
+    tags: ['Portfolio', 'Management', 'Diversification'],
+    instructor: 'Portfolio Manager',
+    totalVideos: 6,
+    videos: [
+      { _id: 'v1', title: 'Portfolio Fundamentals', description: 'Understanding portfolio basics', duration: 1215 },
+      { _id: 'v2', title: 'Asset Allocation Strategies', description: 'How to allocate your investments', duration: 1470 },
+      { _id: 'v3', title: 'Diversification Techniques', description: 'Reducing risk through diversification', duration: 1365 },
+      { _id: 'v4', title: 'Risk Assessment and Management', description: 'Evaluating and managing portfolio risk', duration: 1580 },
+      { _id: 'v5', title: 'Portfolio Optimization', description: 'Maximizing returns while minimizing risk', duration: 1270 },
+      { _id: 'v6', title: 'Rebalancing Your Portfolio', description: 'Maintaining optimal asset allocation', duration: 1430 }
+    ]
+  },
+  'sample-course-6': {
+    _id: 'sample-course-6',
+    title: 'Options Trading Essentials',
+    description: 'Master the fundamentals of options trading. Learn about calls, puts, spreads, and advanced options strategies. Perfect for traders looking to expand their trading toolkit.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
+    price: 99.99,
+    category: 'trading',
+    level: 'advanced',
+    totalEnrollments: 720,
+    tags: ['Options', 'Trading', 'Derivatives'],
+    instructor: 'Options Specialist',
+    totalVideos: 7,
+    videos: [
+      { _id: 'v1', title: 'Options Basics', description: 'Understanding calls and puts', duration: 1940 },
+      { _id: 'v2', title: 'Options Pricing', description: 'How options are priced', duration: 1725 },
+      { _id: 'v3', title: 'Basic Options Strategies', description: 'Simple options trading strategies', duration: 2110 },
+      { _id: 'v4', title: 'Advanced Spread Strategies', description: 'Complex options spreads', duration: 1830 },
+      { _id: 'v5', title: 'Options Risk Management', description: 'Protecting your options positions', duration: 1995 },
+      { _id: 'v6', title: 'Volatility Trading', description: 'Trading based on volatility', duration: 1790 },
+      { _id: 'v7', title: 'Options Portfolio Management', description: 'Managing multiple options positions', duration: 1885 }
+    ]
+  },
+  'sample-course-7': {
+    _id: 'sample-course-7',
+    title: 'Forex Trading for Beginners',
+    description: 'Start your forex trading journey with this comprehensive beginner course. Learn currency pairs, market analysis, trading platforms, and essential risk management techniques.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
+    price: 54.99,
+    category: 'trading',
+    level: 'beginner',
+    totalEnrollments: 1340,
+    tags: ['Forex', 'Currency', 'Trading'],
+    instructor: 'Forex Expert',
+    totalVideos: 5,
+    videos: [
+      { _id: 'v1', title: 'Forex Market Introduction', description: 'Understanding the forex market', duration: 1170 },
+      { _id: 'v2', title: 'Currency Pairs Explained', description: 'Major and minor currency pairs', duration: 1395 },
+      { _id: 'v3', title: 'Forex Trading Platforms', description: 'How to use trading platforms', duration: 1305 },
+      { _id: 'v4', title: 'Forex Market Analysis', description: 'Technical and fundamental analysis', duration: 1460 },
+      { _id: 'v5', title: 'Forex Risk Management', description: 'Protecting your capital in forex', duration: 1250 }
+    ]
+  },
+  'sample-course-8': {
+    _id: 'sample-course-8',
+    title: 'Bond Investment Strategies',
+    description: 'Understand the bond market and learn how to invest in bonds effectively. Cover government bonds, corporate bonds, bond funds, and how to build a fixed-income portfolio.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+    price: 64.99,
+    category: 'investing',
+    level: 'intermediate',
+    totalEnrollments: 650,
+    tags: ['Bonds', 'Fixed Income', 'Investment'],
+    instructor: 'Fixed Income Specialist',
+    totalVideos: 6,
+    videos: [
+      { _id: 'v1', title: 'Introduction to Bonds', description: 'Understanding bond basics', duration: 1330 },
+      { _id: 'v2', title: 'Government Bonds', description: 'Investing in government securities', duration: 1530 },
+      { _id: 'v3', title: 'Corporate Bonds', description: 'Understanding corporate debt', duration: 1425 },
+      { _id: 'v4', title: 'Bond Funds and ETFs', description: 'Diversified bond investments', duration: 1460 },
+      { _id: 'v5', title: 'Bond Portfolio Construction', description: 'Building a bond portfolio', duration: 1295 },
+      { _id: 'v6', title: 'Bond Market Analysis', description: 'Analyzing bond market trends', duration: 1600 }
+    ]
+  },
+  'sample-course-9': {
+    _id: 'sample-course-9',
+    title: 'Day Trading Fundamentals',
+    description: 'Learn day trading strategies and techniques. Master chart patterns, technical indicators, entry and exit points, and how to manage risk in fast-paced trading environments.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
+    price: 84.99,
+    category: 'trading',
+    level: 'advanced',
+    totalEnrollments: 1120,
+    tags: ['Day Trading', 'Technical Analysis', 'Strategies'],
+    instructor: 'Day Trading Pro',
+    totalVideos: 7,
+    videos: [
+      { _id: 'v1', title: 'Day Trading Basics', description: 'Getting started with day trading', duration: 1710 },
+      { _id: 'v2', title: 'Chart Patterns for Day Trading', description: 'Identifying profitable patterns', duration: 1875 },
+      { _id: 'v3', title: 'Technical Indicators', description: 'Using indicators effectively', duration: 1785 },
+      { _id: 'v4', title: 'Entry and Exit Strategies', description: 'Timing your trades perfectly', duration: 2000 },
+      { _id: 'v5', title: 'Risk Management in Day Trading', description: 'Protecting your capital', duration: 1670 },
+      { _id: 'v6', title: 'Psychology of Day Trading', description: 'Mental discipline for traders', duration: 1810 },
+      { _id: 'v7', title: 'Building a Day Trading System', description: 'Creating your trading plan', duration: 1945 }
+    ]
+  },
+  'sample-course-10': {
+    _id: 'sample-course-10',
+    title: 'Value Investing Principles',
+    description: 'Learn the principles of value investing from legendary investors. Understand how to identify undervalued stocks, analyze company fundamentals, and build a long-term value portfolio.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
+    price: 74.99,
+    category: 'investing',
+    level: 'intermediate',
+    totalEnrollments: 890,
+    tags: ['Value Investing', 'Fundamentals', 'Analysis'],
+    instructor: 'Value Investing Expert',
+    totalVideos: 6,
+    videos: [
+      { _id: 'v1', title: 'Value Investing Philosophy', description: 'Understanding value investing principles', duration: 1580 },
+      { _id: 'v2', title: 'Fundamental Analysis', description: 'Analyzing company fundamentals', duration: 1725 },
+      { _id: 'v3', title: 'Identifying Undervalued Stocks', description: 'Finding hidden gems in the market', duration: 1530 },
+      { _id: 'v4', title: 'Financial Statement Analysis', description: 'Reading and interpreting financials', duration: 1635 },
+      { _id: 'v5', title: 'Building a Value Portfolio', description: 'Constructing a value-focused portfolio', duration: 1780 },
+      { _id: 'v6', title: 'Long-term Value Strategies', description: 'Patience and discipline in investing', duration: 1490 }
+    ]
+  },
+  'sample-course-11': {
+    _id: 'sample-course-11',
+    title: 'Swing Trading Masterclass',
+    description: 'Master swing trading strategies that capture multi-day price movements. Learn position sizing, trade management, and how to identify high-probability swing trading setups.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+    price: 94.99,
+    category: 'trading',
+    level: 'intermediate',
+    totalEnrollments: 1050,
+    tags: ['Swing Trading', 'Strategies', 'Technical Analysis'],
+    instructor: 'Swing Trading Expert',
+    totalVideos: 6,
+    videos: [
+      { _id: 'v1', title: 'Swing Trading Introduction', description: 'Understanding swing trading', duration: 1815 },
+      { _id: 'v2', title: 'Identifying Swing Setups', description: 'Finding high-probability trades', duration: 1710 },
+      { _id: 'v3', title: 'Position Sizing Strategies', description: 'How much to risk per trade', duration: 1965 },
+      { _id: 'v4', title: 'Trade Management Techniques', description: 'Managing open positions', duration: 1750 },
+      { _id: 'v5', title: 'Swing Trading Indicators', description: 'Best indicators for swing trading', duration: 1870 },
+      { _id: 'v6', title: 'Building a Swing Trading System', description: 'Creating your trading plan', duration: 1670 }
+    ]
+  },
+  'sample-course-12': {
+    _id: 'sample-course-12',
+    title: 'Risk Management in Trading',
+    description: 'Essential risk management techniques for traders. Learn position sizing, stop-loss strategies, risk-reward ratios, and how to protect your capital while maximizing profits.',
+    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
+    price: 69.99,
+    category: 'trading',
+    level: 'intermediate',
+    totalEnrollments: 1420,
+    tags: ['Risk Management', 'Trading', 'Protection'],
+    instructor: 'Risk Management Expert',
+    totalVideos: 5,
+    videos: [
+      { _id: 'v1', title: 'Risk Management Fundamentals', description: 'Understanding trading risks', duration: 1470 },
+      { _id: 'v2', title: 'Position Sizing Methods', description: 'Calculating position sizes', duration: 1575 },
+      { _id: 'v3', title: 'Stop-Loss Strategies', description: 'Protecting your trades', duration: 1425 },
+      { _id: 'v4', title: 'Risk-Reward Ratios', description: 'Finding profitable setups', duration: 1640 },
+      { _id: 'v5', title: 'Capital Protection Techniques', description: 'Safeguarding your trading account', duration: 1430 }
+    ]
+  }
+};
 
 interface Video {
   id: string;
@@ -134,7 +386,7 @@ const CourseDetailPage = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch course data
+  // Fetch course data - USING SAMPLE DATA ONLY
   useEffect(() => {
     const fetchCourse = async () => {
       if (!id) return;
@@ -143,47 +395,91 @@ const CourseDetailPage = () => {
         setLoading(true);
         setError(null);
 
-        // Fetching course details...
-
-        const response = await fetch(buildApiUrl(`/api/courses/${id}`));
-        
-        if (!response.ok) {
+        // Use sample courses only (backend fetching disabled)
+        if (id && sampleCourses[id]) {
+          console.log('📝 Using sample course data for:', id);
+          const sampleCourse = sampleCourses[id];
+          
+          // Calculate total duration from videos
+          if (sampleCourse.videos) {
+            const totalSeconds = sampleCourse.videos.reduce((acc, video) => acc + (video.duration || 0), 0);
+            sampleCourse.totalDuration = totalSeconds;
+          }
+          
+          setCourse(sampleCourse);
+          setLoading(false);
+        } else {
           throw new Error(t('course_detail.course_not_found'));
         }
 
-        const data = await response.json();
-        
-        // Handle both enhanced and legacy response formats
-        let courseData;
-        if (data.success && data.data && data.data.course) {
-          // Enhanced controller response format
-          courseData = data.data.course;
-          // Course data fetched (enhanced format)
-        } else if (data._id) {
-          // Legacy controller response format
-          courseData = data;
-          // Course data fetched (legacy format)
-        } else {
-          throw new Error('Invalid course data format');
-        }
-        
-        setCourse(courseData);
-
       } catch (error) {
-        console.error('❌ Error fetching course:', error);
+        console.error('❌ Error loading course:', error);
         setError(error instanceof Error ? error.message : t('course_detail.failed_to_load_course'));
-      } finally {
         setLoading(false);
       }
     };
 
     fetchCourse();
-  }, [id]);
+  }, [id, t]);
 
-  // Fetch video data for the course
+  // Fetch video data for the course - USING SAMPLE DATA ONLY
   useEffect(() => {
     const fetchCourseData = async () => {
-      if (!id) return;
+      if (!id || !course) return;
+
+      // Use sample course data only (backend fetching disabled)
+      const isSampleCourse = id && sampleCourses[id];
+      
+      if (isSampleCourse) {
+        // Convert sample course videos to the format expected by the video player
+        const sampleVideos: Video[] = (course.videos || []).map((video, index) => ({
+          id: video._id,
+          title: video.title || `Lesson ${index + 1}`,
+          duration: video.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : '0:00',
+          videoUrl: '', // Sample courses don't have actual video URLs
+          completed: false,
+          locked: index > 0, // First video is free preview, rest are locked
+          isFreePreview: index === 0, // First video is free preview
+          requiresPurchase: true,
+          progress: undefined
+        }));
+        
+        // Build duration map for accurate display
+        const durationMap: Record<string, number> = {};
+        course.videos?.forEach(video => {
+          if (video.duration) {
+            durationMap[video._id] = video.duration;
+          }
+        });
+        setDurationById(durationMap);
+        
+        const totalSecs = Object.values(durationMap).reduce((a, b) => a + (b || 0), 0);
+        setTotalCourseDurationSeconds(totalSecs);
+        
+        setCourseData({
+          title: course.title,
+          videos: sampleVideos,
+          userHasPurchased: false,
+          overallProgress: {
+            totalVideos: sampleVideos.length,
+            completedVideos: 0,
+            totalProgress: 0,
+            lastWatchedVideo: null,
+            lastWatchedPosition: 0
+          }
+        });
+        
+        // Set first video as current if available
+        if (sampleVideos.length > 0) {
+          setCurrentVideoId(sampleVideos[0].id);
+        }
+        
+        return;
+      }
+      
+      // Backend fetching disabled - if not sample course, show error
+      console.log('⚠️ Course not found in sample data:', id);
+      return;
 
       try {
         // Fetching course video data...
@@ -481,10 +777,10 @@ const CourseDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="h-16 w-16 text-red-600 animate-spin mx-auto mb-6" />
-          <p className="text-gray-600 text-lg font-medium">{t('course_detail.loading_course_details')}</p>
+          <Loader className="h-16 w-16 text-cyan-500 animate-spin mx-auto mb-6" />
+          <p className="text-gray-300 text-lg font-medium">{t('course_detail.loading_course_details')}</p>
         </div>
       </div>
     );
@@ -492,18 +788,18 @@ const CourseDetailPage = () => {
 
   if (error || !course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="text-red-600 mb-6">
+          <div className="text-cyan-500 mb-6">
             <BookOpen className="h-20 w-20 mx-auto" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('course_detail.course_not_found')}</h2>
-          <p className="text-gray-600 mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">{t('course_detail.course_not_found')}</h2>
+          <p className="text-gray-400 mb-8">
             {error || t('course_detail.course_not_found_message')}
           </p>
           <Link
             to="/courses"
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
           >
             {t('course_detail.browse_all_courses')}
           </Link>
@@ -519,106 +815,158 @@ const CourseDetailPage = () => {
   const currentVideo = courseData?.videos.find(v => v.id === currentVideoId);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-14 ">
-      {/* Video Player Section */}
-      {(!courseData || courseData.videos.length === 0) ? (
-        <div className="bg-gray-900 p-8 text-center">
-          <div className="text-gray-400">
-            <BookOpen className="w-16 h-16 mx-auto mb-4" />
-            <p className="text-lg font-semibold mb-2">{t('course_detail.loading_course_content')}</p>
-            <p className="text-sm">{t('course_detail.please_wait_loading_videos')}</p>
+    <div className="min-h-screen bg-gray-900 pt-14">
+      {/* Top Navigation Bar - Removed playlist toggle */}
+      <div className="bg-gray-800 border-b border-gray-700 sticky top-14 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-3">
+            {/* Navigation bar - empty for now */}
           </div>
         </div>
-      ) : (
-        <div className="min-h-screen bg-gray-900 flex flex-col">
-          {/* Professional Header */}
-          <div className="bg-gray-800 border-b border-gray-700 px-4 py-3">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => navigate('/courses')}
-                  className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                  <span>{t('course_detail.back_to_courses')}</span>
-                </button>
-                <div className="hidden md:block h-6 w-px bg-gray-600" />
-                <h1 className="hidden md:block text-white font-semibold truncate">
-                  {course.title}
-                </h1>
-              </div>
+      </div>
+
+      {/* Course Header Banner */}
+      <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+            {/* Course Thumbnail */}
+            <div className="w-full lg:w-80 flex-shrink-0">
+              {course.thumbnailURL ? (
+                <div className="relative group rounded-xl overflow-hidden border border-gray-700 shadow-xl">
+                  <img
+                    src={course.thumbnailURL}
+                    alt={course.title}
+                    className="w-full h-48 lg:h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {course.category && (
+                        <span className="bg-cyan-500/20 backdrop-blur-sm text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold border border-cyan-500/30">
+                          {t(`categories.${course.category}`) || course.category}
+                        </span>
+                      )}
+                      {course.level && (
+                        <span className="bg-purple-500/20 backdrop-blur-sm text-purple-400 px-3 py-1 rounded-full text-xs font-semibold border border-purple-500/30 capitalize">
+                          {course.level}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-48 lg:h-64 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center border border-gray-700">
+                  <BookOpen className="h-20 w-20 text-gray-500" />
+                </div>
+              )}
+            </div>
+
+            {/* Course Header Info */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                {course.title}
+              </h1>
               
-              <div className="flex items-center">
-                {/* Desktop Playlist Toggle */}
-                <button
-                  onClick={() => setShowPlaylist(!showPlaylist)}
-                  className="hidden md:flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-700"
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span className="text-sm">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
-                </button>
-                
-                {/* Mobile Playlist Toggle */}
-                <button
-                  onClick={() => setShowPlaylist(!showPlaylist)}
-                  className="md:hidden flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span>Playlist</span>
-                </button>
+              <p className="text-base sm:text-lg text-gray-300 mb-6 leading-relaxed">
+                {course.description}
+              </p>
+
+              {/* Quick Stats Row */}
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+                  <Clock className="h-4 w-4 text-cyan-400" />
+                  <span className="text-sm text-gray-300">{totalDuration}</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+                  <BookOpen className="h-4 w-4 text-cyan-400" />
+                  <span className="text-sm text-gray-300">{totalVideos} {t('course_detail.lessons')}</span>
+                </div>
+                {course.totalEnrollments && (
+                  <div className="flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+                    <Users className="h-4 w-4 text-cyan-400" />
+                    <span className="text-sm text-gray-300">{course.totalEnrollments.toLocaleString()} {t('course_detail.students')}</span>
+                  </div>
+                )}
               </div>
+
+              {/* Tags */}
+              {course.tags && course.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {course.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="bg-gray-800 text-gray-400 px-3 py-1 rounded-lg text-xs font-medium border border-gray-700 hover:border-cyan-500/50 hover:text-cyan-400 transition-all duration-200"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="flex-1 flex">
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-8 space-y-8">
             {/* Video Player Section */}
-            <div className="flex-1 flex flex-col">
-              {/* Enhanced Video Player */}
-              <div className="flex-1" style={{ minHeight: '200px', height: '50vh' }}>
-                <div className="w-full h-full bg-black">
-                  {currentVideo?.videoUrl && 
-                   currentVideo.videoUrl.trim() !== '' && 
-                   currentVideo.videoUrl !== window.location.href &&
-                   currentVideo.videoUrl !== 'undefined' && 
-                   !currentVideo.locked ? (
-                    <EnhancedVideoPlayer
-                      src={currentVideo.videoUrl}
-                      title={courseData?.title}
-                      userId={localStorage.getItem('userId') || undefined}
-                      videoId={currentVideoId}
-                      courseId={id}
-                      playing={isPlaying}
-                      playbackRate={playbackRate}
-                      onPlay={handleVideoPlay}
-                      onPause={handleVideoPause}
-                      onEnded={handleVideoEnd}
-                      onError={handleVideoError}
-                      onReady={() => setPlayerReady(true)}
-                      onTimeUpdate={(currentTime, duration) => {
-                        setCurrentTime(currentTime);
-                        setDuration(duration);
-                        setCurrentVideoPosition(currentTime);
-                        if (duration > 0) {
-                          const actualPercentage = Math.round((currentTime / duration) * 100);
-                          setCurrentVideoPercentage(actualPercentage);
-                        }
-                      }}
-                      onProgress={(watchedDuration, totalDuration) => {
-                        // Progress update logic would go here
-                      }}
-                      onPlaybackRateChange={setPlaybackRate}
-                      onControlsToggle={setControlsVisible}
-                      className="w-full h-full"
-                      initialTime={currentVideo?.progress?.lastPosition || 0}
-                      drmEnabled={currentVideo?.drm?.enabled || false}
-                      watermarkData={currentVideo?.drm?.watermarkData}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      {currentVideo?.locked ? (
-                        // Locked video state
-                        <div className="space-y-4 text-center">
-                          <div className="text-gray-400">
+            {(!courseData || courseData.videos.length === 0) ? (
+              <div className="bg-gray-800 rounded-xl p-8 text-center border border-gray-700">
+                <div className="text-gray-400">
+                  <BookOpen className="w-16 h-16 mx-auto mb-4" />
+                  <p className="text-lg font-semibold mb-2">{t('course_detail.loading_course_content')}</p>
+                  <p className="text-sm">{t('course_detail.please_wait_loading_videos')}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-xl">
+                {/* Video Player */}
+                <div className="relative w-full" style={{ aspectRatio: '16/9', minHeight: '400px' }}>
+                  <div className="w-full h-full bg-black">
+                    {currentVideo?.videoUrl && 
+                     currentVideo.videoUrl.trim() !== '' && 
+                     currentVideo.videoUrl !== window.location.href &&
+                     currentVideo.videoUrl !== 'undefined' && 
+                     !currentVideo.locked ? (
+                      <EnhancedVideoPlayer
+                        src={currentVideo.videoUrl}
+                        title={courseData?.title}
+                        userId={localStorage.getItem('userId') || undefined}
+                        videoId={currentVideoId}
+                        courseId={id}
+                        playing={isPlaying}
+                        playbackRate={playbackRate}
+                        onPlay={handleVideoPlay}
+                        onPause={handleVideoPause}
+                        onEnded={handleVideoEnd}
+                        onError={handleVideoError}
+                        onReady={() => setPlayerReady(true)}
+                        onTimeUpdate={(currentTime, duration) => {
+                          setCurrentTime(currentTime);
+                          setDuration(duration);
+                          setCurrentVideoPosition(currentTime);
+                          if (duration > 0) {
+                            const actualPercentage = Math.round((currentTime / duration) * 100);
+                            setCurrentVideoPercentage(actualPercentage);
+                          }
+                        }}
+                        onProgress={(watchedDuration, totalDuration) => {
+                          // Progress update logic would go here
+                        }}
+                        onPlaybackRateChange={setPlaybackRate}
+                        onControlsToggle={setControlsVisible}
+                        className="w-full h-full"
+                        initialTime={currentVideo?.progress?.lastPosition || 0}
+                        drmEnabled={currentVideo?.drm?.enabled || false}
+                        watermarkData={currentVideo?.drm?.watermarkData}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        {currentVideo?.locked ? (
+                          <div className="space-y-4 text-center px-4">
                             <Lock className="w-16 h-16 mx-auto mb-4" />
                             <p className="text-lg font-semibold mb-2">{t('course_detail.video_locked')}</p>
                             <p className="text-sm mb-4">
@@ -628,16 +976,16 @@ const CourseDetailPage = () => {
                               }
                             </p>
                             {!userToken ? (
-                              <div className="space-y-2">
+                              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                 <button
                                   onClick={() => navigate('/login')}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold mr-2"
+                                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
                                 >
                                   {t('course_detail.sign_in')}
                                 </button>
                                 <button
                                   onClick={handlePurchase}
-                                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold"
+                                  className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold"
                                 >
                                   {t('course_detail.purchase_course')}
                                 </button>
@@ -645,530 +993,103 @@ const CourseDetailPage = () => {
                             ) : (
                               <button
                                 onClick={handlePurchase}
-                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold"
+                                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
                               >
                                 {t('course_detail.purchase_course')}
                               </button>
                             )}
                           </div>
-                        </div>
-                      ) : videoError ? (
-                        // Error state with retry functionality
-                        <div className="space-y-4 text-center">
-                          <div className="text-red-400">
-                            <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                            </svg>
-                            <p className="text-lg font-semibold mb-2">{t('course_detail.video_error')}</p>
-                            <p className="text-sm">{videoError}</p>
+                        ) : videoError ? (
+                          <div className="space-y-4 text-center px-4">
+                            <div className="text-red-400">
+                              <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                              <p className="text-lg font-semibold mb-2">{t('course_detail.video_error')}</p>
+                              <p className="text-sm">{videoError}</p>
+                            </div>
+                            <button
+                              onClick={() => window.location.reload()}
+                              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                            >
+                              {t('course_detail.try_again')}
+                            </button>
                           </div>
-                          
-                          <button
-                            onClick={() => window.location.reload()}
-                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold"
-                          >
-                            {t('course_detail.try_again')}
-                          </button>
-                        </div>
-                      ) : (
-                        // Loading state or no video selected
-                        <div className="text-center">
-                          {courseData.videos.every(v => v.locked) && !userToken ? (
-                            // All videos are locked for public user
-                            <div className="space-y-4 px-4 sm:px-6">
-                              <Lock className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400" />
-                              <p className="text-base sm:text-lg font-semibold text-gray-300 text-center">{t('course_detail.course_preview')}</p>
-                              <p className="text-xs sm:text-sm text-gray-500 mb-4 text-center px-2">
-                                {t('course_detail.no_free_preview')}
-                              </p>
-                              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                                <button
-                                  onClick={() => navigate('/login')}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-sm sm:text-base"
-                                >
-                                  {t('course_detail.sign_in')}
-                                </button>
-                                <button
-                                  onClick={handlePurchase}
-                                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-sm sm:text-base"
-                                >
-                                  {t('course_detail.purchase_course')}
-                                </button>
+                        ) : (
+                          <div className="text-center px-4">
+                            {courseData.videos.every(v => v.locked) && !userToken ? (
+                              <div className="space-y-4">
+                                <Lock className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400" />
+                                <p className="text-base sm:text-lg font-semibold text-gray-300">{t('course_detail.course_preview')}</p>
+                                <p className="text-xs sm:text-sm text-gray-500 mb-4">
+                                  {t('course_detail.no_free_preview')}
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                  <button
+                                    onClick={() => navigate('/login')}
+                                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                                  >
+                                    {t('course_detail.sign_in')}
+                                  </button>
+                                  <button
+                                    onClick={handlePurchase}
+                                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-sm sm:text-base"
+                                  >
+                                    {t('course_detail.purchase_course')}
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            // Loading state
-                            <div className="text-center">
-                              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-                              <p>{t('course_detail.loading_video')}</p>
-                              <p className="text-sm mt-2">
-                                {!currentVideo?.videoUrl || currentVideo.videoUrl === 'undefined' 
-                                  ? t('course_detail.refreshing_video_link')
-                                  : t('course_detail.this_may_take_moments')
-                                }
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Video Info Section */}
-              <div className="bg-gray-800 px-3 sm:px-4 py-3 sm:py-4">
-                <h2 className="text-white font-semibold text-sm sm:text-lg mb-2 line-clamp-2">
-                  {currentVideo?.title || t('course_detail.select_a_video')}
-                  {currentVideo?.isFreePreview && !currentVideo?.locked && (
-                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-600 text-white">
-                      🔓 {t('course_detail.free_preview')}
-                    </span>
-                  )}
-                </h2>
-                {currentVideo?.completed && (
-                  <div className="flex items-center space-x-1 text-green-400 text-xs sm:text-sm">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>{t('course_detail.completed')}</span>
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Playlist Sidebar */}
-            {showPlaylist && (
-              <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col" style={{ height: '100vh' }}>
-                {courseData && courseData.videos ? (
-                  <VideoPlaylist
-                    videos={courseData.videos}
-                    currentVideoId={currentVideoId}
-                    onVideoSelect={handleVideoSelect}
-                    courseProgress={courseData.overallProgress}
-                  />
-                ) : (
-                  <div className="p-4 flex-1 overflow-y-auto">
-                    <div className="text-white text-sm mb-4">{t('course_detail.course_content')}</div>
-                    <div className="space-y-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                          <div className="h-3 bg-gray-700 rounded w-3/4"></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Playlist Overlay */}
-          {showPlaylist && (
-            <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex">
-              <div className="bg-white w-80 ml-auto h-full overflow-y-auto">
-                <div className="p-4 border-b border-gray-200">
-                  <button
-                    onClick={() => setShowPlaylist(false)}
-                    className="text-gray-600 hover:text-gray-800"
-                  >
-                    {t('course_detail.close_playlist')}
-                  </button>
-                </div>
-                {courseData && courseData.videos ? (
-                  <VideoPlaylist
-                    videos={courseData.videos}
-                    currentVideoId={currentVideoId}
-                    onVideoSelect={(videoId) => {
-                      handleVideoSelect(videoId);
-                      setShowPlaylist(false);
-                    }}
-                    courseProgress={courseData.overallProgress}
-                  />
-                ) : (
-                  <div className="p-4">
-                    <div className="space-y-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div
-                className="flex-1"
-                onClick={() => setShowPlaylist(false)}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Enhanced Hero Section */}
-      <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 text-white relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-            {/* Course Info */}
-            <div className="lg:col-span-2">
-              {/* Course Badges */}
-              <div className="flex items-center space-x-3 mb-6">
-                {course.category && (
-                  <span className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold border border-white/30 hover:bg-white/30 transition-all duration-200 cursor-pointer">
-                    {course.category}
-                  </span>
-                )}
-                {course.level && (
-                  <span className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold border border-white/30 hover:bg-white/30 transition-all duration-200 cursor-pointer">
-                    {course.level}
-                  </span>
-                )}
-              </div>
-              
-              {/* Course Tags */}
-              {course.tags && course.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {course.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="bg-white/10 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium border border-white/20 hover:bg-white/20 transition-all duration-200 cursor-pointer"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              
-              {/* Course Title */}
-              <h1 className="text-5xl md:text-6xl font-bold mb-8 leading-tight bg-gradient-to-r from-white to-red-100 bg-clip-text text-transparent">
-                {course.title}
-              </h1>
-              
-              {/* Course Description */}
-              <p className="text-xl text-red-100 mb-10 leading-relaxed max-w-3xl">
-                {course.description}
-              </p>
-              
-              {/* Course Stats */}
-              <div className="flex flex-wrap items-center gap-8 mb-10">
-
-                <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm px-4 py-3 rounded-lg border border-white/20">
-                  <Clock className="h-6 w-6 text-red-200" />
-                  <div>
-                    <span className="font-bold text-lg">{totalDuration}</span>
-                    <span className="text-red-200 text-sm ml-2">{t('course_detail.total')}</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm px-4 py-3 rounded-lg border border-white/20">
-                  <BookOpen className="h-6 w-6 text-red-200" />
-                  <div>
-                    <span className="font-bold text-lg">{totalVideos}</span>
-                    <span className="text-red-200 text-sm ml-2">{t('course_detail.lessons')}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Instructor Section */}
-              <div className="flex items-center space-x-6 bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
-                  <BookOpen className="h-10 w-10 text-white" />
-                </div>
-                <div>
-                  <p className="text-red-200 text-sm font-medium">{t('course_detail.created_by')}</p>
-                  <p className="font-bold text-xl text-white">{course.instructor || 'IBYET Academy'}</p>
-                  <p className="text-red-200 text-sm">
-                    {t('course_detail.last_updated')} {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    }) : t('course_detail.recently')}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Enhanced Purchase Card */}
-            <div className="lg:col-span-1">
-              <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sticky top-8 border border-white/20">
-                {/* Course Thumbnail */}
-                {course.thumbnailURL ? (
-                  <div className="relative mb-6 group">
-                    <img
-                      src={course.thumbnailURL}
-                      alt={course.title}
-                      className="w-full h-48 object-cover rounded-2xl shadow-lg group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/20 rounded-2xl group-hover:bg-black/10 transition-colors duration-300"></div>
-                  </div>
-                ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl mb-6 flex items-center justify-center shadow-lg">
-                    <BookOpen className="h-16 w-16 text-gray-400" />
-                  </div>
-                )}
-                
-                {/* Price Section */}
-                <div className="text-center mb-8">
-                  <div className="flex items-center justify-center space-x-4 mb-3">
-                    <span className="text-5xl font-bold text-gray-800">${course.price}</span>
-                    {course.price > 0 && (
-                      <span className="text-2xl text-gray-500 line-through">${Math.round(course.price * 1.5)}</span>
-                    )}
-                  </div>
-                  {course.price > 0 && (
-                    <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold inline-block">
-                      Save ${Math.round(course.price * 0.5)}!
-                    </div>
-                  )}
-                </div>
-                
-                {/* Purchase Button */}
-                {purchaseStatus?.hasPurchased ? (
-                  <div className="text-center mb-6">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-2xl flex items-center justify-center space-x-3 shadow-lg">
-                      <CheckCircle className="h-6 w-6" />
-                      <span className="font-bold text-lg">{t('course_detail.course_purchased')}</span>
-                    </div>
-                    <button
-                      onClick={() => navigate(`/course/${id}/watch/${courseData?.videos[0]?.id}`)}
-                      className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
-                    >
-                      <Play className="h-5 w-5" />
-                      <span>{t('course_detail.start_learning')}</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4 mb-6">
-                    <button
-                      onClick={handlePurchase}
-                      disabled={isPurchasing}
-                      className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-3 disabled:transform-none"
-                    >
-                      {isPurchasing ? (
-                        <>
-                          <Loader className="h-6 w-6 animate-spin" />
-                          <span className="text-lg">{t('course_detail.processing')}</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart className="h-6 w-6" />
-                          <span className="text-lg">{t('course_detail.enroll_now')}</span>
-                        </>
-                      )}
-                    </button>
-                    
-                    {!userToken && (
-                      <button
-                        onClick={() => navigate('/login')}
-                        className="w-full bg-white border-2 border-red-600 text-red-600 hover:bg-red-50 font-semibold py-3 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center space-x-2"
-                      >
-                        <span>{t('course_detail.sign_in_to_enroll')}</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-                
-                {/* Guarantee */}
-                <div className="text-center mb-8">
-                  <div className="flex items-center justify-center space-x-2 text-gray-600 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>{t('course_detail.secure_checkout')}</span>
-                  </div>
-                </div>
-                
-                {/* Enhanced Course Features */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800 mb-4 text-center">{t('course_detail.whats_included')}</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                      <Clock className="h-5 w-5 text-red-600 flex-shrink-0" />
-                      <span className="text-gray-700">{totalDuration} {t('course_detail.on_demand_video')}</span>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                      <Award className="h-5 w-5 text-red-600 flex-shrink-0" />
-                      <span className="text-gray-700">{t('course_detail.certificate_of_completion')}</span>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                      <Download className="h-5 w-5 text-red-600 flex-shrink-0" />
-                      <span className="text-gray-700">{t('course_detail.downloadable_resources')}</span>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                      <Users className="h-5 w-5 text-red-600 flex-shrink-0" />
-                      <span className="text-gray-700">{t('course_detail.lifetime_access')}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Course Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          <div className="lg:col-span-2 space-y-12">
-            {/* Course Curriculum */}
-            <section>
-              <h2 className="text-3xl font-bold text-gray-800 mb-6">{t('course_detail.course_curriculum')}</h2>
-              {course.videos && course.videos.length > 0 ? (
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-800">{t('course_detail.all_lessons')}</h3>
-                    <p className="text-sm text-gray-600">{totalVideos} {t('course_detail.lessons')} • {totalDuration}</p>
-                  </div>
-                  <div className="divide-y divide-gray-200">
-                    {course.videos.map((video, index) => (
-                      <div key={video._id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors duration-200">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0">
-                            {purchaseStatus?.hasPurchased ? (
-                              <Play className="h-5 w-5 text-red-600" />
                             ) : (
-                              <Lock className="h-5 w-5 text-gray-400" />
+                              <div>
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                                <p className="text-gray-300">{t('course_detail.loading_video')}</p>
+                                <p className="text-sm text-gray-400 mt-2">
+                                  {!currentVideo?.videoUrl || currentVideo.videoUrl === 'undefined' 
+                                    ? t('course_detail.refreshing_video_link')
+                                    : t('course_detail.this_may_take_moments')
+                                  }
+                                </p>
+                              </div>
                             )}
                           </div>
-                          <div>
-                            <h4 className="font-medium text-gray-800">
-                              {index + 1}. {video.title}
-                            </h4>
-                            {video.description && (
-                              <p className="text-sm text-gray-600 mt-1">{video.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <Clock className="h-4 w-4" />
-                          <span>{getFormattedDurationById(video._id, video.duration)}</span>
-                        </div>
+                        )}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
-              ) : (
-                <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('course_detail.no_lessons_available')}</h3>
-                  <p className="text-gray-600">{t('course_detail.no_lessons_message')}</p>
-                </div>
-              )}
-            </section>
 
-            {/* Course Description */}
-            <section>
-              <h2 className="text-3xl font-bold text-gray-800 mb-6">{t('course_detail.about_this_course')}</h2>
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <p className="text-gray-700 leading-relaxed text-lg">
-                  {course.description}
-                </p>
-              </div>
-            </section>
-          </div>
-          
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* Course Stats */}
-            <section className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h3 className="text-xl font-bold text-gray-800 mb-6">{t('course_detail.course_statistics')}</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">{t('course_detail.total_duration')}</span>
-                  <span className="font-semibold">{totalDuration}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">{t('course_detail.total_lessons')}</span>
-                  <span className="font-semibold">{totalVideos}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">{t('course_detail.students_enrolled')}</span>
-                  <span className="font-semibold">{course.totalEnrollments || 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">{t('course_detail.last_updated')}</span>
-                  <span className="font-semibold">
-                    {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : t('course_detail.recently')}
-                  </span>
+                {/* Current Video Info */}
+                <div className="bg-gray-900 px-4 sm:px-6 py-4 border-t border-gray-700">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-white font-semibold text-base sm:text-lg mb-2 line-clamp-2">
+                        {currentVideo?.title || t('course_detail.select_a_video')}
+                      </h2>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {currentVideo?.isFreePreview && !currentVideo?.locked && (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-600 text-white">
+                            🔓 {t('course_detail.free_preview')}
+                          </span>
+                        )}
+                        {currentVideo?.completed && (
+                          <div className="flex items-center space-x-1 text-green-400 text-xs sm:text-sm">
+                            <CheckCircle className="h-4 w-4" />
+                            <span>{t('course_detail.completed')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Playlist toggle button in video info section */}
+                    <button
+                      onClick={() => setShowPlaylist(!showPlaylist)}
+                      className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-800 flex-shrink-0"
+                    >
+                      <BookOpen className="h-5 w-5" />
+                      <span className="hidden sm:inline text-sm">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </section>
-
-            {/* Course Features */}
-            <section className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-6">{t('course_detail.whats_included')}</h3>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">{t('course_detail.lifetime_access_content')}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">{t('course_detail.certificate_of_completion')}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">{t('course_detail.regular_course_updates')}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">{t('course_detail.community_qa_support')}</span>
-                </div>
-              </div>
-            </section>
-
-            {/* Community Section - Only show if course has WhatsApp group */}
-            {course?.hasWhatsappGroup && (
-              <section className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow-lg p-6 border border-green-200">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800">{t('course_detail.join_exclusive_community')}</h3>
-                </div>
-                <div className="space-y-4">
-                  <p className="text-gray-700 leading-relaxed">
-                    🎉 <strong>{t('course_detail.bonus_whatsapp_access')}</strong>
-                  </p>
-                  <div className="bg-white rounded-lg p-4 border border-green-200">
-                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      {t('course_detail.what_youll_get_community')}
-                    </h4>
-                    <ul className="space-y-2 text-sm text-gray-700">
-                      <li className="flex items-start space-x-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span><strong>{t('course_detail.direct_access_instructors')}</strong></span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span><strong>{t('course_detail.connect_fellow_students')}</strong></span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span><strong>{t('course_detail.exclusive_tips_updates')}</strong></span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span><strong>{t('course_detail.project_feedback_reviews')}</strong></span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span><strong>{t('course_detail.job_opportunities_referrals')}</strong></span>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="bg-green-100 rounded-lg p-4 border border-green-300">
-                    <p className="text-green-800 font-medium text-sm">
-                      💡 <strong>{t('course_detail.pro_tip_success')}</strong>
-                    </p>
-                  </div>
-                </div>
-              </section>
             )}
           </div>
         </div>

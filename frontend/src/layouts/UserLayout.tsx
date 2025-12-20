@@ -9,13 +9,12 @@ import CookieConsent from '../components/CookieConsent';
 const UserLayout: React.FC = () => {
   const openCookieSettingsRef = useRef<(() => void) | null>(null);
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#28283D' }}>
       <UserNavbar />
       <main className="flex-grow">
         <Outlet />
       </main>
-      {/* TEMPORARILY HIDDEN */}
-      {/* <Footer className="relative z-30" openCookieSettingsRef={openCookieSettingsRef} /> */}
+      <Footer className="relative z-30" openCookieSettingsRef={openCookieSettingsRef} />
       {/* <CookieConsent onOpenSettingsRef={openCookieSettingsRef} /> */}
       {/* <ScrollToTop /> */}
       {/* <FloatingContactButton /> */}

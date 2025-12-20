@@ -113,13 +113,13 @@ const UserCourseDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-900 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="mb-6">
           <button
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-red-600"
+            className="inline-flex items-center space-x-2 text-gray-300 hover:text-cyan-400"
           >
             <ArrowLeft className="h-5 w-5" />
             <span>{t('course_detail.back_to_dashboard')}</span>
@@ -127,7 +127,7 @@ const UserCourseDetailPage: React.FC = () => {
         </div>
 
         {/* Hero card */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+        <div className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-700">
           <div className="grid grid-cols-1 lg:grid-cols-3">
             <div className="lg:col-span-2 p-6 sm:p-8">
               <div className="flex flex-wrap gap-2 mb-4">
@@ -138,7 +138,7 @@ const UserCourseDetailPage: React.FC = () => {
                   <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold border border-blue-100">{course.level}</span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{course.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-3">{course.title}</h1>
               <p className="text-gray-600 leading-relaxed mb-6">{course.description}</p>
               <div className="flex flex-wrap items-center gap-6">
                 <div className="flex items-center space-x-2 text-gray-700">
@@ -179,8 +179,8 @@ const UserCourseDetailPage: React.FC = () => {
         {/* Curriculum */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <section className="bg-white rounded-xl shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">{t('course_detail.course_curriculum')}</h2>
+            <section className="bg-gray-800 rounded-xl shadow border border-gray-700 p-6">
+              <h2 className="text-xl font-bold text-white mb-4">{t('course_detail.course_curriculum')}</h2>
               {course.videos && course.videos.length > 0 ? (
                 <div className="divide-y divide-gray-100">
                   {course.videos.map((v, idx) => (
@@ -205,19 +205,19 @@ const UserCourseDetailPage: React.FC = () => {
             </section>
           </div>
           <div className="space-y-6">
-            <section className="bg-white rounded-xl shadow p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">{t('course_detail.whats_included')}</h3>
-              <ul className="space-y-3 text-gray-700">
-                <li className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-600" /> {t('course_detail.lifetime_access')}</li>
-                <li className="flex items-center gap-2"><Award className="h-5 w-5 text-green-600" /> {t('course_detail.certificate_of_completion')}</li>
-                <li className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-green-600" /> {t('course_detail.regular_course_updates')}</li>
+            <section className="bg-gray-800 rounded-xl shadow border border-gray-700 p-6">
+              <h3 className="text-lg font-bold text-white mb-4">{t('course_detail.whats_included')}</h3>
+              <ul className="space-y-3 text-gray-300">
+                <li className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-400" /> {t('course_detail.lifetime_access')}</li>
+                <li className="flex items-center gap-2"><Award className="h-5 w-5 text-green-400" /> {t('course_detail.certificate_of_completion')}</li>
+                <li className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-green-400" /> {t('course_detail.regular_course_updates')}</li>
               </ul>
             </section>
 
             {/* WhatsApp Group Button */}
             {course.hasWhatsappGroup && (
-              <section className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">{t('course_detail.community')}</h3>
+              <section className="bg-gray-800 rounded-xl shadow border border-gray-700 p-6">
+                <h3 className="text-lg font-bold text-white mb-4">{t('course_detail.community')}</h3>
                 <WhatsAppGroupButton
                   courseId={id || ''}
                   isEnrolled={!!course.userHasPurchased}

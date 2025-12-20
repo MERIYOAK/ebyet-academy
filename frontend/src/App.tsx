@@ -42,6 +42,8 @@ import PaymentFailurePage from './pages/PaymentFailurePage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import CoursesPage from './pages/CoursesPage';
+import BundlesPage from './pages/BundlesPage';
+import BundleDetailPage from './pages/BundleDetailPage';
 import HelpCenterPage from './pages/HelpCenterPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -95,6 +97,8 @@ function App() {
           <Route path="/course/:id" element={<CourseDetailPage />} />
           <Route path="/my-course/:id" element={<UserCourseDetailPage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/bundles" element={<BundlesPage />} />
+          <Route path="/bundles/:id" element={<BundleDetailPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/course/:id/watch/:videoId" element={<VideoPlayerPage />} />
           <Route path="/checkout/success" element={<CheckoutSuccessPage />} />

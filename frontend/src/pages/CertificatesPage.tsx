@@ -272,10 +272,10 @@ const CertificatesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-3 xxs:px-4">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-3 xxs:px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-red-500 mx-auto mb-3 xxs:mb-4"></div>
-          <p className="text-gray-600 text-sm xxs:text-base">{t('common.loading')}</p>
+          <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-cyan-500 mx-auto mb-3 xxs:mb-4"></div>
+          <p className="text-gray-300 text-sm xxs:text-base">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -283,18 +283,18 @@ const CertificatesPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-3 xxs:px-4">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-3 xxs:px-4">
         <div className="text-center max-w-md mx-auto p-4 xxs:p-8">
-          <div className="text-red-500 mb-3 xxs:mb-4">
+          <div className="text-red-400 mb-3 xxs:mb-4">
             <svg className="w-12 h-12 xxs:w-16 xxs:h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-xl xxs:text-2xl font-bold mb-3 xxs:mb-4">{t('common.error')}</h2>
-          <p className="text-gray-600 mb-4 xxs:mb-6 text-sm xxs:text-base">{error}</p>
+          <h2 className="text-xl xxs:text-2xl font-bold text-white mb-3 xxs:mb-4">{t('common.error')}</h2>
+          <p className="text-gray-300 mb-4 xxs:mb-6 text-sm xxs:text-base">{error}</p>
           <button
             onClick={fetchCertificates}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 xxs:px-6 py-2 xxs:py-3 rounded-lg transition-colors duration-200 text-sm xxs:text-base"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 xxs:px-6 py-2 xxs:py-3 rounded-lg transition-all duration-200 text-sm xxs:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
           >
             {t('common.retry')}
           </button>
@@ -304,17 +304,17 @@ const CertificatesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gray-900">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b pt-20 xxs:pt-16">
+      <div className="bg-gray-800 shadow-sm border-b border-gray-700 pt-20 xxs:pt-16">
         <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8">
           <div className="flex items-center space-x-3 xxs:space-x-4 py-4 xxs:py-6">
-            <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
               <Award className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl xxs:text-3xl font-bold text-gray-900">{t('certificates.my_certificates')}</h1>
-              <p className="mt-1 text-gray-600 text-sm xxs:text-base">
+              <h1 className="text-2xl xxs:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">{t('certificates.my_certificates')}</h1>
+              <p className="mt-1 text-gray-300 text-sm xxs:text-base">
                 {t('certificates.congratulations')}
               </p>
             </div>
@@ -396,17 +396,17 @@ const CertificatesPage = () => {
 
                   {/* Certificate Content */}
                   <div className="p-4 xxs:p-6">
-                    <h3 className="text-base xxs:text-lg font-semibold text-gray-900 mb-2 xxs:mb-3 line-clamp-2">
+                    <h3 className="text-base xxs:text-lg font-semibold text-white mb-2 xxs:mb-3 line-clamp-2">
                       {certificate.courseTitle}
                     </h3>
                     
                     <div className="space-y-2 xxs:space-y-3 mb-4 xxs:mb-6">
-                      <div className="flex items-center text-xs xxs:text-sm text-gray-600">
+                      <div className="flex items-center text-xs xxs:text-sm text-gray-300">
                         <Calendar className="w-3 h-3 xxs:w-4 xxs:h-4 mr-2 text-gray-400" />
                         <span>{t('certificates.completed')}: {formatDate(certificate.completionDate)}</span>
                       </div>
                       
-                      <div className="flex items-center text-xs xxs:text-sm text-gray-600">
+                      <div className="flex items-center text-xs xxs:text-sm text-gray-300">
                         <Calendar className="w-3 h-3 xxs:w-4 xxs:h-4 mr-2 text-gray-400" />
                         <span>{t('certificates.issued')}: {formatDate(certificate.dateIssued)}</span>
                       </div>
@@ -446,12 +446,12 @@ const CertificatesPage = () => {
                      </div>
 
                     {/* Verify Link */}
-                    <div className="mt-3 xxs:mt-4 pt-3 xxs:pt-4 border-t border-gray-100">
+                    <div className="mt-3 xxs:mt-4 pt-3 xxs:pt-4 border-t border-gray-700">
                       <a
                         href={buildApiUrl(`/api/certificates/verify/${certificate.certificateId}`)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-1 text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                        className="flex items-center justify-center space-x-1 text-xs text-gray-400 hover:text-cyan-400 transition-colors duration-200"
                       >
                         <ExternalLink className="w-3 h-3" />
                         <span>{t('certificates.verify_certificate')}</span>

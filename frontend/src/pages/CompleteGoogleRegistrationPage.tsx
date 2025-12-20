@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Phone, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { config } from '../config/environment';
 import ScrollToTop from '../components/ScrollToTop';
@@ -21,7 +22,7 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
     // Validate required parameters
     if (!userId || !email || !name) {
       setStatus('error');
-      setError('Invalid registration link. Please try signing in with Google again.');
+      setError(t('google_registration.invalid_link_message'));
     }
   }, [userId, email, name]);
 
@@ -59,7 +60,7 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
 
       if (response.ok) {
         setStatus('success');
-        setMessage(result.message || 'Registration completed successfully!');
+        setMessage(result.message || t('google_registration.registration_complete'));
         
         // Store the token and redirect to dashboard
         if (result.data?.token) {
@@ -70,12 +71,12 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
         }
       } else {
         setStatus('error');
-        setError(result.message || 'Failed to complete registration. Please try again.');
+        setError(result.message || t('google_registration.registration_failed'));
       }
     } catch (error) {
       console.error('Complete registration error:', error);
       setStatus('error');
-      setError('Network error. Please check your connection and try again.');
+      setError(t('common.error'));
     }
   };
 
@@ -87,16 +88,16 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
 
   if (status === 'error' && (!userId || !email || !name)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center pt-16">
         <ScrollToTop />
         <div className="max-w-md w-full mx-auto p-8">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <XCircle className="h-16 w-16 text-red-600 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Invalid Registration Link</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
+          <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-8 text-center">
+            <XCircle className="h-16 w-16 text-red-400 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-white mb-4">Invalid Registration Link</h2>
+            <p className="text-gray-300 mb-6">{error}</p>
             <button
               onClick={() => navigate('/login')}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
             >
               Go to Login
             </button>
@@ -107,22 +108,22 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center pt-16 pb-12 px-4">
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center pt-16 pb-12 px-4">
       <ScrollToTop />
       <div className="max-w-md w-full space-y-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Complete Registration</h2>
-            <p className="mt-2 text-gray-600">
-              Welcome, {name}! Please provide your phone number to complete your account setup.
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">{t('google_registration.complete_registration')}</h2>
+            <p className="mt-2 text-gray-300">
+              {t('google_registration.welcome_message', { name })}
             </p>
-            <p className="mt-1 text-sm text-gray-500">{email}</p>
+            <p className="mt-1 text-sm text-gray-400">{email}</p>
           </div>
 
           {status === 'input' && (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
+                <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-300">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -130,7 +131,7 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
                     id="phoneNumber"
                     type="tel"
                     required
-                    className="appearance-none relative block w-full pl-12 pr-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:z-10 transition-all duration-200"
+                    className="appearance-none relative block w-full pl-12 pr-4 py-3 border border-gray-600 bg-gray-900 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:z-10 transition-all duration-200"
                     placeholder={config.SUPPORT_PHONE}
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
@@ -139,53 +140,53 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
                     <Phone className="h-5 w-5 text-gray-400" />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-400">
                   Enter your phone number in international format (e.g., +1234567890)
                 </p>
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-800">{error}</p>
+                <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+                  <p className="text-sm text-red-300">{error}</p>
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-800 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
               >
-                Complete Registration
+                {t('google_registration.complete_registration')}
               </button>
             </form>
           )}
 
           {status === 'loading' && (
             <div className="text-center space-y-4">
-              <Loader className="h-16 w-16 text-red-600 animate-spin mx-auto" />
-              <h3 className="text-xl font-semibold text-gray-800">Completing Registration...</h3>
-              <p className="text-gray-600">Please wait while we set up your account.</p>
+              <Loader className="h-16 w-16 text-cyan-400 animate-spin mx-auto" />
+              <h3 className="text-xl font-semibold text-white">{t('google_registration.completing_registration')}</h3>
+              <p className="text-gray-300">{t('google_registration.please_wait')}</p>
             </div>
           )}
 
           {status === 'success' && (
             <div className="text-center space-y-4">
-              <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
-              <h3 className="text-xl font-semibold text-gray-800">Registration Complete!</h3>
-              <p className="text-gray-600">{message}</p>
-              <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+              <CheckCircle className="h-16 w-16 text-green-400 mx-auto" />
+              <h3 className="text-xl font-semibold text-white">{t('google_registration.registration_complete')}</h3>
+              <p className="text-gray-300">{message}</p>
+              <p className="text-sm text-gray-400">{t('auth.verify_email.redirecting')}</p>
             </div>
           )}
 
           {status === 'error' && (
             <div className="text-center space-y-4">
-              <XCircle className="h-16 w-16 text-red-600 mx-auto" />
-              <h3 className="text-xl font-semibold text-gray-800">Registration Failed</h3>
-              <p className="text-gray-600">{error}</p>
+              <XCircle className="h-16 w-16 text-red-400 mx-auto" />
+              <h3 className="text-xl font-semibold text-white">{t('google_registration.registration_failed')}</h3>
+              <p className="text-gray-300">{error}</p>
               <button
                 onClick={handleRetry}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
               >
-                Try Again
+                {t('google_registration.try_again')}
               </button>
             </div>
           )}

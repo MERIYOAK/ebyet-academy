@@ -634,17 +634,23 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #28283D;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #4A4A6E;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  background: #5A5A7E;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4A4A6E #28283D;
 }
 
 /* Dark scrollbar for playlist */

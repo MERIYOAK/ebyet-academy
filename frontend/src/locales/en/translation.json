@@ -2,6 +2,7 @@
   "navbar": {
     "home": "Home",
     "courses": "Courses",
+    "bundles": "Bundles",
     "about": "About",
     "contact": "Contact",
     "login": "Login",
@@ -32,6 +33,15 @@
   "home": {
     "hero_title": "Master Trading & Investing",
     "hero_subtitle": "Learn professional trading strategies, market analysis, and investment techniques from industry experts. Build your financial future with comprehensive courses designed for traders and investors.",
+    "hero_main_title": "Master the Art of Investing and Trading",
+    "hero_bullet_1": "Learn professional investment strategies from experts",
+    "hero_bullet_2": "Understand market analysis and trading techniques",
+    "hero_bullet_3": "Build a profitable investment portfolio",
+    "hero_get_started": "Get started for free",
+    "hero_live_demo": "Live demo",
+    "hero_trial_text": "14-days free trial, no credit card required.",
+    "hero_social_proof": "Follow us here...",
+    "hero_social_more": "and many more..",
     "announcement1_date": "January 15, 2024",
     "announcement1_title": "New Advanced Trading Course Now Available!",
     "announcement1_content": "We are excited to announce the launch of our comprehensive Advanced Trading Strategies course. Learn from industry experts and master professional trading techniques. Enroll now and take your trading skills to the next level!",
@@ -44,7 +54,12 @@
     "get_started": "Get Started",
     "learn_more": "Learn More",
     "featured_courses": "Featured Courses",
+    "courses_title": "Courses",
+    "courses_subtitle": "Explore our collection of courses designed to accelerate your professional development",
     "view_all_courses": "View All Courses",
+    "bundles_title": "Course Bundles",
+    "bundles_subtitle": "Save money with our curated course bundles. Get multiple courses at a discounted price.",
+    "view_all_bundles": "View All Bundles",
     "testimonials_title": "Testimonials",
     "student_success": "Student Success",
     "loading_featured_courses": "Loading featured courses, please wait...",
@@ -174,24 +189,28 @@
     "filtered_by": "Filtered by:",
     "no_courses_available": "No courses available yet. Check back soon.",
     "no_courses_match": "No courses match your search criteria.",
+    "sample_data_notice": "Sample Courses - Backend connection pending",
     "pagination": {
       "show": "Show",
       "per_page": "{{count}} per page",
       "page_info": "Page {{current}} of {{total}} ({{items}} total courses)",
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "go_to_page": "Go to page",
+      "go": "Go"
     }
   },
   "about": {
     "page_title": "About Us",
     "mission_title": "Our Mission",
-    "mission_text": "To provide high-quality, accessible education that empowers individuals to master essential skills and advance their careers in the digital age",
-    "vision_title": "Our Vision",
-    "vision_text": "To be the leading platform for professional skill development and digital education, making quality learning accessible to everyone",
-    "values_title": "Our Values",
-    "values_subtitle": "The principles that guide everything we do at our academy",
-    "team_title": "Our Team",
+    "mission_text": "Empowering individuals to master trading and investing through expert-led courses, practical strategies, and real-world market insights. We make financial education accessible to everyone, from beginners to advanced traders.",
+    "badge": "Empowering Traders Worldwide",
+    "explore_courses": "Explore Courses",
     "contact_us": "Contact Us",
+    "what_we_do": "What We Offer",
+    "what_we_do_desc": "Comprehensive trading and investing education designed for success",
+    "values_title": "Our Values",
+    "values_subtitle": "The principles that guide everything we do",
     "stats": {
       "students_enrolled": "Students Enrolled",
       "expert_instructors": "Expert Instructors",
@@ -200,45 +219,45 @@
     },
     "why_choose_title": "Why Choose Us?",
     "why_choose_points": {
-      "expert_courses": "Expert-led courses from industry professionals",
-      "up_to_date": "Up-to-date content reflecting current industry standards",
-      "practical_content": "Practical, actionable content you can implement immediately",
-      "ongoing_support": "Ongoing support and community access"
+      "expert_courses": "Professional trading and investing courses taught by experienced market experts",
+      "up_to_date": "Current market strategies and techniques that reflect today's financial markets",
+      "practical_content": "Real-world trading strategies you can apply immediately to your portfolio",
+      "ongoing_support": "Continuous learning support and access to our trading community"
     },
-    "team_description": "Our team consists of successful professionals, industry experts, and passionate educators who are dedicated to helping others succeed in their chosen fields.",
+    "features": {
+      "market_analysis": "Market Analysis",
+      "market_analysis_desc": "Learn to analyze market trends and make informed trading decisions",
+      "comprehensive_courses": "Comprehensive Courses",
+      "comprehensive_courses_desc": "From beginner basics to advanced trading strategies",
+      "risk_management": "Risk Management",
+      "risk_management_desc": "Master portfolio protection and risk mitigation techniques",
+      "real_time": "Real-Time Learning",
+      "real_time_desc": "Access live market insights and practical trading scenarios",
+      "portfolio": "Portfolio Building",
+      "portfolio_desc": "Build and manage profitable investment portfolios",
+      "investment": "Investment Strategies",
+      "investment_desc": "Learn proven investment strategies from industry experts"
+    },
+    "cta_title": "Ready to Start Your Trading Journey?",
+    "cta_desc": "Join thousands of successful traders and investors. Start learning today and transform your financial future.",
+    "browse_courses": "Browse Courses",
+    "get_started": "Get Started Free",
     "values": {
       "innovation": {
         "title": "Innovation",
-        "description": "Constantly evolving with the latest industry trends and technological advancements."
+        "description": "Staying ahead with the latest trading strategies and market analysis techniques."
       },
       "trust": {
         "title": "Trust",
-        "description": "Building lasting relationships through transparency and proven results."
+        "description": "Building confidence through transparent teaching and proven trading methodologies."
       },
       "growth": {
         "title": "Growth",
-        "description": "Committed to helping learners achieve sustainable, long-term success."
+        "description": "Helping traders achieve consistent, long-term financial growth and success."
       },
       "excellence": {
         "title": "Excellence",
-        "description": "Delivering the highest quality education and support to our community."
-      }
-    },
-    "team_members": {
-      "sarah": {
-        "name": "Sarah Johnson",
-        "role": "Founder & CEO",
-        "description": "Formeር professional with 10+ years experience, helping learners build successful careers."
-      },
-      "mike": {
-        "name": "Mike Chen",
-        "role": "Head of Education",
-        "description": "Digital education expert with 10+ years experience in curriculum development and skill training."
-      },
-      "emily": {
-        "name": "Emily Rodriguez",
-        "role": "Community Manager",
-        "description": "Building and nurturing our community of learners, ensuring everyone gets the support they need."
+        "description": "Delivering the highest quality trading education and market insights."
       }
     }
   },
@@ -262,6 +281,16 @@
     "hours": "Hours",
     "why_choose_title": "Why Choose Our Academy?",
     "contact_description": "We're here to help you on your learning journey. Reach out to us through any of the channels below.",
+    "success_message": "Message sent successfully! We'll get back to you soon.",
+    "error_message": "Failed to send message. Please try again or contact us directly.",
+    "quick_actions": {
+      "support": "Support",
+      "support_desc": "Get help with your account or courses",
+      "faq": "FAQ",
+      "faq_desc": "Find answers to common questions",
+      "urgent": "Urgent",
+      "urgent_desc": "Need immediate assistance?"
+    },
     "form_placeholders": {
       "name": "Your name",
       "email": "your@email.com",
@@ -357,7 +386,8 @@
     "students": "students",
     "by_instructor": "by IBYET Academy",
     "thumbnail_placeholder": "Course Thumbnail",
-    "error": "Error"
+    "error": "Error",
+    "bestseller": "Bestseller"
   },
   "dashboard_card": {
     "course_completed": "🎉 Course completed! You've earned your certificate.",
@@ -515,9 +545,16 @@
   },
   "language": {
     "tigrinya": "ትግርኛ",
-    "english": "English"
+    "english": "English",
+    "toggle_language": "Toggle language"
   },
   "categories": {
+    "crypto": "Cryptocurrency",
+    "investing": "Investing",
+    "trading": "Trading",
+    "stock-market": "Stock Market",
+    "etf": "ETF",
+    "option-trading": "Option Trading",
     "youtube": "YouTube Mastery",
     "camera": "Camera",
     "photo": "Photo Editing",
@@ -1036,5 +1073,143 @@
     "resetting": "Resetting...",
     "reset_password": "Reset Password",
     "sending": "Sending..."
+  },
+  "bundle_card": {
+    "save_percentage": "Save {{percentage}}%",
+    "featured": "Featured",
+    "course": "Course",
+    "courses": "Courses",
+    "view_bundle": "View Bundle",
+    "buy_bundle": "Buy Bundle"
+  },
+  "bundles_page": {
+    "title": "Course Bundles",
+    "subtitle": "Save money by purchasing curated course bundles. Get multiple courses at a discounted price.",
+    "search_placeholder": "Search bundles...",
+    "filters": "Filters",
+    "featured_only": "Featured Only",
+    "active_filters": "Active:",
+    "search": "Search",
+    "featured": "Featured",
+    "clear_all": "Clear All",
+    "filter_by_category": "Filter by Category",
+    "results_count": "{{count}} bundle(s) found",
+    "no_bundles_found": "No bundles found matching your criteria.",
+    "clear_filters": "Clear filters"
+  },
+  "bundle_detail": {
+    "bundle_not_found": "Bundle not found",
+    "loading": "Loading bundle...",
+    "error_loading_courses": "Error loading courses",
+    "back_to_bundles": "Back to Bundles",
+    "included_courses": "Included Courses",
+    "loading_courses": "Loading courses...",
+    "lessons": "lessons",
+    "no_courses_available": "Course details are not available at this time.",
+    "course": "Course",
+    "courses": "Courses",
+    "save_amount": "Save ${{amount}} ({{percentage}}%)",
+    "original_value": "Original Value: ${{value}}",
+    "buy_bundle": "Buy Bundle",
+    "processing": "Processing...",
+    "purchase_note": "This is a placeholder. Purchase functionality will be available soon.",
+    "purchase_placeholder": "Bundle purchase functionality will be available soon!",
+    "course_placeholder_description": "This course is included in the bundle."
+  },
+  "google_registration": {
+    "complete_registration": "Complete Registration",
+    "welcome_message": "Welcome, {{name}}! Please provide your phone number to complete your account setup.",
+    "phone_number": "Phone Number",
+    "phone_number_help": "Enter your phone number in international format (e.g., +1234567890)",
+    "invalid_registration_link": "Invalid Registration Link",
+    "invalid_link_message": "Invalid registration link. Please try signing in with Google again.",
+    "go_to_login": "Go to Login",
+    "completing_registration": "Completing Registration...",
+    "please_wait": "Please wait while we set up your account.",
+    "registration_complete": "Registration Complete!",
+    "registration_failed": "Registration Failed",
+    "try_again": "Try Again",
+    "please_enter_phone": "Please enter your phone number",
+    "invalid_phone_format": "Please enter a valid international phone number (e.g., +1234567890)"
+  },
+  "google_callback": {
+    "authenticating": "Authenticating...",
+    "processing_authentication": "Processing authentication...",
+    "no_token_received": "No authentication token received",
+    "authentication_successful": "Authentication successful! Redirecting to dashboard...",
+    "authentication_failed_message": "Authentication failed. Please try again.",
+    "success": "Success!",
+    "authentication_failed": "Authentication Failed",
+    "back_to_login": "Back to Login"
+  },
+  "help_center_faq": {
+    "create_account_question": "How do I create an account?",
+    "create_account_answer": "Creating an account is simple! Click the 'Sign Up' button in the top navigation, fill in your details, and verify your email address. You'll receive a confirmation email with a verification link.",
+    "purchase_course_question": "How do I purchase a course?",
+    "purchase_course_answer": "Browse our course catalog, select the course you want, and click 'Buy Now'. You'll be redirected to our secure Stripe checkout. After successful payment, the course will be immediately available in your dashboard.",
+    "mobile_access_question": "Can I access courses on mobile devices?",
+    "mobile_access_answer": "Yes! Our platform is fully responsive and works on all devices including smartphones, tablets, and desktop computers. You can watch videos, track progress, and access all features from any device.",
+    "course_access_duration_question": "How long do I have access to purchased courses?",
+    "course_access_duration_answer": "You retain ongoing access to purchased courses as long as your account remains in good standing. You can rewatch lessons anytime from your dashboard.",
+    "download_videos_question": "Can I download course videos?",
+    "download_videos_answer": "Currently, we don't support video downloads to ensure content protection. However, you can access all videos online from any device with an internet connection.",
+    "internet_connection_question": "What happens if I lose internet connection while watching?",
+    "internet_connection_answer": "Your progress is automatically saved. Simply reconnect to the internet and continue watching from where you left off.",
+    "videos_not_loading_question": "Videos are not loading properly. What should I do?",
+    "videos_not_loading_answer": "Try refreshing the page, clearing your browser cache, or using a different browser. If the problem persists, contact our support team.",
+    "login_issues_question": "I can't log into my account. What should I do?",
+    "login_issues_answer": "Make sure you're using the correct email and password. If you've forgotten your password, use the 'Forgot Password' link. If issues persist, contact support.",
+    "video_player_issues_question": "The video player is not working correctly.",
+    "video_player_issues_answer": "Try refreshing the page or clearing your browser cache. Make sure you have a stable internet connection. If the problem continues, contact support.",
+    "certificate_question": "How do I get a certificate of completion?",
+    "certificate_answer": "Certificates are automatically generated when you fully complete a course (all lessons completed and required watch time reached). You can download certificates from the 'My Certificates' section in your dashboard.",
+    "share_certificate_question": "Can I share my certificates on social media?",
+    "share_certificate_answer": "Yes! You can share your certificates on social media platforms. Use the share button on your certificate page to post it on your preferred platform.",
+    "payment_methods_question": "What payment methods do you accept?",
+    "payment_methods_answer": "We accept all major credit cards, debit cards, and payments through Stripe. All transactions are secure and encrypted.",
+    "purchases_final_question": "Are all purchases final?",
+    "purchases_final_answer": "Yes, all purchases are final. We encourage you to review course details and preview content before making a purchase to ensure it meets your needs.",
+    "payment_security_question": "Is my payment information secure?",
+    "payment_security_answer": "Absolutely! We use Stripe, a PCI-compliant payment processor, to handle all transactions. Your payment information is encrypted and never stored on our servers."
+  },
+  "terms_content": {
+    "hero_title": "Terms of Service",
+    "hero_subtitle": "Please read these terms carefully before using {{appName}}. By using our platform, you agree to these terms and conditions.",
+    "last_updated": "Last updated:",
+    "acceptance_title": "1. Acceptance of Terms",
+    "acceptance_content": "These Terms of Service (\"Terms\") govern your use of our website and services. By using our platform, you agree to these terms in full. If you disagree with any part of these terms, you may not access our service.",
+    "services_title": "2. Services Description",
+    "services_content": "We provide online educational courses and related services. Our platform allows users to enroll in courses, access course materials, track progress, and earn certificates upon completion.",
+    "user_accounts_title": "3. User Accounts",
+    "user_accounts_content": "You are responsible for maintaining the confidentiality of your account credentials. You agree to notify us immediately of any unauthorized use of your account. We reserve the right to suspend or terminate accounts that violate these terms.",
+    "payment_terms_title": "4. Payment Terms",
+    "payment_terms_content": "All course purchases are final. Payments are processed securely through our payment partners. Refunds are handled according to our refund policy, which can be found in our Help Center.",
+    "intellectual_property_title": "5. Intellectual Property Rights",
+    "intellectual_property_content": "All course content, including videos, materials, and resources, is protected by copyright and intellectual property laws. You may not reproduce, distribute, or share course content without explicit permission.",
+    "privacy_data_title": "6. Privacy & Data Protection",
+    "privacy_data_content": "Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your personal information.",
+    "contact_questions": "If you have any questions about these Terms of Service, please contact us:"
+  },
+  "privacy_content": {
+    "hero_title": "Privacy Policy",
+    "hero_subtitle": "We are committed to protecting your privacy and ensuring the security of your personal information. This policy explains how we collect, use, and safeguard your data.",
+    "last_updated": "Last updated:",
+    "introduction_title": "Introduction",
+    "introduction_content": "At {{appName}} (\"we,\" \"our,\" or \"us\"), we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services.",
+    "information_collection_title": "Information We Collect",
+    "information_collection_content": "We collect information that you provide directly to us, such as when you create an account, enroll in courses, make purchases, or contact us for support. This may include your name, email address, phone number, payment information, and course progress data.",
+    "how_we_use_title": "How We Use Your Information",
+    "how_we_use_content": "We use the information we collect to provide, maintain, and improve our services, process payments, communicate with you, and personalize your learning experience.",
+    "information_sharing_title": "Information Sharing and Disclosure",
+    "information_sharing_content": "We do not sell your personal information. We may share your information with trusted service providers who assist us in operating our platform, conducting business, or serving our users, as long as those parties agree to keep this information confidential.",
+    "data_security_title": "Data Security",
+    "data_security_content": "We implement appropriate technical and organizational security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.",
+    "your_rights_title": "Your Rights and Choices",
+    "your_rights_content": "You have the right to access, update, or delete your personal information. You can manage your account settings and preferences through your dashboard.",
+    "cookies_title": "Cookies & Tracking Technologies",
+    "cookies_content": "We use cookies and similar tracking technologies to track activity on our platform and hold certain information to enhance your user experience.",
+    "changes_title": "Changes to This Privacy Policy",
+    "changes_content": "We may update this Privacy Policy from time to time to reflect changes in our practices or applicable laws. We will notify you of any material changes by posting the updated policy on our website and updating the \"Last updated\" date.",
+    "contact_questions": "If you have any questions about this Privacy Policy or our data practices, please contact us:"
   }
 }

@@ -92,13 +92,13 @@ const AuthForm: React.FC<AuthFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">{title}</h2>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">{title}</h2>
             {subtitle && (
-              <p className="mt-2 text-gray-600">{subtitle}</p>
+              <p className="mt-2 text-gray-300">{subtitle}</p>
             )}
           </div>
 
@@ -198,14 +198,14 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
             {/* Message and Error Display */}
             {message && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-800">{message}</p>
+              <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                <p className="text-sm text-green-400">{message}</p>
               </div>
             )}
             
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
 
@@ -213,7 +213,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
               <button
                 type="submit"
                 disabled={isLoadingState}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
               >
                 {isLoadingState ? (
                   <div className="flex items-center">
@@ -231,17 +231,17 @@ const AuthForm: React.FC<AuthFormProps> = ({
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
+                  <div className="w-full border-t border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">{t('auth.social.or_continue_with')}</span>
+                  <span className="px-2 bg-gray-800 text-gray-400">{t('auth.social.or_continue_with')}</span>
                 </div>
               </div>
 
               <div className="mt-6">
                 <button 
                   onClick={handleGoogleLogin}
-                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow-md transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-600 rounded-lg shadow-sm bg-gray-900 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-800"
                 >
                   {/* Google Logo with proper colors */}
                   <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24">
@@ -259,9 +259,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
           {links.length > 0 && (
             <div className="mt-6 space-y-2">
               {links.map((link, index) => (
-                <p key={index} className="text-center text-sm text-gray-600">
+                <p key={index} className="text-center text-sm text-gray-400">
                   {link.text}{' '}
-                  <Link to={link.href} className="font-medium text-red-600 hover:text-red-500 transition-colors duration-200">
+                  <Link to={link.href} className="font-medium text-cyan-400 hover:text-cyan-300 transition-colors duration-200">
                     {link.linkText}
                   </Link>
                 </p>

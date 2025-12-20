@@ -22,7 +22,7 @@ const LanguageToggler: React.FC = () => {
       <button
         onClick={toggleDropdown}
         className="flex items-center space-x-1 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        aria-label="Toggle language"
+        aria-label={t('language.toggle_language')}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >

@@ -377,10 +377,10 @@ const CheckoutSuccessPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="h-16 w-16 text-green-600 animate-spin mx-auto mb-6" />
-          <p className="text-gray-600 text-lg font-medium">{t('checkout_success.loading_purchase_details')}</p>
+          <Loader className="h-16 w-16 text-cyan-400 animate-spin mx-auto mb-6" />
+          <p className="text-gray-300 text-lg font-medium">{t('checkout_success.loading_purchase_details')}</p>
         </div>
       </div>
     );
@@ -388,18 +388,18 @@ const CheckoutSuccessPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="text-red-600 mb-6">
+          <div className="text-red-400 mb-6">
             <AlertCircle className="h-20 w-20 mx-auto" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('checkout_success.payment_successful')}</h2>
-          <p className="text-gray-600 mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">{t('checkout_success.payment_successful')}</h2>
+          <p className="text-gray-300 mb-8">
             {t('checkout_success.payment_processed_successfully')}
           </p>
           <Link
             to="/dashboard"
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
           >
             {t('checkout_success.go_to_dashboard')}
           </Link>
@@ -409,11 +409,11 @@ const CheckoutSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 pt-24 pb-12">
+    <div className="min-h-screen bg-gray-900 pt-24 pb-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
           {/* Success Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-12 text-center">
+          <div className="bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-12 text-center">
             <div className="bg-white bg-opacity-20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="h-16 w-16 text-white" />
             </div>
@@ -428,10 +428,10 @@ const CheckoutSuccessPage = () => {
           <div className="p-8">
             {/* Warning for wrong course */}
             {isWrongCourse && correctCourseTitle && courseInfo?.title && correctCourseTitle !== courseInfo.title && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
                 <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-                  <p className="text-yellow-800 text-sm">
+                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2" />
+                  <p className="text-yellow-300 text-sm">
                     <strong>{t('checkout_success.note_wrong_course', { courseTitle: correctCourseTitle, amount: actualAmountPaid })}</strong>
                   </p>
                 </div>
@@ -439,44 +439,44 @@ const CheckoutSuccessPage = () => {
             )}
 
             {/* Order Details */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('checkout_success.order_confirmation')}</h2>
+            <div className="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
+              <h2 className="text-2xl font-bold text-white mb-4">{t('checkout_success.order_confirmation')}</h2>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('checkout_success.order_id')}</span>
-                  <span className="font-semibold text-gray-800">
+                  <span className="text-gray-400">{t('checkout_success.order_id')}</span>
+                  <span className="font-semibold text-white">
                     {receiptInfo?.orderId || `#YTA-${Date.now().toString().slice(-6)}`}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('checkout_success.course')}</span>
-                  <span className="font-semibold text-gray-800">
+                  <span className="text-gray-400">{t('checkout_success.course')}</span>
+                  <span className="font-semibold text-white">
                     {correctCourseTitle || courseInfo?.title || t('checkout_success.course_purchase')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('checkout_success.amount_paid')}</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="text-gray-400">{t('checkout_success.amount_paid')}</span>
+                  <span className="font-semibold text-green-400">
                     ${actualAmountPaid || receiptInfo?.amount || courseInfo?.price || t('checkout_success.processing')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('checkout_success.payment_method')}</span>
-                  <span className="font-semibold text-gray-800">
+                  <span className="text-gray-400">{t('checkout_success.payment_method')}</span>
+                  <span className="font-semibold text-white">
                     {receiptInfo?.paymentMethod || '••••4242'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('checkout_success.status')}</span>
-                  <span className="font-semibold text-green-600 flex items-center">
+                  <span className="text-gray-400">{t('checkout_success.status')}</span>
+                  <span className="font-semibold text-green-400 flex items-center">
                     <CheckCircle className="h-4 w-4 mr-1" />
                     {receiptInfo?.status || t('checkout_success.completed')}
                   </span>
                 </div>
                 {receiptInfo?.paymentDate && (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">{t('checkout_success.payment_date')}</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="text-gray-400">{t('checkout_success.payment_date')}</span>
+                    <span className="font-semibold text-white">
                       {new Date(receiptInfo.paymentDate).toLocaleDateString()}
                     </span>
                   </div>
@@ -486,41 +486,41 @@ const CheckoutSuccessPage = () => {
 
             {/* Next Steps */}
             <div className="space-y-6 mb-8">
-              <h3 className="text-2xl font-bold text-gray-800">{t('checkout_success.whats_next')}</h3>
+              <h3 className="text-2xl font-bold text-white">{t('checkout_success.whats_next')}</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-red-50 rounded-lg p-6">
+                <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
                   <div className="flex items-center mb-4">
-                    <div className="bg-red-100 p-3 rounded-full mr-4">
-                      <Play className="h-6 w-6 text-red-600" />
+                    <div className="bg-cyan-500/20 p-3 rounded-full mr-4">
+                      <Play className="h-6 w-6 text-cyan-400" />
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-800">{t('checkout_success.start_learning')}</h4>
+                    <h4 className="text-lg font-semibold text-white">{t('checkout_success.start_learning')}</h4>
                   </div>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-300 mb-4">
                     {t('checkout_success.access_course_immediately')}
                   </p>
                   <Link
                     to={firstVideoId ? `/course/${courseId}/watch/${firstVideoId}` : `/course/${courseId}`}
-                    className="inline-flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
                   >
                     <span>{t('checkout_success.start_course')}</span>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
 
-                <div className="bg-blue-50 rounded-lg p-6">
+                <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
                   <div className="flex items-center mb-4">
-                    <div className="bg-blue-100 p-3 rounded-full mr-4">
-                      <BookOpen className="h-6 w-6 text-blue-600" />
+                    <div className="bg-blue-500/20 p-3 rounded-full mr-4">
+                      <BookOpen className="h-6 w-6 text-blue-400" />
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-800">{t('checkout_success.view_dashboard')}</h4>
+                    <h4 className="text-lg font-semibold text-white">{t('checkout_success.view_dashboard')}</h4>
                   </div>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-300 mb-4">
                     {t('checkout_success.track_progress')}
                   </p>
                   <Link
                     to="/dashboard"
-                    className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/20"
                   >
                     <span>{t('checkout_success.go_to_dashboard')}</span>
                     <ArrowRight className="h-4 w-4" />
@@ -530,19 +530,19 @@ const CheckoutSuccessPage = () => {
             </div>
 
             {/* Receipt Information */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
+            <div className="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
               <div className="flex items-center mb-4">
-                <Download className="h-5 w-5 text-gray-600 mr-2" />
-                <h4 className="text-lg font-semibold text-gray-800">{t('checkout_success.download_receipt')}</h4>
+                <Download className="h-5 w-5 text-cyan-400 mr-2" />
+                <h4 className="text-lg font-semibold text-white">{t('checkout_success.download_receipt')}</h4>
               </div>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-300 mb-4">
                 {t('checkout_success.download_receipt_description')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button 
                   onClick={handleDownloadReceipt}
                   disabled={downloadingReceipt}
-                  className="flex items-center justify-center space-x-2 border border-gray-300 hover:border-gray-400 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center space-x-2 border border-gray-600 hover:border-cyan-500 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {downloadingReceipt ? (
                     <Loader className="h-4 w-4 animate-spin" />
@@ -555,21 +555,21 @@ const CheckoutSuccessPage = () => {
             </div>
 
             {/* Support */}
-            <div className="text-center bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-800 mb-2">{t('checkout_success.need_help')}</h4>
-              <p className="text-gray-600 mb-4">
+            <div className="text-center bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700">
+              <h4 className="text-lg font-semibold text-white mb-2">{t('checkout_success.need_help')}</h4>
+              <p className="text-gray-300 mb-4">
                 {t('checkout_success.support_team_help')}
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-3">
                 <Link
                   to="/contact"
-                  className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-2 rounded-lg transition-colors duration-200 border border-gray-300"
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-gray-600"
                 >
                   {t('checkout_success.contact_support')}
                 </Link>
                 <Link
                   to="/help"
-                  className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-2 rounded-lg transition-colors duration-200 border border-gray-300"
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-gray-600"
                 >
                   {t('checkout_success.help_center')}
                 </Link>
