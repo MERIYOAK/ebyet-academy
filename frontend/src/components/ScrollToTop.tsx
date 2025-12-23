@@ -10,12 +10,12 @@ const ScrollToTop: React.FC = () => {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-50 p-3 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-red-300"
+          className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-50 p-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-cyan-500/50"
           style={{
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)',
-            background: 'rgba(220, 38, 38, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
+            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%)',
+            border: '1px solid rgba(6, 182, 212, 0.3)'
           }}
           aria-label="Scroll to top"
         >

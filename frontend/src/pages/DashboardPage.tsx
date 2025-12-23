@@ -218,7 +218,7 @@ const DashboardPage = () => {
       <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 pt-20 xxs:pt-24 pb-6 xxs:pb-8">
       {/* Header */}
         <div className="mb-6 xxs:mb-8">
-          <h1 className="text-2xl xxs:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl xxs:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2 pb-1 sm:pb-2">
             {t('dashboard.welcome_back')}, {displayName}! 👋
           </h1>
           <p className="text-gray-300 text-sm xxs:text-base">

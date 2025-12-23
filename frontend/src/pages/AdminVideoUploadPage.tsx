@@ -325,9 +325,9 @@ const AdminVideoUploadPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading course...</p>
         </div>
       </div>
@@ -336,12 +336,12 @@ const AdminVideoUploadPage: React.FC = () => {
 
   if (error && !course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-orange-400 mb-4">{error}</p>
           <Link
             to="/admin/courses"
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500"
           >
             Back to Courses
           </Link>
@@ -351,21 +351,21 @@ const AdminVideoUploadPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-900 pt-16">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-gray-800 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link
                 to={`/admin/courses/${courseId}/videos`}
-                className="inline-flex items-center text-gray-600 hover:text-gray-900"
+                className="inline-flex items-center text-gray-600 hover:text-white"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Videos
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Upload Video</h1>
+                <h1 className="text-3xl font-bold text-white">Upload Video</h1>
                 <p className="text-gray-600">{course?.title}</p>
               </div>
             </div>
@@ -385,14 +385,14 @@ const AdminVideoUploadPage: React.FC = () => {
         )}
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="mb-6 bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
             <div className="flex items-center">
-              <svg className="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-orange-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
-                <div className="mt-1 text-sm text-red-700">
+                <h3 className="text-sm font-medium text-orange-300">Please fix the following errors:</h3>
+                <div className="mt-1 text-sm text-orange-200">
                   {error.split('\n').map((line, index) => (
                     <div key={index} className="flex items-start">
                       <span className="mr-2">•</span>
@@ -403,7 +403,7 @@ const AdminVideoUploadPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-600"
+                className="text-orange-400 hover:text-orange-300"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -428,9 +428,9 @@ const AdminVideoUploadPage: React.FC = () => {
         )}
 
         {/* Upload Form */}
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="bg-gray-800 rounded-lg shadow-sm border">
           <div className={`p-6 ${progressOverlay.isVisible ? 'pointer-events-none' : ''}`}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Video Information</h2>
+            <h2 className="text-lg font-semibold text-white mb-6">Video Information</h2>
             
             {/* Info Alert */}
             <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -584,7 +584,7 @@ const AdminVideoUploadPage: React.FC = () => {
               <div className="flex justify-end space-x-3">
                 <Link
                   to={`/admin/courses/${courseId}/videos`}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-gray-800 hover:bg-gray-900"
                 >
                   Cancel
                 </Link>
@@ -601,15 +601,15 @@ const AdminVideoUploadPage: React.FC = () => {
         </div>
 
         {/* Course Info */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border">
+        <div className="mt-8 bg-gray-800 rounded-lg shadow-sm border">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Information</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Course Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Course Details</h4>
-                <p className="text-sm text-gray-900 mb-1"><strong>Title:</strong> {course?.title}</p>
-                <p className="text-sm text-gray-900 mb-1"><strong>Description:</strong> {course?.description}</p>
-                <p className="text-sm text-gray-900"><strong>Current Videos:</strong> {course?.videos?.length || 0}</p>
+                <p className="text-sm text-white mb-1"><strong>Title:</strong> {course?.title}</p>
+                <p className="text-sm text-white mb-1"><strong>Description:</strong> {course?.description}</p>
+                <p className="text-sm text-white"><strong>Current Videos:</strong> {course?.videos?.length || 0}</p>
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Quick Actions</h4>

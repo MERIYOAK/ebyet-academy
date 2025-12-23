@@ -9,7 +9,7 @@ import LoadingMessage from '../components/LoadingMessage';
 // import { useFeaturedCourses } from '../hooks/useCourses'; // Temporarily disabled - using sample data
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 import { getFeaturedBundles } from '../data/mockBundles';
-import heroImage from '../assets/images/hero image new.png';
+import heroImage from '../assets/images/hero-image.jpeg';
 
 
 const HomePage = () => {
@@ -239,7 +239,7 @@ const HomePage = () => {
           <img 
             src={heroImage} 
             alt="Hero" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-right md:object-center"
           />
           {/* Dark overlay for better text readability */}
           <div className="absolute inset-0 bg-black/40"></div>
@@ -250,7 +250,7 @@ const HomePage = () => {
           <div className="flex flex-col justify-center space-y-2.5 xs:space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 max-w-2xl lg:max-w-3xl xl:max-w-4xl pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 xl:pt-16 pb-12 xs:pb-16 sm:pb-20 md:pb-24">
             {/* Big Title with Gradient */}
             <h1 
-              className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight xs:leading-tight sm:leading-tight pt-8 xs:pt-10 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24"
+              className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight xs:leading-tight sm:leading-tight pt-8 xs:pt-10 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24 pb-2 xs:pb-3 sm:pb-4"
               style={{
                 background: 'linear-gradient(to right, #00BFFF 0%, #00BFFF 40%, #9370DB 60%, #9370DB 100%)',
                 WebkitBackgroundClip: 'text',
@@ -481,7 +481,7 @@ const HomePage = () => {
       <section className="py-10 xs:py-12 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.courses_title', 'Courses')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
@@ -519,7 +519,7 @@ const HomePage = () => {
       <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-900">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.bundles_title', 'Course Bundles')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
@@ -565,7 +565,7 @@ const HomePage = () => {
       <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-900">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.why_choose_title', 'Why Choose Us')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
@@ -618,7 +618,7 @@ const HomePage = () => {
       <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-900">
         <div className="max-w-4xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.faq.title', 'Frequently Asked Questions')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
@@ -662,7 +662,7 @@ const HomePage = () => {
       <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-800 overflow-hidden">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.success_stories_title', 'Success Stories')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
@@ -760,7 +760,7 @@ const HomePage = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-purple-600/20"></div>
         <div className="max-w-4xl mx-auto text-center px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 relative z-10">
-          <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 xs:mb-4 sm:mb-5 md:mb-6 text-white">
+          <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 xs:mb-4 sm:mb-5 md:mb-6 pb-2 sm:pb-3 md:pb-4 text-white">
             {t('home.cta_title', 'Ready to Start Your Investment Journey?')}
           </h2>
           <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl mb-5 xs:mb-6 sm:mb-7 md:mb-8 text-white/90 px-3 xs:px-4">
@@ -810,7 +810,7 @@ const HomePage = () => {
             >
               <Mail className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" style={{ color: '#00BFFF' }} />
             </div>
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.newsletter_title', 'Stay Updated with Investment Insights')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-300 max-w-2xl mx-auto px-3 xs:px-4">

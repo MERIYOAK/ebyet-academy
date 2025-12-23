@@ -176,7 +176,7 @@ const BundleDetailPage: React.FC = () => {
                   {bundle.category}
                 </span>
               )}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4">
                 {bundle.title}
               </h1>
               <p className="text-gray-300 text-lg leading-relaxed mb-6">
@@ -186,7 +186,7 @@ const BundleDetailPage: React.FC = () => {
 
             {/* Included Courses Section */}
             <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-6 pb-2 sm:pb-3 flex items-center gap-2">
                 <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-cyan-400" />
                 {t('bundle_detail.included_courses', 'Included Courses')}
                 <span className="text-lg sm:text-xl text-gray-400 font-normal">
@@ -311,4 +311,8 @@ const BundleDetailPage: React.FC = () => {
 };
 
 export default BundleDetailPage;
+
+
+
+
 

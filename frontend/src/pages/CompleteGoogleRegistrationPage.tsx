@@ -113,7 +113,7 @@ const CompleteGoogleRegistrationPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">{t('google_registration.complete_registration')}</h2>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-2 sm:pb-3">{t('google_registration.complete_registration')}</h2>
             <p className="mt-2 text-gray-300">
               {t('google_registration.welcome_message', { name })}
             </p>

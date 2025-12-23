@@ -92,7 +92,7 @@ const AdminCourseViewPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Loading course details...</p>
         </div>
       </div>
@@ -103,14 +103,14 @@ const AdminCourseViewPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
-          <div className="bg-red-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <Settings className="h-8 w-8 text-red-600" />
+          <div className="bg-cyan-500/20 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <Settings className="h-8 w-8 text-cyan-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Course Not Found</h3>
-          <p className="text-red-600 mb-6">{error || 'The course you are looking for does not exist.'}</p>
+          <p className="text-orange-400 mb-6">{error || 'The course you are looking for does not exist.'}</p>
           <Link
             to="/admin/courses"
-            className="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-colors duration-200"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Courses
@@ -123,7 +123,7 @@ const AdminCourseViewPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
       {/* Enhanced Header */}
-      <div className="bg-white shadow-lg border-b border-gray-200">
+      <div className="bg-gray-800 shadow-lg border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -147,7 +147,7 @@ const AdminCourseViewPage: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
@@ -159,7 +159,7 @@ const AdminCourseViewPage: React.FC = () => {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   activeTab === tab.id
-                    ? 'border-red-500 text-red-600'
+                    ? 'border-orange-500 text-orange-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -177,7 +177,7 @@ const AdminCourseViewPage: React.FC = () => {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Course Image */}
-              <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="bg-gray-800 rounded-xl shadow-sm border overflow-hidden">
                 <div className="aspect-video bg-gray-200 relative overflow-hidden">
                   {course.thumbnailURL ? (
                     <>
@@ -235,7 +235,7 @@ const AdminCourseViewPage: React.FC = () => {
               </div>
 
               {/* Course Description */}
-              <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="bg-gray-800 rounded-xl shadow-sm border p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed">{course.description}</p>
               </div>
@@ -244,7 +244,7 @@ const AdminCourseViewPage: React.FC = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Course Stats */}
-              <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="bg-gray-800 rounded-xl shadow-sm border p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Course Statistics</h2>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -266,7 +266,7 @@ const AdminCourseViewPage: React.FC = () => {
               </div>
 
               {/* Course Details */}
-              <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="bg-gray-800 rounded-xl shadow-sm border p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Course Details</h2>
                 <div className="space-y-4">
                   <div>
@@ -302,7 +302,7 @@ const AdminCourseViewPage: React.FC = () => {
               </div>
 
               {/* Timestamps */}
-              <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="bg-gray-800 rounded-xl shadow-sm border p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Timestamps</h2>
                 <div className="space-y-4">
                   <div className="flex items-center p-3 bg-gray-50 rounded-lg">
@@ -326,8 +326,8 @@ const AdminCourseViewPage: React.FC = () => {
         )}
 
         {activeTab === 'videos' && (
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-gray-800 rounded-xl shadow-sm border">
+            <div className="p-6 border-b border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">Course Videos</h2>
@@ -343,7 +343,7 @@ const AdminCourseViewPage: React.FC = () => {
                   </Link>
                   <Link
                     to={`/admin/upload`}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-gray-800 hover:bg-gray-50 transition-colors duration-200"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Bulk Upload
@@ -393,8 +393,8 @@ const AdminCourseViewPage: React.FC = () => {
                       return (
                         <div key={videoId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                           <div className="flex items-center space-x-4">
-                            <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg">
-                              <Play className="h-6 w-6 text-red-600" />
+                            <div className="flex items-center justify-center w-12 h-12 bg-cyan-500/20 rounded-lg">
+                              <Play className="h-6 w-6 text-cyan-400" />
                             </div>
                             <div>
                               <div className="flex items-center space-x-2">
@@ -415,7 +415,7 @@ const AdminCourseViewPage: React.FC = () => {
                             {videoId && videoId !== `video-${index}` ? (
                               <Link
                                 to={`/admin/courses/${course._id}/videos/${videoId}`}
-                                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-gray-800 hover:bg-gray-50 transition-colors duration-200"
                               >
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
@@ -444,7 +444,7 @@ const AdminCourseViewPage: React.FC = () => {
                     <p className="text-gray-500 mb-6">Get started by adding your first video to this course.</p>
                     <Link
                       to={`/admin/upload`}
-                      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
+                      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 transition-colors duration-200"
                     >
                       <Plus className="h-5 w-5 mr-2" />
                       Add First Video

@@ -20,7 +20,7 @@ const CheckoutCancelPage = () => {
             <div className="bg-white bg-opacity-20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
               <XCircle className="h-16 w-16 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-white mb-4">
+            <h1 className="text-4xl font-bold text-white mb-4 pb-2 sm:pb-3 md:pb-4">
               {t('checkout_cancel.payment_cancelled')}
             </h1>
             <p className="text-xl text-red-100">

@@ -130,7 +130,7 @@ const CertificateVerificationPage = () => {
 
   const shareImage = 'https://persi-edu-platform.s3.us-east-1.amazonaws.com/persi-academy/Ig-images/congratulations.jpeg';
   const pageTitle = 'Congratulations on Your Certificate!';
-  const pageDescription = 'Celebrate your achievement with IBYET Academy. View and share your certificate now.';
+  const pageDescription = 'Celebrate your achievement with IBYET Investing. View and share your certificate now.';
   const certificateUrl = typeof window !== 'undefined' && urlCertificateId
     ? `${window.location.origin}/verify/${urlCertificateId}`
     : `${window.location.origin}/verify`;
@@ -160,7 +160,7 @@ const CertificateVerificationPage = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 xxs:w-18 xxs:h-18 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4 xxs:mb-6 shadow-lg transform hover:scale-110 transition-transform duration-300">
               <Shield className="w-8 h-8 xxs:w-9 xxs:h-9 sm:w-10 sm:h-10 text-white" />
             </div>
-                         <h1 className="text-2xl xxs:text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 xxs:mb-4 animate-fade-in-up">
+                         <h1 className="text-2xl xxs:text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 xxs:mb-4 pb-2 sm:pb-3 md:pb-4 animate-fade-in-up">
               {t('certificate_verification.page_title')}
             </h1>
             <p className="text-sm xxs:text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed px-2">

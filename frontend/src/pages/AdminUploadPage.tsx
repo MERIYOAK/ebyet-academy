@@ -467,27 +467,27 @@ const AdminUploadPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20 pb-12">
+    <div className="min-h-screen bg-gray-900 pt-20 pb-12">
       <div className={`max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 ${isLoading || progressOverlay.isVisible ? 'blur-[2px] pointer-events-none' : ''}`}>
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-red-600 to-red-700 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-700">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Upload New Course</h1>
-            <p className="text-red-100 mt-2 text-sm sm:text-base">Create and publish your educational content</p>
+            <p className="text-gray-300 mt-2 text-sm sm:text-base">Create and publish your educational content</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8" noValidate>
             {/* Error Notification */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
-                    <div className="mt-2 text-sm text-red-700">
+                    <h3 className="text-sm font-medium text-orange-300">Please fix the following errors:</h3>
+                    <div className="mt-2 text-sm text-orange-200">
                       {error.split('\n').map((line, index) => (
                         <div key={index} className="flex items-start">
                           <span className="mr-2">•</span>
@@ -499,7 +499,7 @@ const AdminUploadPage = () => {
                   <div className="ml-auto pl-3">
                     <button
                       onClick={() => setError(null)}
-                      className="inline-flex text-red-400 hover:text-red-600"
+                      className="inline-flex text-orange-400 hover:text-orange-300"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -518,7 +518,7 @@ const AdminUploadPage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Course Title *
                   </label>
                   <input
@@ -526,13 +526,13 @@ const AdminUploadPage = () => {
                     required
                     value={course.title}
                     onChange={(e) => setCourse(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     placeholder="Enter course title"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Course Description *
                   </label>
                   <textarea
@@ -540,13 +540,13 @@ const AdminUploadPage = () => {
                     rows={4}
                     value={course.description}
                     onChange={(e) => setCourse(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     placeholder="Describe what students will learn in this course"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Price (USD) *
                   </label>
                   <input
@@ -556,19 +556,19 @@ const AdminUploadPage = () => {
                     step="0.01"
                     value={course.price}
                     onChange={(e) => setCourse(prev => ({ ...prev, price: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     placeholder="99.00"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Course Category *
                   </label>
                   <select
                     value={course.category}
                     onChange={(e) => setCourse(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     required
                   >
                     <option value="">Select a category</option>
@@ -583,13 +583,13 @@ const AdminUploadPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Course Level *
                   </label>
                   <select
                     value={course.level}
                     onChange={(e) => setCourse(prev => ({ ...prev, level: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     required
                   >
                     <option value="">Select a level</option>
@@ -600,7 +600,7 @@ const AdminUploadPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Course Tags (comma-separated, max 3)
                   </label>
                   <input
@@ -621,7 +621,7 @@ const AdminUploadPage = () => {
                         setTagsInput(course.tags.join(', '));
                       }
                     }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     placeholder="e.g., beginner, advanced, javascript, react"
                   />
                   <p className="mt-1 text-sm text-gray-500">
@@ -648,7 +648,7 @@ const AdminUploadPage = () => {
 
                 {/* WhatsApp Group Settings */}
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">WhatsApp Group Settings</h3>
+                  <h3 className="text-lg font-medium text-white mb-4">WhatsApp Group Settings</h3>
                   
                   <div className="space-y-4">
                     {/* Enable WhatsApp Group */}
@@ -660,7 +660,7 @@ const AdminUploadPage = () => {
                         onChange={(e) => setCourse(prev => ({ ...prev, hasWhatsappGroup: e.target.checked }))}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <label htmlFor="hasWhatsappGroup" className="ml-2 block text-sm text-gray-900">
+                      <label htmlFor="hasWhatsappGroup" className="ml-2 block text-sm text-white">
                         Enable WhatsApp Group for this course
                       </label>
                     </div>
@@ -668,7 +668,7 @@ const AdminUploadPage = () => {
                     {/* WhatsApp Group Link */}
                     {course.hasWhatsappGroup && (
                       <div>
-                        <label htmlFor="whatsappGroupLink" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="whatsappGroupLink" className="block text-sm font-medium text-gray-300 mb-2">
                           WhatsApp Group Link *
                         </label>
                         <input
@@ -677,7 +677,7 @@ const AdminUploadPage = () => {
                           value={course.whatsappGroupLink || ''}
                           onChange={(e) => setCourse(prev => ({ ...prev, whatsappGroupLink: e.target.value }))}
                           required={course.hasWhatsappGroup}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                           placeholder="https://chat.whatsapp.com/your-group-link"
                         />
                         <p className="mt-1 text-sm text-gray-500">
@@ -711,7 +711,7 @@ const AdminUploadPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Course Thumbnail *
                   </label>
                   <div className="relative">
@@ -724,7 +724,7 @@ const AdminUploadPage = () => {
                     />
                     <label
                       htmlFor="thumbnail-upload"
-                      className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-400 transition-colors duration-200 cursor-pointer"
+                      className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer"
                     >
                       <Upload className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-gray-600">
@@ -763,7 +763,7 @@ const AdminUploadPage = () => {
                 <button
                   type="button"
                   onClick={addVideo}
-                  className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-colors duration-200"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add Video</span>
@@ -778,7 +778,7 @@ const AdminUploadPage = () => {
               )}
 
               {course.videos.map((video, index) => (
-                <div key={video.id} className="bg-gray-50 rounded-lg p-6 space-y-4">
+                <div key={video.id} className="bg-gray-900 rounded-lg p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800">
                       Video {index + 1}
@@ -786,14 +786,14 @@ const AdminUploadPage = () => {
                     <button
                       type="button"
                       onClick={() => removeVideo(video.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                      className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
                     >
                       <X className="h-5 w-5" />
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Video Title *
                     </label>
                     <input
@@ -801,33 +801,33 @@ const AdminUploadPage = () => {
                       required
                       value={video.title}
                       onChange={(e) => updateVideo(video.id, { title: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                       placeholder="Enter video title"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Lesson Description
                     </label>
                     <textarea
                       value={video.description}
                       onChange={(e) => updateVideo(video.id, { description: e.target.value })}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                       placeholder="Describe what this lesson covers..."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Video Duration (MM:SS)
                     </label>
                     <input
                       type="text"
                       value={video.duration || ''}
                       onChange={(e) => updateVideo(video.id, { duration: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                       placeholder="e.g., 5:30 or 1:25:45"
                       pattern="^(\d{1,2}:)?[0-5]?\d:[0-5]\d$"
                       title="Format: MM:SS or HH:MM:SS (e.g., 5:30 or 1:25:45)"
@@ -838,7 +838,7 @@ const AdminUploadPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Video File *
                     </label>
                     <div className="relative">
@@ -851,7 +851,7 @@ const AdminUploadPage = () => {
                       />
                       <label
                         htmlFor={`video-upload-${video.id}`}
-                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-400 transition-colors duration-200 cursor-pointer"
+                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer"
                       >
                         <Upload className="h-5 w-5 text-gray-400 mr-2" />
                         <span className="text-gray-600">
@@ -869,10 +869,10 @@ const AdminUploadPage = () => {
                         id={`free-preview-${video.id}`}
                         checked={video.isFreePreview || false}
                         onChange={(e) => updateVideo(video.id, { isFreePreview: e.target.checked })}
-                        className="h-5 w-5 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                        className="h-5 w-5 text-cyan-400 focus:ring-cyan-500 border-gray-700 rounded"
                       />
                       <div>
-                        <label htmlFor={`free-preview-${video.id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                        <label htmlFor={`free-preview-${video.id}`} className="text-sm font-medium text-gray-300 cursor-pointer">
                           Free Preview Lesson
                         </label>
                         <p className="text-xs text-gray-500 mt-1">
@@ -895,7 +895,7 @@ const AdminUploadPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-8 py-3 rounded-lg hover:from-cyan-500 hover:to-blue-500 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">

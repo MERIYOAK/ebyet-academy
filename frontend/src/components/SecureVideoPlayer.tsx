@@ -360,7 +360,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
       container?.appendChild(dynamicWatermark);
 
-      // Add IBYET ACADEMY watermark
+      // Add IBYET INVESTING watermark
       const academyWatermark = document.createElement('div');
       academyWatermark.id = 'academy-watermark';
       academyWatermark.style.cssText = `
@@ -376,7 +376,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         user-select: none;
       `;
-      academyWatermark.textContent = 'IBYET ACADEMY';
+      academyWatermark.textContent = 'IBYET INVESTING';
       container?.appendChild(academyWatermark);
 
       // Update watermark every second

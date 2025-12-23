@@ -472,9 +472,9 @@ const AdminCourseEditPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading course...</p>
         </div>
       </div>
@@ -483,12 +483,12 @@ const AdminCourseEditPage: React.FC = () => {
 
   if (error && !course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-orange-400 mb-4">{error}</p>
           <Link
             to="/admin/courses"
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500"
           >
             Back to Courses
           </Link>
@@ -498,7 +498,7 @@ const AdminCourseEditPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-900 pt-16">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6">
@@ -506,21 +506,21 @@ const AdminCourseEditPage: React.FC = () => {
             <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               <Link
                 to={`/admin/courses/${courseId}`}
-                className="inline-flex items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base"
+                className="inline-flex items-center text-gray-600 hover:text-white text-sm sm:text-base"
               >
                 <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Back to Course</span>
                 <span className="sm:hidden">Back</span>
               </Link>
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Edit Course</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Edit Course</h1>
                 <p className="text-sm sm:text-base text-gray-600 truncate max-w-full">{course?.title}</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
               <button
                 onClick={() => navigate(`/admin/courses/${courseId}`)}
-                className="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-900"
               >
                 <X className="h-4 w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Cancel</span>
@@ -555,14 +555,14 @@ const AdminCourseEditPage: React.FC = () => {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
                 <div className="flex items-center">
-                  <svg className="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-5 w-5 text-orange-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
-                    <div className="mt-1 text-sm text-red-700">
+                    <h3 className="text-sm font-medium text-orange-300">Please fix the following errors:</h3>
+                    <div className="mt-1 text-sm text-orange-200">
                       {error.split('\n').map((line, index) => (
                         <div key={index} className="flex items-start">
                           <span className="mr-2">•</span>
@@ -573,7 +573,7 @@ const AdminCourseEditPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setError(null)}
-                    className="text-red-400 hover:text-red-600"
+                    className="text-orange-400 hover:text-orange-300"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -584,7 +584,7 @@ const AdminCourseEditPage: React.FC = () => {
             {/* Course Information Form */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Course Information</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">Course Information</h2>
                 
                 <form className="space-y-4 sm:space-y-6">
                   {/* Title */}
@@ -743,7 +743,7 @@ const AdminCourseEditPage: React.FC = () => {
 
                   {/* WhatsApp Group Settings */}
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">WhatsApp Group Settings</h3>
+                    <h3 className="text-lg font-medium text-white mb-4">WhatsApp Group Settings</h3>
                     
                     <div className="space-y-4">
                       {/* Enable WhatsApp Group */}
@@ -756,7 +756,7 @@ const AdminCourseEditPage: React.FC = () => {
                           onChange={handleInputChange}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
-                        <label htmlFor="hasWhatsappGroup" className="ml-2 block text-sm text-gray-900">
+                        <label htmlFor="hasWhatsappGroup" className="ml-2 block text-sm text-white">
                           Enable WhatsApp Group for this course
                         </label>
                       </div>
@@ -813,7 +813,7 @@ const AdminCourseEditPage: React.FC = () => {
             {/* Thumbnail Upload */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Course Thumbnail</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6">Course Thumbnail</h2>
                 
                 <div className="space-y-4">
                   {/* Current Thumbnail */}
@@ -847,7 +847,7 @@ const AdminCourseEditPage: React.FC = () => {
                       />
                       <label
                         htmlFor="thumbnail-upload"
-                        className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 cursor-pointer w-full sm:w-auto justify-center"
+                        className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-900 cursor-pointer w-full sm:w-auto justify-center"
                       >
                         <Upload className="h-4 w-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">Choose Image</span>
@@ -911,7 +911,7 @@ const AdminCourseEditPage: React.FC = () => {
                               <button
                                 onClick={() => restoreThumbnail(thumbnailURL)}
                                 disabled={uploadingThumbnail}
-                                className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-900 disabled:opacity-50"
                               >
                                 Restore
                               </button>
@@ -929,7 +929,7 @@ const AdminCourseEditPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
-                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Course Videos</h2>
+                  <h2 className="text-base sm:text-lg font-semibold text-white">Course Videos</h2>
                   <Link
                     to={`/admin/courses/${courseId}/videos`}
                     className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
@@ -951,12 +951,12 @@ const AdminCourseEditPage: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-gray-900 truncate">{video.title}</h3>
+                            <h3 className="text-sm font-medium text-white truncate">{video.title}</h3>
                             <p className="text-xs text-gray-500">
                               Duration: {video.duration} • Order: {video.order || index + 1}
                             </p>
                             {video.description && (
-                              <p className="text-xs text-gray-600 mt-1 bg-gray-50 p-1 rounded truncate">
+                              <p className="text-xs text-gray-600 mt-1 bg-gray-900 p-1 rounded truncate">
                                 <strong>Description:</strong> {video.description}
                               </p>
                             )}
@@ -966,7 +966,7 @@ const AdminCourseEditPage: React.FC = () => {
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             video.status === 'active' ? 'bg-green-100 text-green-800' :
                             video.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
+                            'bg-orange-500/20 text-orange-300'
                           }`}>
                             {video.status}
                           </span>
@@ -977,7 +977,7 @@ const AdminCourseEditPage: React.FC = () => {
                 ) : (
                   <div className="text-center py-6 sm:py-8">
                     <Video className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No videos yet</h3>
+                    <h3 className="text-base sm:text-lg font-medium text-white mb-2">No videos yet</h3>
                     <p className="text-sm sm:text-base text-gray-500 mb-3 sm:mb-4">Add videos to your course to get started.</p>
                     <Link
                       to={`/admin/courses/${courseId}/videos`}
@@ -998,7 +998,7 @@ const AdminCourseEditPage: React.FC = () => {
             {/* Course Stats */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Course Statistics</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Course Statistics</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Version:</span>
@@ -1020,7 +1020,7 @@ const AdminCourseEditPage: React.FC = () => {
             {/* Course Details */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Course Details</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Course Details</h3>
                 <div className="space-y-3">
                   <div>
                     <span className="text-sm text-gray-600">Created by:</span>
@@ -1045,18 +1045,18 @@ const AdminCourseEditPage: React.FC = () => {
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Quick Actions</h3>
                 <div className="space-y-3">
                   <Link
                     to={`/admin/courses/${courseId}/videos`}
-                    className="inline-flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg"
+                    className="inline-flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-900 hover:bg-gray-100 rounded-lg"
                   >
                     <Video className="h-4 w-4 mr-2" />
                     Manage Videos
                   </Link>
                   <Link
                     to={`/admin/courses/${courseId}`}
-                    className="inline-flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg"
+                    className="inline-flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-900 hover:bg-gray-100 rounded-lg"
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View Course

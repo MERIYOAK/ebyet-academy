@@ -7,7 +7,7 @@ export const config = {
   FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173',
   
   // App Configuration
-  APP_NAME: import.meta.env.VITE_APP_NAME || 'IBYET Academy',
+  APP_NAME: import.meta.env.VITE_APP_NAME || 'IBYET Investing',
   APP_DESCRIPTION: import.meta.env.VITE_APP_DESCRIPTION || 'Professional Skills Development',
   
   // Contact Information

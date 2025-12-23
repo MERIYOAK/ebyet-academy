@@ -230,9 +230,9 @@ const AdminUsersPage: React.FC = () => {
 
   if (loading && users.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-red-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-cyan-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 text-sm xxs:text-base">Loading users...</p>
         </div>
       </div>
@@ -241,12 +241,12 @@ const AdminUsersPage: React.FC = () => {
 
   if (error && users.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center px-4">
-          <p className="text-red-600 mb-4 text-sm xxs:text-base">{error}</p>
+          <p className="text-orange-400 mb-4 text-sm xxs:text-base">{error}</p>
           <button 
             onClick={() => fetchUsers(1)}
-            className="bg-red-600 text-white px-3 xxs:px-4 py-2 rounded-lg hover:bg-red-700 text-sm xxs:text-base"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-3 xxs:px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500 text-sm xxs:text-base"
           >
             Retry
           </button>
@@ -256,19 +256,19 @@ const AdminUsersPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-900 pt-16">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-gray-800 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 xxs:py-6">
           <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-4 xxs:space-y-0">
             <div>
-              <h1 className="text-2xl xxs:text-3xl font-bold text-gray-900">User Management</h1>
+              <h1 className="text-2xl xxs:text-3xl font-bold text-white">User Management</h1>
               <p className="mt-2 text-gray-600 text-sm xxs:text-base">Manage all registered users, view profiles, and control access</p>
             </div>
             <div className="flex space-x-2 xxs:space-x-3">
               <Link
                 to="/admin/dashboard"
-                className="inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
               >
                 <ArrowLeft className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1 xxs:mr-2" />
                 Back to Dashboard
@@ -280,15 +280,15 @@ const AdminUsersPage: React.FC = () => {
 
       {/* Enhanced Filters and Search */}
       <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 xxs:py-6">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
           {/* Filter Header */}
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 px-3 xxs:px-4 sm:px-6 py-3 xxs:py-4 border-b border-gray-100">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-3 xxs:px-4 sm:px-6 py-3 xxs:py-4 border-b border-gray-700">
             <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-3 xxs:space-y-0">
               <div className="flex items-center space-x-2 xxs:space-x-3">
-                <Filter className="h-4 w-4 xxs:h-5 xxs:w-5 text-red-600" />
-                <h3 className="text-base xxs:text-lg font-semibold text-gray-900">User Management</h3>
+                <Filter className="h-4 w-4 xxs:h-5 xxs:w-5 text-cyan-400" />
+                <h3 className="text-base xxs:text-lg font-semibold text-white">User Management</h3>
                 {(searchTerm || statusFilter !== 'all') && (
-                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  <span className="bg-cyan-500/20 text-cyan-300 text-xs font-medium px-2 py-0.5 rounded-full">
                     Filtered
                   </span>
                 )}
@@ -297,7 +297,7 @@ const AdminUsersPage: React.FC = () => {
                 {(searchTerm || statusFilter !== 'all') && (
                   <button
                     onClick={handleClearFilters}
-                    className="flex items-center space-x-1 xxs:space-x-2 px-2 xxs:px-3 py-1 xxs:py-1.5 text-xs xxs:text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    className="flex items-center space-x-1 xxs:space-x-2 px-2 xxs:px-3 py-1 xxs:py-1.5 text-xs xxs:text-sm text-gray-400 hover:text-cyan-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
                   >
                     <X className="h-3 w-3 xxs:h-4 xxs:w-4" />
                     <span>Clear filters</span>
@@ -312,7 +312,7 @@ const AdminUsersPage: React.FC = () => {
             <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 xxs:gap-4 sm:gap-6">
               {/* Search */}
               <div className="xxs:col-span-1 sm:col-span-2 space-y-2">
-                <label className="block text-xs xxs:text-sm font-semibold text-gray-700">
+                <label className="block text-xs xxs:text-sm font-semibold text-gray-300">
                   Search Users
                 </label>
                 <div className="relative">
@@ -324,7 +324,7 @@ const AdminUsersPage: React.FC = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-200 text-sm xxs:text-base"
+                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base bg-gray-900/80 text-white"
                     placeholder="Search by name or email..."
                   />
                   {searchTerm && (
@@ -341,14 +341,14 @@ const AdminUsersPage: React.FC = () => {
 
               {/* Status Filter */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
+                <label className="block text-sm font-semibold text-gray-300">
                   Status
                 </label>
                 <div className="relative">
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-200 appearance-none bg-white"
+                    className="w-full px-4 py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-800"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -364,7 +364,7 @@ const AdminUsersPage: React.FC = () => {
 
               {/* Sort */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
+                <label className="block text-sm font-semibold text-gray-300">
                   Sort By
                 </label>
                 <div className="relative">
@@ -375,7 +375,7 @@ const AdminUsersPage: React.FC = () => {
                       setSortBy(field);
                       setSortOrder(order as 'asc' | 'desc');
                     }}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-200 appearance-none bg-white"
+                    className="w-full px-4 py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-800"
                   >
                     <option value="createdAt-desc">Newest First</option>
                     <option value="createdAt-asc">Oldest First</option>
@@ -399,7 +399,7 @@ const AdminUsersPage: React.FC = () => {
             <div className="mt-6">
               <button
                 onClick={handleSearch}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-200"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Search Users
@@ -410,7 +410,7 @@ const AdminUsersPage: React.FC = () => {
             <div className="mt-6 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-600">
-                  <span className="font-semibold text-gray-900">{pagination?.totalUsers || 0}</span> total users
+                  <span className="font-semibold text-white">{pagination?.totalUsers || 0}</span> total users
                   {pagination && (
                     <span className="ml-2">
                       (Page {pagination.currentPage} of {pagination.totalPages})
@@ -422,7 +422,7 @@ const AdminUsersPage: React.FC = () => {
                     <span className="text-sm text-gray-500">Filtered by:</span>
                     <div className="flex flex-wrap gap-2">
                       {searchTerm && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/20 text-orange-300">
                           "{searchTerm}"
                         </span>
                       )}
@@ -444,10 +444,10 @@ const AdminUsersPage: React.FC = () => {
           {users.length > 0 ? (
             <>
               {/* Desktop Table */}
-              <div className="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="hidden md:block bg-gray-800 rounded-xl shadow-sm border overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-900">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         User
@@ -469,9 +469,9 @@ const AdminUsersPage: React.FC = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-gray-800 divide-y divide-gray-200">
                     {users.map((user) => (
-                      <tr key={user._id} className="hover:bg-gray-50 transition-colors duration-200">
+                      <tr key={user._id} className="hover:bg-gray-900 transition-colors duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -488,7 +488,7 @@ const AdminUsersPage: React.FC = () => {
                               )}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                              <div className="text-sm font-medium text-white">{user.name}</div>
                               <div className="text-sm text-gray-500 flex items-center">
                                 <Mail className="h-3 w-3 mr-1" />
                                 {user.email}
@@ -501,12 +501,12 @@ const AdminUsersPage: React.FC = () => {
                             {user.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                           <div className="max-w-32 truncate" title={user.phoneNumber || 'N/A'}>
                             {user.phoneNumber || 'N/A'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                           {user.purchasedCourses?.length || 0} courses
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -553,7 +553,7 @@ const AdminUsersPage: React.FC = () => {
               {/* Mobile Cards */}
               <div className="md:hidden space-y-3 xxs:space-y-4">
                 {users.map((user) => (
-                  <div key={user._id} className="bg-white rounded-lg shadow-sm border p-3 xxs:p-4">
+                  <div key={user._id} className="bg-gray-800 rounded-lg shadow-sm border p-3 xxs:p-4">
                     <div className="flex items-start space-x-3 xxs:space-x-4">
                       <div className="flex-shrink-0 h-10 w-10 xxs:h-12 xxs:w-12">
                         {user.profilePicture ? (
@@ -570,7 +570,7 @@ const AdminUsersPage: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-sm xxs:text-base font-medium text-gray-900 truncate">{user.name}</h3>
+                          <h3 className="text-sm xxs:text-base font-medium text-white truncate">{user.name}</h3>
                           <div className="flex items-center space-x-1 xxs:space-x-2">
                             {user.role !== 'admin' && user.status === 'active' && (
                               <button
@@ -629,7 +629,7 @@ const AdminUsersPage: React.FC = () => {
               <div className="mx-auto h-10 w-10 xxs:h-12 xxs:w-12 text-gray-400">
                 <Users className="h-10 w-10 xxs:h-12 xxs:w-12" />
               </div>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+              <h3 className="mt-2 text-sm font-medium text-white">No users found</h3>
               <p className="mt-1 text-xs xxs:text-sm text-gray-500">
                 {searchTerm || statusFilter !== 'all' 
                   ? 'Try adjusting your search or filter criteria.'
@@ -647,21 +647,21 @@ const AdminUsersPage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={!pagination.hasPrevPage}
-                className="relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={!pagination.hasNextPage}
-                className="ml-2 xxs:ml-3 relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ml-2 xxs:ml-3 relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
             </div>
             <div className="hidden md:flex-1 md:flex md:items-center md:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-300">
                   Showing{' '}
                   <span className="font-medium">{(currentPage - 1) * limit + 1}</span>
                   {' '}to{' '}
@@ -678,7 +678,7 @@ const AdminUsersPage: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={!pagination.hasPrevPage}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-800 text-sm font-medium text-gray-500 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -692,8 +692,8 @@ const AdminUsersPage: React.FC = () => {
                         onClick={() => handlePageChange(pageNum)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                           pageNum === currentPage
-                            ? 'z-10 bg-red-50 border-red-500 text-red-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            ? 'z-10 bg-orange-500/20 border-orange-500 text-orange-400'
+                            : 'bg-gray-800 border-gray-300 text-gray-500 hover:bg-gray-900'
                         }`}
                       >
                         {pageNum}
@@ -704,7 +704,7 @@ const AdminUsersPage: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={!pagination.hasNextPage}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-800 text-sm font-medium text-gray-500 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>

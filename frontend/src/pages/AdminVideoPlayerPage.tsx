@@ -506,7 +506,7 @@ const AdminVideoPlayerPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p>Loading video...</p>
         </div>
       </div>
@@ -521,7 +521,7 @@ const AdminVideoPlayerPage = () => {
           <p className="text-gray-400 mb-6">{error || 'The video you are looking for does not exist.'}</p>
           <Link
             to="/admin/courses"
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-colors duration-200"
           >
             Back to Admin Courses
           </Link>
@@ -704,7 +704,7 @@ const AdminVideoPlayerPage = () => {
                         title="Click to seek"
                       >
                         <div 
-                          className="bg-red-600 h-1.5 sm:h-2 rounded-full transition-all duration-200 relative"
+                          className="bg-gradient-to-r from-cyan-600 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-200 relative"
                           style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
                         />
                         <div className="absolute inset-0 rounded-full hover:bg-gray-500 transition-colors duration-200"></div>
@@ -737,7 +737,7 @@ const AdminVideoPlayerPage = () => {
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <button
                       onClick={handleManualPlayClick}
-                      className="bg-red-600 hover:bg-red-700 text-white p-3 sm:p-4 rounded-full shadow-lg transition-all duration-200 pointer-events-auto transform hover:scale-110"
+                      className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white p-3 sm:p-4 rounded-full shadow-lg transition-all duration-200 pointer-events-auto transform hover:scale-110"
                       title="Click to play"
                     >
                       <Play className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -749,7 +749,7 @@ const AdminVideoPlayerPage = () => {
                 {!playerReady && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="text-center text-white px-4">
-                      <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-red-500 mx-auto mb-2 sm:mb-4"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-cyan-500 mx-auto mb-2 sm:mb-4"></div>
                       <p className="text-sm sm:text-base">Loading Video Player...</p>
                     </div>
                   </div>
@@ -802,15 +802,15 @@ const AdminVideoPlayerPage = () => {
             {/* Error overlay */}
             {error && (
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75">
-                <div className="bg-red-900 border border-red-600 rounded-lg p-4 sm:p-6 max-w-lg mx-4 text-center">
-                  <div className="text-red-400 text-3xl sm:text-4xl mb-2 sm:mb-4">⚠️</div>
+                <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4 sm:p-6 max-w-lg mx-4 text-center">
+                  <div className="text-orange-400 text-3xl sm:text-4xl mb-2 sm:mb-4">⚠️</div>
                   <h3 className="text-white text-base sm:text-lg font-semibold mb-2">Video Playback Error</h3>
-                  <p className="text-red-200 text-xs sm:text-sm mb-4">{error}</p>
+                  <p className="text-orange-200 text-xs sm:text-sm mb-4">{error}</p>
                   
                   <div className="flex flex-col space-y-2">
                     <button
                       onClick={() => setError(null)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded transition-colors duration-200 text-sm"
+                      className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 sm:px-4 py-2 rounded transition-colors duration-200 text-sm"
                     >
                       Dismiss
                     </button>
@@ -872,7 +872,7 @@ const AdminVideoPlayerPage = () => {
                     <select
                       value={playbackRate}
                       onChange={(e) => handlePlaybackRateChange(Number(e.target.value))}
-                      className="bg-gray-700 text-white rounded px-2 sm:px-3 py-1 border border-gray-600 focus:outline-none focus:border-red-500 text-xs sm:text-sm"
+                      className="bg-gray-700 text-white rounded px-2 sm:px-3 py-1 border border-gray-600 focus:outline-none focus:border-cyan-500 text-xs sm:text-sm"
                     >
                       <option value={0.5}>0.5x</option>
                       <option value={0.75}>0.75x</option>
@@ -935,7 +935,7 @@ const AdminVideoPlayerPage = () => {
                       return !nextVideo;
                     })()
                   }
-                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-200 text-sm"
+                  className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-200 text-sm"
                 >
                   Next Video
                 </button>
@@ -965,7 +965,7 @@ const AdminVideoPlayerPage = () => {
                     key={video.id}
                     className={`p-2 sm:p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
                       video.id === currentVideoId
-                        ? 'bg-red-100 border border-red-300'
+                        ? 'bg-cyan-500/20 border border-cyan-500/30'
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                     onClick={() => handleVideoSelect(video.id)}
@@ -981,7 +981,7 @@ const AdminVideoPlayerPage = () => {
                       </div>
                       {video.id === currentVideoId && (
                         <div className="ml-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                         </div>
                       )}
                     </div>
@@ -1013,7 +1013,7 @@ const AdminVideoPlayerPage = () => {
                     key={video.id}
                     className={`p-2 sm:p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
                       video.id === currentVideoId
-                        ? 'bg-red-100 border border-red-300'
+                        ? 'bg-cyan-500/20 border border-cyan-500/30'
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                     onClick={() => {
@@ -1032,7 +1032,7 @@ const AdminVideoPlayerPage = () => {
                       </div>
                       {video.id === currentVideoId && (
                         <div className="ml-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                         </div>
                       )}
                     </div>

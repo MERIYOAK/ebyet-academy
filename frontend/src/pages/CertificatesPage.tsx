@@ -313,7 +313,7 @@ const CertificatesPage = () => {
               <Award className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl xxs:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">{t('certificates.my_certificates')}</h1>
+              <h1 className="text-2xl xxs:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-1 sm:pb-2">{t('certificates.my_certificates')}</h1>
               <p className="mt-1 text-gray-300 text-sm xxs:text-base">
                 {t('certificates.congratulations')}
               </p>

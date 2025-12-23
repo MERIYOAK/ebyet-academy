@@ -384,7 +384,7 @@
     "more_tags": "more",
     "lessons": "lessons",
     "students": "students",
-    "by_instructor": "by IBYET Academy",
+    "by_instructor": "by IBYET Investing",
     "thumbnail_placeholder": "Course Thumbnail",
     "error": "Error",
     "bestseller": "Bestseller"
@@ -536,7 +536,7 @@
     "share_text": "I just completed the course \"{{courseTitle}}\"! View my certificate here:"
   },
   "brand": {
-    "name": "IBYET Academy"
+    "name": "IBYET Investing"
   },
   "cookie": {
     "banner_message": "We use cookies to enhance your experience. Do you accept?",

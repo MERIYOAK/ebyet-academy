@@ -28,9 +28,9 @@ const Toast: React.FC<ToastProps> = ({
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-5 w-5 text-green-400" />;
       case 'error':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return <XCircle className="h-5 w-5 text-orange-400" />;
       default:
         return null;
     }
@@ -39,11 +39,11 @@ const Toast: React.FC<ToastProps> = ({
   const getStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
+        return 'bg-green-500/10 border-green-500/30 text-green-300';
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-orange-500/10 border-orange-500/30 text-orange-300';
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-800';
+        return 'bg-gray-800 border-gray-700 text-gray-300';
     }
   };
 
@@ -67,7 +67,7 @@ const Toast: React.FC<ToastProps> = ({
                 setIsVisible(false);
                 setTimeout(onClose, 300);
               }}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-300 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>

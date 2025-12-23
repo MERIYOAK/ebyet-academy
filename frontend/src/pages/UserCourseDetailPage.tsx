@@ -138,7 +138,7 @@ const UserCourseDetailPage: React.FC = () => {
                   <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold border border-blue-100">{course.level}</span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-3">{course.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-3 pb-2 sm:pb-3">{course.title}</h1>
               <p className="text-gray-600 leading-relaxed mb-6">{course.description}</p>
               <div className="flex flex-wrap items-center gap-6">
                 <div className="flex items-center space-x-2 text-gray-700">

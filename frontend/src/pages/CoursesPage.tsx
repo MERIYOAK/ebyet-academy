@@ -591,7 +591,7 @@ const CoursesPage: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-white pt-16 sm:pt-20 md:pt-24 pb-6 sm:pb-8 md:pb-12">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="text-center mb-6 sm:mb-8 md:mb-12">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 pb-2 sm:pb-3 md:pb-4">
             {t('courses.page_title_all')}
           </h1>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300">

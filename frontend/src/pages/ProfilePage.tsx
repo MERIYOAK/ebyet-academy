@@ -545,7 +545,7 @@ const ProfilePage = () => {
               <span className="font-medium">{t('profile.back_to_dashboard')}</span>
             </button>
           </div>
-          <h1 className="text-xl xxs:text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mt-3 xxs:mt-4 sm:mt-6 mb-2">{t('profile.title')}</h1>
+          <h1 className="text-xl xxs:text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mt-3 xxs:mt-4 sm:mt-6 mb-2 pb-1 sm:pb-2 md:pb-3">{t('profile.title')}</h1>
           <p className="text-gray-300 text-sm xxs:text-base sm:text-lg">{t('profile.subtitle')}</p>
         </div>
       </div>

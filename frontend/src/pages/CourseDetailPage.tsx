@@ -369,7 +369,7 @@ const CourseDetailPage = () => {
   // Handle window resize for playlist visibility
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) { // md breakpoint - desktop
+      if (window.innerWidth >= 1024) { // lg breakpoint - desktop
         setShowPlaylist(true); // Always show on desktop
       } else {
         setShowPlaylist(false); // Hide on mobile by default
@@ -863,7 +863,7 @@ const CourseDetailPage = () => {
 
             {/* Course Header Info */}
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4 leading-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                 {course.title}
               </h1>
               
@@ -891,7 +891,7 @@ const CourseDetailPage = () => {
 
               {/* Tags */}
               {course.tags && course.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {course.tags.map((tag, index) => (
                     <span
                       key={index}
@@ -902,6 +902,39 @@ const CourseDetailPage = () => {
                   ))}
                 </div>
               )}
+
+              {/* Buy Button - Show if course is not purchased */}
+              {(!purchaseStatus?.hasPurchased && !courseData?.userHasPurchased) && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4 border-t border-gray-700">
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-bold text-white">
+                        ${course.price?.toFixed(2) || '0.00'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {t('course_detail.lifetime_access', 'Lifetime access')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handlePurchase}
+                    disabled={isPurchasing}
+                    className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  >
+                    {isPurchasing ? (
+                      <>
+                        <Loader className="h-5 w-5 animate-spin" />
+                        <span>{t('checkout_success.processing', 'Processing...')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-5 w-5" />
+                        <span>{t('course_detail.purchase_course')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -910,7 +943,7 @@ const CourseDetailPage = () => {
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column - Main Content */}
+          {/* Left Column - Video Player */}
           <div className="lg:col-span-8 space-y-8">
             {/* Video Player Section */}
             {(!courseData || courseData.videos.length === 0) ? (
@@ -1085,8 +1118,63 @@ const CourseDetailPage = () => {
                       className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-800 flex-shrink-0"
                     >
                       <BookOpen className="h-5 w-5" />
-                      <span className="hidden sm:inline text-sm">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
+                      <span className="text-sm">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Playlist Popup - Above video on mobile */}
+            {showPlaylist && courseData && courseData.videos.length > 0 && (
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="lg:hidden fixed inset-0 bg-black/60 z-40"
+                  onClick={() => setShowPlaylist(false)}
+                />
+                {/* Playlist Popup */}
+                <div className="lg:hidden fixed inset-x-4 top-24 z-50 bg-gray-800 rounded-xl border border-gray-700 shadow-2xl max-h-[70vh] overflow-hidden">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-900">
+                    <h3 className="text-lg font-semibold text-white">{t('course_detail.course_curriculum', 'Course Curriculum')}</h3>
+                    <button
+                      onClick={() => setShowPlaylist(false)}
+                      className="text-gray-400 hover:text-white transition-colors p-1"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto max-h-[calc(70vh-80px)]">
+                    <VideoPlaylist
+                      videos={courseData.videos}
+                      currentVideoId={currentVideoId}
+                      onVideoSelect={(videoId) => {
+                        setCurrentVideoId(videoId);
+                        setShowPlaylist(false); // Close on mobile after selection
+                      }}
+                      courseProgress={courseData.courseProgress}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Right Column - Playlist Sidebar (Desktop) */}
+          <div className="hidden lg:block lg:col-span-4">
+            {courseData && courseData.videos.length > 0 && showPlaylist && (
+              <div className="sticky top-24">
+                <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+                  <div className="p-4 border-b border-gray-700">
+                    <h3 className="text-lg font-semibold text-white">{t('course_detail.course_curriculum', 'Course Curriculum')}</h3>
+                  </div>
+                  <div className="max-h-[calc(100vh-150px)] overflow-y-auto">
+                    <VideoPlaylist
+                      videos={courseData.videos}
+                      currentVideoId={currentVideoId}
+                      onVideoSelect={setCurrentVideoId}
+                      courseProgress={courseData.courseProgress}
+                    />
                   </div>
                 </div>
               </div>

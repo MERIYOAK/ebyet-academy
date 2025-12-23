@@ -166,10 +166,10 @@ const AdminCoursesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-sm xxs:text-base">Loading courses...</p>
+          <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-cyan-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400 text-sm xxs:text-base">Loading courses...</p>
         </div>
       </div>
     );
@@ -177,12 +177,12 @@ const AdminCoursesPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center px-4">
-          <p className="text-red-600 mb-4 text-sm xxs:text-base">{error}</p>
+          <p className="text-cyan-400 mb-4 text-sm xxs:text-base">{error}</p>
           <button 
             onClick={fetchCourses}
-            className="bg-red-600 text-white px-3 xxs:px-4 py-2 rounded-lg hover:bg-red-700 text-sm xxs:text-base"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-3 xxs:px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500 text-sm xxs:text-base"
           >
             Retry
           </button>
@@ -192,19 +192,19 @@ const AdminCoursesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-900 pt-16">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-gray-900/80 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 xxs:py-6">
           <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-4 xxs:space-y-0">
             <div>
-              <h1 className="text-2xl xxs:text-3xl font-bold text-gray-900">Course Management</h1>
-              <p className="mt-2 text-gray-600 text-sm xxs:text-base">Manage all your courses, upload new content, and track performance</p>
+              <h1 className="text-2xl xxs:text-3xl font-bold text-white">Course Management</h1>
+              <p className="mt-2 text-gray-400 text-sm xxs:text-base">Manage all your courses, upload new content, and track performance</p>
             </div>
             <div className="flex space-x-2 xxs:space-x-3">
               <Link
                 to="/admin/upload"
-                className="inline-flex items-center px-3 xxs:px-4 py-2 border border-transparent text-xs xxs:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="inline-flex items-center px-3 xxs:px-4 py-2 border border-transparent text-xs xxs:text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
               >
                 <Upload className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1 xxs:mr-2" />
                 Upload Course
@@ -216,15 +216,15 @@ const AdminCoursesPage: React.FC = () => {
 
       {/* Enhanced Filters and Search */}
       <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 xxs:py-6">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-gray-900/80 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
           {/* Filter Header */}
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 px-3 xxs:px-4 sm:px-6 py-3 xxs:py-4 border-b border-gray-100">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-3 xxs:px-4 sm:px-6 py-3 xxs:py-4 border-b border-gray-700">
             <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-3 xxs:space-y-0">
               <div className="flex items-center space-x-2 xxs:space-x-3">
-                <Filter className="h-4 w-4 xxs:h-5 xxs:w-5 text-red-600" />
-                <h3 className="text-base xxs:text-lg font-semibold text-gray-900">Course Management</h3>
+                <Filter className="h-4 w-4 xxs:h-5 xxs:w-5 text-cyan-400" />
+                <h3 className="text-base xxs:text-lg font-semibold text-white">Course Management</h3>
                 {(searchTerm || statusFilter !== 'all') && (
-                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  <span className="bg-cyan-500/20 text-cyan-300 text-xs font-medium px-2 py-0.5 rounded-full">
                     Filtered
                   </span>
                 )}
@@ -236,7 +236,7 @@ const AdminCoursesPage: React.FC = () => {
                       handleSearchChange('');
                       handleStatusFilterChange('all');
                     }}
-                    className="flex items-center space-x-1 xxs:space-x-2 px-2 xxs:px-3 py-1 xxs:py-1.5 text-xs xxs:text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    className="flex items-center space-x-1 xxs:space-x-2 px-2 xxs:px-3 py-1 xxs:py-1.5 text-xs xxs:text-sm text-gray-400 hover:text-cyan-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
                   >
                     <X className="h-3 w-3 xxs:h-4 xxs:w-4" />
                     <span>Clear filters</span>
@@ -262,13 +262,13 @@ const AdminCoursesPage: React.FC = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-200 text-sm xxs:text-base"
+                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base"
                     placeholder="Search by title or description..."
                   />
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
-                      className="absolute inset-y-0 right-0 pr-3 xxs:pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 xxs:pr-4 flex items-center text-gray-400 hover:text-gray-400 transition-colors"
                     >
                       <X className="h-3 w-3 xxs:h-4 xxs:w-4" />
                     </button>
@@ -285,7 +285,7 @@ const AdminCoursesPage: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => handleStatusFilterChange(e.target.value)}
-                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-200 appearance-none bg-white text-sm xxs:text-base"
+                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-900/80 text-sm xxs:text-base"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -313,7 +313,7 @@ const AdminCoursesPage: React.FC = () => {
                       setSortBy(field);
                       setSortOrder(order as 'asc' | 'desc');
                     }}
-                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-200 appearance-none bg-white text-sm xxs:text-base"
+                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-900/80 text-sm xxs:text-base"
                   >
                     <option value="createdAt-desc">Newest First</option>
                     <option value="createdAt-asc">Oldest First</option>
@@ -336,15 +336,15 @@ const AdminCoursesPage: React.FC = () => {
             {/* Results Summary */}
             <div className="mt-4 xxs:mt-6 flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-3 xxs:space-y-0">
               <div className="flex items-center space-x-2 xxs:space-x-4">
-                <div className="text-xs xxs:text-sm text-gray-600">
-                  Showing <span className="font-semibold text-gray-900">{displayedCourses.length}</span> of <span className="font-semibold text-gray-900">{totalItems}</span> courses
+                <div className="text-xs xxs:text-sm text-gray-400">
+                  Showing <span className="font-semibold text-white">{displayedCourses.length}</span> of <span className="font-semibold text-white">{totalItems}</span> courses
                 </div>
                 {(searchTerm || statusFilter !== 'all') && (
                   <div className="flex flex-col xxs:flex-row xxs:items-center space-y-2 xxs:space-y-0 xxs:space-x-2">
                     <span className="text-xs xxs:text-sm text-gray-500">Filtered by:</span>
                     <div className="flex flex-wrap gap-1 xxs:gap-2">
                       {searchTerm && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300">
                           "{searchTerm}"
                         </span>
                       )}
@@ -364,7 +364,7 @@ const AdminCoursesPage: React.FC = () => {
         {/* Courses Grid */}
         <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xxs:gap-4 sm:gap-6 mt-4 xxs:mt-6 sm:mt-8">
           {displayedCourses.map((course) => (
-            <div key={course._id} className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+            <div key={course._id} className="bg-gray-900/80 rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
               {/* Course Image */}
               <div className="aspect-video bg-gray-200 relative overflow-hidden">
                 {course.thumbnailURL ? (
@@ -423,10 +423,10 @@ const AdminCoursesPage: React.FC = () => {
 
               {/* Course Info */}
               <div className="p-3 xxs:p-4 sm:p-6 flex flex-col flex-grow">
-                <h3 className="text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2 h-12 xxs:h-14">
+                <h3 className="text-sm xxs:text-base sm:text-lg font-semibold text-white mb-2 line-clamp-2 h-12 xxs:h-14">
                   {course.title}
                 </h3>
-                <p className="text-gray-600 text-xs xxs:text-sm mb-3 xxs:mb-4 line-clamp-3 flex-grow">
+                <p className="text-gray-400 text-xs xxs:text-sm mb-3 xxs:mb-4 line-clamp-3 flex-grow">
                   {course.description}
                 </p>
 
@@ -440,7 +440,7 @@ const AdminCoursesPage: React.FC = () => {
                 <div className="flex flex-col xxs:flex-row space-y-2 xxs:space-y-0 xxs:space-x-2 mt-auto">
                   <Link
                     to={`/admin/courses/${course._id}`}
-                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-lg text-gray-700 bg-gray-900/80 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
                   >
                     <Eye className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1" />
                     View
@@ -457,7 +457,7 @@ const AdminCoursesPage: React.FC = () => {
                       setCourseToDelete(course);
                       setShowDeleteModal(true);
                     }}
-                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-transparent text-xs xxs:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-transparent text-xs xxs:text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
                   >
                     <Trash2 className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1" />
                     Delete
@@ -465,7 +465,7 @@ const AdminCoursesPage: React.FC = () => {
                 </div>
 
                 {/* Created Date */}
-                <div className="mt-3 xxs:mt-4 pt-3 xxs:pt-4 border-t border-gray-200">
+                <div className="mt-3 xxs:mt-4 pt-3 xxs:pt-4 border-t border-gray-700">
                   <p className="text-xs text-gray-500">
                     Created: {formatDate(course.createdAt)}
                   </p>
@@ -484,7 +484,7 @@ const AdminCoursesPage: React.FC = () => {
               <select
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
                 <option value={6}>6 per page</option>
                 <option value={12}>12 per page</option>
@@ -504,7 +504,7 @@ const AdminCoursesPage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -528,7 +528,7 @@ const AdminCoursesPage: React.FC = () => {
                       <button
                         key={1}
                         onClick={() => handlePageChange(1)}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900"
                       >
                         1
                       </button>
@@ -550,8 +550,8 @@ const AdminCoursesPage: React.FC = () => {
                         onClick={() => handlePageChange(i)}
                         className={`px-3 py-2 text-sm font-medium rounded-md ${
                           i === currentPage
-                            ? 'text-white bg-red-600 border border-red-600'
-                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                            ? 'text-white bg-gradient-to-r from-cyan-600 to-blue-600 border border-cyan-500'
+                            : 'text-gray-700 bg-gray-900/80 border border-gray-300 hover:bg-gray-900'
                         }`}
                       >
                         {i}
@@ -572,7 +572,7 @@ const AdminCoursesPage: React.FC = () => {
                       <button
                         key={totalPages}
                         onClick={() => handlePageChange(totalPages)}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900"
                       >
                         {totalPages}
                       </button>
@@ -587,7 +587,7 @@ const AdminCoursesPage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -601,7 +601,7 @@ const AdminCoursesPage: React.FC = () => {
             <div className="mx-auto h-10 w-10 xxs:h-12 xxs:w-12 text-gray-400">
               <BookOpen className="h-10 w-10 xxs:h-12 xxs:w-12" />
             </div>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No courses found</h3>
+            <h3 className="mt-2 text-sm font-medium text-white">No courses found</h3>
             <p className="mt-1 text-xs xxs:text-sm text-gray-500">
               {searchTerm || statusFilter !== 'all' 
                 ? 'Try adjusting your search or filter criteria.'
@@ -612,7 +612,7 @@ const AdminCoursesPage: React.FC = () => {
               <div className="mt-4 xxs:mt-6">
                 <Link
                   to="/admin/upload"
-                  className="inline-flex items-center px-3 xxs:px-4 py-2 border border-transparent shadow-sm text-xs xxs:text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700"
+                  className="inline-flex items-center px-3 xxs:px-4 py-2 border border-transparent shadow-sm text-xs xxs:text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
                 >
                   <Plus className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1 xxs:mr-2" />
                   Upload Course

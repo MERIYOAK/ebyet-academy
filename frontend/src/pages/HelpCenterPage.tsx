@@ -120,7 +120,7 @@ const HelpCenterPage = () => {
       <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">Help Center</h1>
+            <h1 className="text-4xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4">Help Center</h1>
             <p className="text-xl text-cyan-100 max-w-3xl mx-auto">
               Find answers to common questions, get technical support, and learn how to make the most of your {config.APP_NAME} experience.
             </p>
