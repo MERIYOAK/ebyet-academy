@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Users, Calendar, DollarSign, Eye, Play, Plus, Upload, Settings, BookOpen } from 'lucide-react';
+import { Users, Calendar, DollarSign, Eye, Play, Plus, Upload, Settings, BookOpen } from 'lucide-react';
 
 interface Course {
   _id: string;
@@ -108,13 +108,6 @@ const AdminCourseViewPage: React.FC = () => {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Course Not Found</h3>
           <p className="text-orange-400 mb-6">{error || 'The course you are looking for does not exist.'}</p>
-          <Link
-            to="/admin/courses"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-colors duration-200"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Courses
-          </Link>
         </div>
       </div>
     );
@@ -127,14 +120,6 @@ const AdminCourseViewPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link
-                to="/admin/courses"
-                className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
-              >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                Back to Courses
-              </Link>
-              <div className="h-8 w-px bg-gray-300"></div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{course.title}</h1>
                 <p className="text-gray-600 mt-1">Course Management Dashboard</p>

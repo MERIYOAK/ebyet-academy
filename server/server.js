@@ -26,6 +26,9 @@ const progressRoutes = require('./routes/progressRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const drmVideoRoutes = require('./routes/drmVideoRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const bundleRoutes = require('./routes/bundleRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
+const newsletterRoutes = require('./routes/newsletterRoutes');
 
 // Import controllers for fallback routes
 const authController = require('./controllers/authController');
@@ -473,6 +476,9 @@ app.use('/api/courses', courseRoutesEnhanced);
 // Legacy course routes (for backward compatibility)
 app.use('/api/courses-legacy', courseRoutes);
 
+// Bundle routes
+app.use('/api/bundles', bundleRoutes);
+
 // Archive management routes (admin only)
 app.use('/api/archive', archiveRoutes);
 
@@ -500,6 +506,8 @@ app.use('/api/user', userRoutes);
 
 // Contact routes
 app.use('/api/contact', contactRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Admin dashboard stats (basic stats only)
 app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
@@ -680,7 +688,7 @@ app.listen(PORT, () => {
   
   // Check S3 configuration on startup
   console.log('\n🔍 Checking S3 configuration...');
-  const { S3Client, ListBucketsCommand } = require('@aws-sdk/client-s3');
+  const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
   
   const region = process.env.AWS_REGION || 'us-east-1';
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
@@ -698,13 +706,13 @@ app.listen(PORT, () => {
     console.log(`   - Bucket: ${bucket}`);
     console.log(`   - Region: ${region}`);
     
-    // Test S3 connection
+    // Test S3 connection by listing objects in the specific bucket (requires only s3:ListBucket on that bucket)
     const testS3Client = new S3Client({
       region,
       credentials: { accessKeyId, secretAccessKey }
     });
     
-    testS3Client.send(new ListBucketsCommand({}))
+    testS3Client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: 1 }))
       .then(() => {
         console.log('✅ S3 connection successful - uploads will use S3');
       })

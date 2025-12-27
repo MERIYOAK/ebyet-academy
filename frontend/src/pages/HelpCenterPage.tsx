@@ -94,12 +94,12 @@ const HelpCenterPage = () => {
   ];
 
   const categories = [
-    { id: 'all', name: 'All Questions', icon: BookOpen },
-    { id: 'getting-started', name: 'Getting Started', icon: Users },
-    { id: 'course-access', name: 'Course Access', icon: Zap },
-    { id: 'technical', name: 'Technical Issues', icon: HelpCircle },
-    { id: 'certificates', name: 'Certificates', icon: Star },
-    { id: 'payments', name: 'Payments & Refunds', icon: CreditCard }
+    { id: 'all', name: t('help.popular_topics'), icon: BookOpen },
+    { id: 'getting-started', name: t('help.getting_started'), icon: Users },
+    { id: 'course-access', name: t('help.course_access'), icon: Zap },
+    { id: 'technical', name: t('help.technical_support'), icon: HelpCircle },
+    { id: 'certificates', name: t('help.certificates'), icon: Star },
+    { id: 'payments', name: t('help.payment_help'), icon: CreditCard }
   ];
 
   const filteredFaqs = selectedCategory === 'all' 
@@ -120,9 +120,9 @@ const HelpCenterPage = () => {
       <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4">Help Center</h1>
+            <h1 className="text-4xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4">{t('help.page_title')}</h1>
             <p className="text-xl text-cyan-100 max-w-3xl mx-auto">
-              Find answers to common questions, get technical support, and learn how to make the most of your {config.APP_NAME} experience.
+              {t('help.hero_subtitle', { appName: config.APP_NAME })}
             </p>
           </div>
         </div>
@@ -148,16 +148,16 @@ const HelpCenterPage = () => {
           <div className="bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-700">
             <div className="flex items-center mb-4">
               <MessageCircle className="h-8 w-8 text-cyan-400 mr-3" />
-              <h3 className="text-lg font-semibold text-white">Live Chat</h3>
+              <h3 className="text-lg font-semibold text-white">{t('help.live_chat')}</h3>
             </div>
-            <p className="text-gray-300 mb-4">Chat with our support team in real-time</p>
+            <p className="text-gray-300 mb-4">{t('help.live_chat_desc')}</p>
             <a
               href={`https://wa.me/${config.SUPPORT_WHATSAPP.replace(/[^\d]/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-cyan-400 hover:text-cyan-300 font-medium"
             >
-              WhatsApp Chat
+              {t('help.whatsapp_chat')}
             </a>
           </div>
 
@@ -173,7 +173,7 @@ const HelpCenterPage = () => {
 
         {/* Category Filter */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">{t('help.frequently_asked')}</h2>
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
               const Icon = category.icon;

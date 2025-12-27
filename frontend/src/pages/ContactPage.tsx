@@ -209,8 +209,8 @@ const ContactPage = () => {
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-12 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full"></div>
                   <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent pb-2 sm:pb-3">
-                    {t('contact.contact_form')}
-                  </h2>
+                {t('contact.contact_form')}
+              </h2>
                 </div>
                 
                 {submitStatus === 'success' && (
@@ -225,83 +225,83 @@ const ContactPage = () => {
                     <p className="text-sm text-red-300">{t('contact.error_message', 'Failed to send message. Please try again or contact us directly.')}</p>
                   </div>
                 )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
+              
+              <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="group">
-                      <label htmlFor="name" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
-                        {t('contact.name')}
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500"
-                        placeholder={t('contact.form_placeholders.name')}
-                      />
-                    </div>
-                    
-                    <div className="group">
-                      <label htmlFor="email" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
-                        {t('contact.email')}
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500"
-                        placeholder={t('contact.form_placeholders.email')}
-                      />
-                    </div>
-                  </div>
-                  
                   <div className="group">
-                    <label htmlFor="subject" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
-                      {t('contact.subject')}
+                      <label htmlFor="name" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
+                      {t('contact.name')}
                     </label>
                     <input
                       type="text"
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
+                      id="name"
+                      name="name"
+                      value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500"
-                      placeholder={t('contact.form_placeholders.subject')}
+                        className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500"
+                      placeholder={t('contact.form_placeholders.name')}
                     />
                   </div>
                   
                   <div className="group">
-                    <label htmlFor="message" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
-                      {t('contact.message')}
+                      <label htmlFor="email" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
+                      {t('contact.email')}
                     </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
                       onChange={handleChange}
                       required
-                      rows={6}
-                      className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500 resize-none"
-                      placeholder={t('contact.form_placeholders.message')}
+                        className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500"
+                      placeholder={t('contact.form_placeholders.email')}
                     />
                   </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
+                </div>
+                
+                <div className="group">
+                    <label htmlFor="subject" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
+                    {t('contact.subject')}
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                      className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500"
+                    placeholder={t('contact.form_placeholders.subject')}
+                  />
+                </div>
+                
+                <div className="group">
+                    <label htmlFor="message" className="block text-sm font-semibold text-gray-300 mb-2 group-hover:text-cyan-400 transition-colors duration-300">
+                    {t('contact.message')}
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    rows={6}
+                      className="w-full px-4 py-3 bg-gray-900/80 border-2 border-gray-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 text-white placeholder-gray-500 resize-none"
+                    placeholder={t('contact.form_placeholders.message')}
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
                     className={`w-full group relative overflow-hidden bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isSubmitting ? 'animate-pulse' : ''}`}
-                  >
+                >
                     <Send className={`h-5 w-5 transition-transform duration-300 ${isSubmitting ? 'animate-spin' : 'group-hover:translate-x-1'}`} />
                     <span>{isSubmitting ? t('common.loading') : t('contact.send_message')}</span>
-                  </button>
-                </form>
+                </button>
+              </form>
               </div>
             </div>
           </div>

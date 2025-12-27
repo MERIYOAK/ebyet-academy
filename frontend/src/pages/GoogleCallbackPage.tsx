@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { buildApiUrl } from '../config/environment';
-
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader, CheckCircle, XCircle } from 'lucide-react';
 import ScrollToTop from '../components/ScrollToTop';

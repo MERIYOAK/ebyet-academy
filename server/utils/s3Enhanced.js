@@ -1,7 +1,7 @@
 const { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'persi-academy';
+const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
 
 // Initialize S3 client with AWS SDK v3 and better error handling
 const createS3Client = () => {

@@ -6,6 +6,7 @@ import { config } from '../config/environment';
 import ScrollToTop from '../components/ScrollToTop';
 
 const CompleteGoogleRegistrationPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState('');

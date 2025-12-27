@@ -135,7 +135,8 @@ class S3Service {
       // Generate unique filename
       const fileExtension = originalName.split('.').pop();
       const uniqueFileName = `${userId}-${crypto.randomBytes(16).toString('hex')}.${fileExtension}`;
-      const key = `persi-academy/profile-pictures/${uniqueFileName}`;
+      const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
+      const key = `${S3_ROOT_PREFIX}/profile-pics/${uniqueFileName}`;
 
       // Upload to S3
       const uploadParams = {
@@ -169,7 +170,8 @@ class S3Service {
           // Retry the upload
           const fileExtension = originalName.split('.').pop();
           const uniqueFileName = `${userId}-${crypto.randomBytes(16).toString('hex')}.${fileExtension}`;
-          const key = `profile-pictures/${uniqueFileName}`;
+          const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
+          const key = `${S3_ROOT_PREFIX}/profile-pics/${uniqueFileName}`;
 
           const uploadParams = {
             Bucket: this.bucketName,
@@ -224,7 +226,8 @@ class S3Service {
 
       // Generate unique filename
       const uniqueFileName = `${userId}-google-${crypto.randomBytes(16).toString('hex')}.${extension}`;
-      const key = `profile-pictures/${uniqueFileName}`;
+      const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
+      const key = `${S3_ROOT_PREFIX}/profile-pics/${uniqueFileName}`;
 
       // Upload to S3
       const uploadParams = {
@@ -268,7 +271,8 @@ class S3Service {
           const extension = this.getExtensionFromContentType(contentType);
 
           const uniqueFileName = `${userId}-google-${crypto.randomBytes(16).toString('hex')}.${extension}`;
-          const key = `profile-pictures/${uniqueFileName}`;
+          const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
+          const key = `${S3_ROOT_PREFIX}/profile-pics/${uniqueFileName}`;
 
           const uploadParams = {
             Bucket: this.bucketName,

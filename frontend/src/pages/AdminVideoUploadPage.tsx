@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Video, Clock, User, Save, X } from 'lucide-react';
+import { Upload, Video, Clock, User, Save, X } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 
 interface Course {
@@ -339,12 +339,6 @@ const AdminVideoUploadPage: React.FC = () => {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-orange-400 mb-4">{error}</p>
-          <Link
-            to="/admin/courses"
-            className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500"
-          >
-            Back to Courses
-          </Link>
         </div>
       </div>
     );
@@ -357,13 +351,6 @@ const AdminVideoUploadPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link
-                to={`/admin/courses/${courseId}/videos`}
-                className="inline-flex items-center text-gray-600 hover:text-white"
-              >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                Back to Videos
-              </Link>
               <div>
                 <h1 className="text-3xl font-bold text-white">Upload Video</h1>
                 <p className="text-gray-600">{course?.title}</p>

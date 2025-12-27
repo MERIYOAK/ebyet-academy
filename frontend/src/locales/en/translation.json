@@ -21,14 +21,18 @@
     "email": "Email",
     "social_links": "Pages",
     "follow_us": "Additional Pages",
-    "copyright": "All Rights Reserved.",
+    "copyright": " All Rights Reserved.",
     "privacy_policy": "Privacy Policy",
     "terms_of_service": "Terms of Service",
     "help_center": "Help Center",
     "help": "Help",
     "verify_certificate": "Verify Certificate",
     "cookie_settings": "Cookie Settings",
-    "made_by": "This website is made by -> "
+    "developed_by": "This website is made by -> ",
+    "description": "Master the art of investing and trading with our comprehensive courses designed by industry experts.",
+    "quick_links": "Quick Links",
+    "support": "Support & Legal",
+    "contact_us": "Contact Us"
   },
   "home": {
     "hero_title": "Master Trading & Investing",
@@ -37,22 +41,16 @@
     "hero_bullet_1": "Learn professional investment strategies from experts",
     "hero_bullet_2": "Understand market analysis and trading techniques",
     "hero_bullet_3": "Build a profitable investment portfolio",
-    "hero_get_started": "Get started for free",
-    "hero_live_demo": "Live demo",
-    "hero_trial_text": "14-days free trial, no credit card required.",
     "hero_social_proof": "Follow us here...",
-    "hero_social_more": "and many more..",
-    "announcement1_date": "January 15, 2024",
-    "announcement1_title": "New Advanced Trading Course Now Available!",
-    "announcement1_content": "We are excited to announce the launch of our comprehensive Advanced Trading Strategies course. Learn from industry experts and master professional trading techniques. Enroll now and take your trading skills to the next level!",
-    "announcement2_date": "February 1, 2024",
-    "announcement2_title": "Live Trading Webinar This Weekend",
-    "announcement2_content": "Join us for an exclusive live trading webinar this Saturday at 2 PM. Watch our expert traders analyze real-time market conditions and learn advanced strategies. Limited seats available - register now!",
-    "announcement3_date": "February 10, 2024",
-    "announcement3_title": "New Investment Portfolio Management Course",
-    "announcement3_content": "Master the art of portfolio management with our new comprehensive course. Learn how to diversify investments, manage risk, and maximize returns. Perfect for both beginners and experienced investors.",
+    "announcements": {
+      "loading": "Loading announcements...",
+      "no_announcements": "No announcements available",
+      "no_announcements_subtitle": "Check back soon for exciting updates and news!",
+      "go_to_announcement": "Go to announcement {{number}}"
+    },
     "get_started": "Get Started",
     "learn_more": "Learn More",
+    "contact_us": "Get in Touch",
     "featured_courses": "Featured Courses",
     "courses_title": "Courses",
     "courses_subtitle": "Explore our collection of courses designed to accelerate your professional development",
@@ -65,40 +63,19 @@
     "loading_featured_courses": "Loading featured courses, please wait...",
     "error_loading_courses": "Failed to load courses",
     "no_courses_available": "No courses yet. Check back soon.",
-    "hero_variations": {
-      "variation1": {
-        "headline": "Master Digital Content Creation",
-        "subtext": "Transform your creative passion into a profitable career with our comprehensive courses in video production, photography, and digital media.",
-        "button1": "Start Learning Today",
-        "button2": "Browse Courses",
-        "stats": "100+ Students • 10+ Hours of Content • 4.9★ Rating"
-      },
-      "variation2": {
-        "headline": "Learn Professional Skills",
-        "subtext": "Discover proven techniques to master camera work, video editing, photo editing, and digital content creation from industry experts.",
-        "button1": "Get Started Free",
-        "button2": "Explore Courses",
-        "stats": "Trusted by Professionals Worldwide • 95% Satisfaction Rate"
-      },
-      "variation3": {
-        "headline": "From Beginner to Professional",
-        "subtext": "No experience? No problem. Our structured courses take you from zero to building a successful career in digital media and technology.",
-        "button1": "Start Your Journey",
-        "button2": "See How It Works",
-        "stats": "20+ Expert Instructors • Global Community of Learners"
-      },
-      "variation4": {
-        "headline": "Learn. Create. Succeed.",
-        "subtext": "Access powerful lessons on content creation, media production, technology skills, and professional development—all in one platform.",
-        "button1": "Join for Free",
-        "button2": "Browse Library",
-        "stats": "Continuous Updates • Lifetime Access to Materials"
-      }
-    },
+    "no_bundles_available": "No featured bundles available at this time.",
     "featured_courses_title": "Featured Courses",
     "featured_courses_subtitle": "Our most popular courses, designed to accelerate your professional development",
     "why_choose_title": "Why Choose Our Academy?",
     "why_choose_subtitle": "We're not just another course platform. We're your partner in professional success and skill development.",
+    "benefit_expert_instructors": "Expert Instructors",
+    "benefit_expert_instructors_desc": "Learn from industry professionals with years of real-world trading and investment experience",
+    "benefit_certified_courses": "Certified Courses",
+    "benefit_certified_courses_desc": "Earn recognized certificates upon completion to boost your professional credentials",
+    "benefit_flexible_learning": "Flexible Learning",
+    "benefit_flexible_learning_desc": "Study at your own pace with lifetime access to course materials and updates",
+    "benefit_community": "Active Community",
+    "benefit_community_desc": "Join a community of students and investors sharing knowledge and strategies",
     "benefits": {
       "targeted_learning": {
         "title": "Targeted Learning",
@@ -119,6 +96,15 @@
     },
     "success_stories_title": "Success Stories",
     "success_stories_subtitle": "Hear from professionals who transformed their careers with our courses",
+    "testimonial_1_name": "Michael Ande",
+    "testimonial_1_role": "Professional Trader",
+    "testimonial_1_content": "The advanced trading strategies course completely changed my approach to the markets. I've increased my profitability by 300% in just 6 months!",
+    "testimonial_2_name": "Sarah Haile",
+    "testimonial_2_role": "Investment Advisor",
+    "testimonial_2_content": "The comprehensive curriculum and expert instructors helped me build a solid foundation in investing. Highly recommend to anyone serious about financial growth.",
+    "testimonial_3_name": "David Mebhratu",
+    "testimonial_3_role": "Portfolio Manager",
+    "testimonial_3_content": "Best investment education platform I've found. The real-world examples and practical exercises made all the difference in my learning journey.",
     "faq": {
       "title": "Frequently Asked Questions",
       "subtitle": "Find quick answers to the most common questions about our courses and platform",
@@ -137,26 +123,19 @@
         }
       }
     },
-    "testimonials": {
-      "jessica": {
-        "name": "Jessica Thompson",
-        "role": "Digital Content Creator",
-        "content": "These courses transformed my skills from basic to professional level in just 6 months!"
-      },
-      "david": {
-        "name": "David Park",
-        "role": "Video Producer",
-        "content": "The video editing techniques alone helped me land my dream job within the first month."
-      },
-      "maria": {
-        "name": "Maria Garcia",
-        "role": "Photographer",
-        "content": "Finally, a course that actually delivers on its promises. My photography business doubled!"
-      }
-    },
     "cta_title": "Ready to Transform Your Skills?",
     "cta_subtitle": "Start your journey to professional success",
-    "cta_button": "Get Started Free"
+    "cta_button": "Get Started Free",
+    "newsletter_title": "Stay Updated with Investment Insights",
+    "newsletter_subtitle": "Subscribe to our newsletter and get the latest investment tips, market analysis, and exclusive course updates delivered to your inbox.",
+    "newsletter_placeholder": "Enter your email address",
+    "newsletter_subscribe": "Subscribe",
+    "newsletter_subscribing": "Subscribing...",
+    "newsletter_subscribed": "Subscribed!",
+    "newsletter_success": "Thank you for subscribing! Check your email for confirmation.",
+    "newsletter_error": "Something went wrong. Please try again later.",
+    "newsletter_invalid_email": "Please enter a valid email address",
+    "newsletter_privacy": "We respect your privacy. Unsubscribe at any time."
   },
   "courses": {
     "page_title": "Courses",
@@ -189,7 +168,6 @@
     "filtered_by": "Filtered by:",
     "no_courses_available": "No courses available yet. Check back soon.",
     "no_courses_match": "No courses match your search criteria.",
-    "sample_data_notice": "Sample Courses - Backend connection pending",
     "pagination": {
       "show": "Show",
       "per_page": "{{count}} per page",
@@ -209,8 +187,6 @@
     "contact_us": "Contact Us",
     "what_we_do": "What We Offer",
     "what_we_do_desc": "Comprehensive trading and investing education designed for success",
-    "values_title": "Our Values",
-    "values_subtitle": "The principles that guide everything we do",
     "stats": {
       "students_enrolled": "Students Enrolled",
       "expert_instructors": "Expert Instructors",
@@ -239,27 +215,9 @@
       "investment_desc": "Learn proven investment strategies from industry experts"
     },
     "cta_title": "Ready to Start Your Trading Journey?",
-    "cta_desc": "Join thousands of successful traders and investors. Start learning today and transform your financial future.",
+    "cta_desc": "Join our community of successful traders and investors. Start learning today and transform your financial future.",
     "browse_courses": "Browse Courses",
-    "get_started": "Get Started Free",
-    "values": {
-      "innovation": {
-        "title": "Innovation",
-        "description": "Staying ahead with the latest trading strategies and market analysis techniques."
-      },
-      "trust": {
-        "title": "Trust",
-        "description": "Building confidence through transparent teaching and proven trading methodologies."
-      },
-      "growth": {
-        "title": "Growth",
-        "description": "Helping traders achieve consistent, long-term financial growth and success."
-      },
-      "excellence": {
-        "title": "Excellence",
-        "description": "Delivering the highest quality trading education and market insights."
-      }
-    }
+    "get_started": "Get Started Free"
   },
   "contact": {
     "page_title": "Contact",
@@ -342,8 +300,7 @@
       "guarantee": "Security",
       "support_24_7": "24/7",
       "secure_checkout": "Secure"
-    },
-    "success_message": "Thank you for your message! We'll get back to you soon."
+    }
   },
   "common": {
     "loading": "Loading...",
@@ -538,13 +495,18 @@
   "brand": {
     "name": "IBYET Investing"
   },
+  "meta": {
+    "page_title": "IBYET Investing - Professional Skills Development | Master Trading & Investing",
+    "description": "IBYET Investing - Transform your career with our comprehensive finance and professional development courses. Learn from industry experts and master essential skills in finance, technology, and digital content creation.",
+    "keywords": "professional development, online learning, trading, investing, finance courses, content creation, social media, digital marketing, video editing, camera skills, content creator, video production, digital media, technology skills, career development, online courses"
+  },
   "cookie": {
     "banner_message": "We use cookies to enhance your experience. Do you accept?",
     "accept": "Accept",
     "decline": "Decline"
   },
   "language": {
-    "tigrinya": "ትግርኛ",
+    "tigrinya": "Tigrinya",
     "english": "English",
     "toggle_language": "Toggle language"
   },
@@ -555,12 +517,6 @@
     "stock-market": "Stock Market",
     "etf": "ETF",
     "option-trading": "Option Trading",
-    "youtube": "YouTube Mastery",
-    "camera": "Camera",
-    "photo": "Photo Editing",
-    "video": "Video Editing",
-    "computer": "Basic Computer Learning",
-    "english": "English",
     "other": "Other"
   },
   "whatsapp": {
@@ -611,36 +567,13 @@
     "next": "Next"
   },
   "course_detail": {
-    "page_title": "Course Details",
-    "enroll_now": "Enroll Now",
-    "buy_now": "Buy Now",
     "free_preview": "Free Preview",
-    "course_overview": "Course Overview",
-    "what_you_ll_learn": "What You'll Learn",
-    "course_content": "Course Content",
-    "instructor": "Instructor",
-    "students_enrolled": "Students Enrolled",
-    "course_duration": "Course Duration",
-    "skill_level": "Skill Level",
-    "language": "Language",
-    "last_updated": "Last Updated",
-    "requirements": "Requirements",
-    "description": "Description",
     "lessons": "Lessons",
-    "total_duration": "Total Duration",
-    "preview": "Preview",
-    "locked": "Locked",
     "completed": "Completed",
-    "in_progress": "In Progress",
-    "not_started": "Not Started",
-    "whatsapp_group": "WhatsApp Group",
-    "join_whatsapp": "Join WhatsApp Group",
-    "back_to_courses": "Back to Courses",
-    "purchase_required": "Purchase Required",
-    "free_preview_available": "Free Preview Available",
     "loading_course": "Loading course...",
     "course_not_found": "Course not found",
-    "back_to_dashboard": "Back to Dashboard",
+    "total": "Total",
+    "students": "Students",
     "purchased_course": "Purchased course",
     "course_curriculum": "Course Curriculum",
     "no_lessons_available": "No lessons available.",
@@ -670,30 +603,7 @@
     "loading_video": "Loading video...",
     "refreshing_video_link": "Refreshing video link...",
     "this_may_take_moments": "This may take a few moments",
-    "select_a_video": "Select a video",
-    "close_playlist": "Close Playlist",
-    "created_by": "Created by",
-    "recently": "Recently",
-    "course_purchased": "Course Purchased",
-    "sign_in_to_enroll": "Sign In to Enroll",
-    "secure_checkout": "Secure checkout with Stripe",
-    "on_demand_video": "on-demand video",
-    "downloadable_resources": "vast resources",
-    "all_lessons": "All Lessons",
-    "no_lessons_message": "This course doesn't have any lessons yet.",
-    "about_this_course": "About This Course",
-    "course_statistics": "Course Statistics",
-    "lifetime_access_content": "Lifetime access to course content",
-    "community_qa_support": "Community Q&A support",
-    "join_exclusive_community": "Join Our Exclusive Community",
-    "bonus_whatsapp_access": "Bonus: Get instant access to our private WhatsApp community when you enroll!",
-    "what_youll_get_community": "What you'll get in our community:",
-    "direct_access_instructors": "Direct access to instructors - Ask questions and get personalized help",
-    "connect_fellow_students": "Connect with fellow students - Network and learn together",
-    "exclusive_tips_updates": "Exclusive tips and updates - Get the latest industry insights",
-    "project_feedback_reviews": "Project feedback and reviews - Share your work and get constructive feedback",
-    "job_opportunities_referrals": "Job opportunities and referrals - Access to exclusive career opportunities",
-    "pro_tip_success": "Pro Tip: Students who join our community complete courses 3x faster and have 90% higher success rates!"
+    "select_a_video": "Select a video"
   },
   "checkout_success": {
     "loading_purchase_details": "Loading your purchase details...",
@@ -896,7 +806,6 @@
       "page_title": "Verify Email",
       "verify_your_email": "Verify Your Email",
       "check_email": "Please check your email and click the verification link",
-      "resend_verification": "Resend Verification",
       "back_to_login": "Back to Login",
       "verification_sent": "Verification email sent",
       "verification_error": "Failed to send verification email",
@@ -908,7 +817,11 @@
       "verified": "Email Verified!",
       "failed": "Verification Failed",
       "redirecting": "Redirecting to dashboard...",
-      "go_to_home": "Go to Home"
+      "go_to_home": "Go to Home",
+      "resend_verification": "Resend Verification Email",
+      "resend_subtitle": "Enter your email address and we'll send you a new verification link",
+      "send_verification_email": "Send Verification Email",
+      "sending": "Sending..."
     }
   },
   "certificate_verification": {
@@ -987,15 +900,21 @@
   },
   "help": {
     "page_title": "Help Center",
+    "hero_subtitle": "Find answers to common questions, get technical support, and learn how to make the most of your {{appName}} experience.",
     "frequently_asked": "Frequently Asked Questions",
     "get_help": "Get Help",
     "contact_support": "Contact Support",
     "search_help": "Search help articles...",
-    "popular_topics": "Popular Topics",
+    "popular_topics": "All Questions",
     "getting_started": "Getting Started",
+    "course_access": "Course Access",
     "account_issues": "Account Issues",
-    "payment_help": "Payment Help",
-    "technical_support": "Technical Support",
+    "payment_help": "Payments & Refunds",
+    "technical_support": "Technical Issues",
+    "certificates": "Certificates",
+    "live_chat": "Live Chat",
+    "live_chat_desc": "Chat with our support team in real-time",
+    "whatsapp_chat": "WhatsApp Chat",
     "no_results": "No results found",
     "try_different_search": "Try a different search term"
   },
@@ -1111,10 +1030,7 @@
     "save_amount": "Save ${{amount}} ({{percentage}}%)",
     "original_value": "Original Value: ${{value}}",
     "buy_bundle": "Buy Bundle",
-    "processing": "Processing...",
-    "purchase_note": "This is a placeholder. Purchase functionality will be available soon.",
-    "purchase_placeholder": "Bundle purchase functionality will be available soon!",
-    "course_placeholder_description": "This course is included in the bundle."
+    "processing": "Processing..."
   },
   "google_registration": {
     "complete_registration": "Complete Registration",

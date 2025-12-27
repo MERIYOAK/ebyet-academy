@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
-import { Link } from 'react-router-dom';
 import { 
-  ArrowLeft, 
   Search, 
   Filter, 
   Users, 
@@ -264,15 +262,6 @@ const AdminUsersPage: React.FC = () => {
             <div>
               <h1 className="text-2xl xxs:text-3xl font-bold text-white">User Management</h1>
               <p className="mt-2 text-gray-600 text-sm xxs:text-base">Manage all registered users, view profiles, and control access</p>
-            </div>
-            <div className="flex space-x-2 xxs:space-x-3">
-              <Link
-                to="/admin/dashboard"
-                className="inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
-              >
-                <ArrowLeft className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1 xxs:mr-2" />
-                Back to Dashboard
-              </Link>
             </div>
           </div>
         </div>

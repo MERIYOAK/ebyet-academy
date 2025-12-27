@@ -1613,7 +1613,7 @@ const VideoPlayerPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p>Loading video...</p>
         </div>
       </div>
@@ -1639,14 +1639,7 @@ const VideoPlayerPage = () => {
               >
                 {t('video_player.purchase_course')}
               </Link>
-            ) : (
-          <Link
-            to="/courses"
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
-          >
-            {t('video_player.back_to_courses')}
-          </Link>
-            )}
+            ) : null}
             <Link
               to="/dashboard"
               className="border border-gray-600 text-gray-300 hover:text-white px-6 py-3 rounded-lg transition-colors duration-200"
@@ -1835,7 +1828,7 @@ const VideoPlayerPage = () => {
                     
                     {isRetrying && (
                       <div className="flex items-center justify-center space-x-2">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
                         <span>Retrying...</span>
                       </div>
                     )}
@@ -1855,7 +1848,7 @@ const VideoPlayerPage = () => {
                 ) : (
                   // Loading state
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
                     <p>Loading video...</p>
                     <p className="text-sm mt-2">
                       {isRefreshingUrl

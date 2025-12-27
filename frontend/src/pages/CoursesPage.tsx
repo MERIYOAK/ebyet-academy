@@ -3,240 +3,9 @@ import { useTranslation } from 'react-i18next';
 import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
-// TEMPORARILY DISABLED: import { useCourses, CourseFilters, ApiCourse } from '../hooks/useCourses';
-import { ApiCourse } from '../hooks/useCourses';
+import { useCourses, CourseFilters, ApiCourse } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
-// TEMPORARY: Sample courses for frontend (will be replaced with backend later)
-const sampleCourses: ApiCourse[] = [
-  {
-    _id: 'sample-course-1',
-    title: 'Introduction to Stock Market Investing',
-    description: 'Learn the fundamentals of stock market investing, including how to analyze stocks, build a diversified portfolio, and make informed investment decisions. Perfect for beginners who want to start their investment journey.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
-    price: 49.99,
-    category: 'stock-market',
-    level: 'beginner',
-    totalEnrollments: 1250,
-    tags: ['Investing', 'Stocks', 'Beginner'],
-    videos: [
-      { _id: 'v1', duration: '15:30' },
-      { _id: 'v2', duration: '22:45' },
-      { _id: 'v3', duration: '18:20' },
-      { _id: 'v4', duration: '25:10' },
-      { _id: 'v5', duration: '20:00' }
-    ]
-  },
-  {
-    _id: 'sample-course-2',
-    title: 'Advanced Trading Strategies',
-    description: 'Master advanced trading techniques including day trading, swing trading, and options strategies. Learn technical analysis, risk management, and how to develop your own trading system.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-    price: 79.99,
-    category: 'trading',
-    level: 'advanced',
-    totalEnrollments: 890,
-    tags: ['Trading', 'Advanced', 'Strategies'],
-    videos: [
-      { _id: 'v1', duration: '30:15' },
-      { _id: 'v2', duration: '28:40' },
-      { _id: 'v3', duration: '35:20' },
-      { _id: 'v4', duration: '32:50' },
-      { _id: 'v5', duration: '29:30' },
-      { _id: 'v6', duration: '27:10' }
-    ]
-  },
-  {
-    _id: 'sample-course-3',
-    title: 'Cryptocurrency Investment Guide',
-    description: 'Comprehensive guide to cryptocurrency investing. Learn about Bitcoin, Ethereum, altcoins, DeFi, NFTs, and how to safely store and trade digital assets. Stay ahead in the crypto market.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=600&fit=crop',
-    price: 59.99,
-    category: 'crypto',
-    level: 'intermediate',
-    totalEnrollments: 2100,
-    tags: ['Cryptocurrency', 'Bitcoin', 'Blockchain'],
-    videos: [
-      { _id: 'v1', duration: '18:45' },
-      { _id: 'v2', duration: '24:30' },
-      { _id: 'v3', duration: '20:15' },
-      { _id: 'v4', duration: '22:00' },
-      { _id: 'v5', duration: '19:30' }
-    ]
-  },
-  {
-    _id: 'sample-course-4',
-    title: 'Real Estate Investment Fundamentals',
-    description: 'Discover how to build wealth through real estate investing. Learn about property analysis, financing options, rental properties, and real estate investment strategies for long-term wealth building.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
-    price: 69.99,
-    category: 'investing',
-    level: 'beginner',
-    totalEnrollments: 1560,
-    tags: ['Real Estate', 'Property', 'Investment'],
-    videos: [
-      { _id: 'v1', duration: '25:20' },
-      { _id: 'v2', duration: '28:45' },
-      { _id: 'v3', duration: '23:10' },
-      { _id: 'v4', duration: '26:30' },
-      { _id: 'v5', duration: '24:50' },
-      { _id: 'v6', duration: '27:15' },
-      { _id: 'v7', duration: '22:40' }
-    ]
-  },
-  {
-    _id: 'sample-course-5',
-    title: 'ETF Investment Strategies',
-    description: 'Learn professional ETF (Exchange-Traded Fund) investment strategies. Understand ETF selection, diversification techniques, risk assessment, and how to build a diversified portfolio using ETFs for maximum returns.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
-    price: 89.99,
-    category: 'etf',
-    level: 'intermediate',
-    totalEnrollments: 980,
-    tags: ['Portfolio', 'Management', 'Diversification'],
-    videos: [
-      { _id: 'v1', duration: '20:15' },
-      { _id: 'v2', duration: '24:30' },
-      { _id: 'v3', duration: '22:45' },
-      { _id: 'v4', duration: '26:20' },
-      { _id: 'v5', duration: '21:10' },
-      { _id: 'v6', duration: '23:50' }
-    ]
-  },
-  {
-    _id: 'sample-course-6',
-    title: 'Options Trading Essentials',
-    description: 'Master the fundamentals of options trading. Learn about calls, puts, spreads, and advanced options strategies. Perfect for traders looking to expand their trading toolkit.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
-    price: 99.99,
-    category: 'option-trading',
-    level: 'advanced',
-    totalEnrollments: 720,
-    tags: ['Options', 'Trading', 'Derivatives'],
-    videos: [
-      { _id: 'v1', duration: '32:20' },
-      { _id: 'v2', duration: '28:45' },
-      { _id: 'v3', duration: '35:10' },
-      { _id: 'v4', duration: '30:30' },
-      { _id: 'v5', duration: '33:15' },
-      { _id: 'v6', duration: '29:50' },
-      { _id: 'v7', duration: '31:25' }
-    ]
-  },
-  {
-    _id: 'sample-course-7',
-    title: 'Forex Trading for Beginners',
-    description: 'Start your forex trading journey with this comprehensive beginner course. Learn currency pairs, market analysis, trading platforms, and essential risk management techniques.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
-    price: 54.99,
-    category: 'trading',
-    level: 'beginner',
-    totalEnrollments: 1340,
-    tags: ['Forex', 'Currency', 'Trading'],
-    videos: [
-      { _id: 'v1', duration: '19:30' },
-      { _id: 'v2', duration: '23:15' },
-      { _id: 'v3', duration: '21:45' },
-      { _id: 'v4', duration: '24:20' },
-      { _id: 'v5', duration: '20:50' }
-    ]
-  },
-  {
-    _id: 'sample-course-8',
-    title: 'Bond Investment Strategies',
-    description: 'Understand the bond market and learn how to invest in bonds effectively. Cover government bonds, corporate bonds, bond funds, and how to build a fixed-income portfolio.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-    price: 64.99,
-    category: 'investing',
-    level: 'intermediate',
-    totalEnrollments: 650,
-    tags: ['Bonds', 'Fixed Income', 'Investment'],
-    videos: [
-      { _id: 'v1', duration: '22:10' },
-      { _id: 'v2', duration: '25:30' },
-      { _id: 'v3', duration: '23:45' },
-      { _id: 'v4', duration: '24:20' },
-      { _id: 'v5', duration: '21:15' },
-      { _id: 'v6', duration: '26:40' }
-    ]
-  },
-  {
-    _id: 'sample-course-9',
-    title: 'Day Trading Fundamentals',
-    description: 'Learn day trading strategies and techniques. Master chart patterns, technical indicators, entry and exit points, and how to manage risk in fast-paced trading environments.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
-    price: 84.99,
-    category: 'trading',
-    level: 'advanced',
-    totalEnrollments: 1120,
-    tags: ['Day Trading', 'Technical Analysis', 'Strategies'],
-    videos: [
-      { _id: 'v1', duration: '28:30' },
-      { _id: 'v2', duration: '31:15' },
-      { _id: 'v3', duration: '29:45' },
-      { _id: 'v4', duration: '33:20' },
-      { _id: 'v5', duration: '27:50' },
-      { _id: 'v6', duration: '30:10' },
-      { _id: 'v7', duration: '32:25' }
-    ]
-  },
-  {
-    _id: 'sample-course-10',
-    title: 'Value Investing Principles',
-    description: 'Learn the principles of value investing from legendary investors. Understand how to identify undervalued stocks, analyze company fundamentals, and build a long-term value portfolio.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
-    price: 74.99,
-    category: 'investing',
-    level: 'intermediate',
-    totalEnrollments: 890,
-    tags: ['Value Investing', 'Fundamentals', 'Analysis'],
-    videos: [
-      { _id: 'v1', duration: '26:20' },
-      { _id: 'v2', duration: '28:45' },
-      { _id: 'v3', duration: '25:30' },
-      { _id: 'v4', duration: '27:15' },
-      { _id: 'v5', duration: '29:40' },
-      { _id: 'v6', duration: '24:50' }
-    ]
-  },
-  {
-    _id: 'sample-course-11',
-    title: 'Swing Trading Masterclass',
-    description: 'Master swing trading strategies that capture multi-day price movements. Learn position sizing, trade management, and how to identify high-probability swing trading setups.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-    price: 94.99,
-    category: 'trading',
-    level: 'intermediate',
-    totalEnrollments: 1050,
-    tags: ['Swing Trading', 'Strategies', 'Technical Analysis'],
-    videos: [
-      { _id: 'v1', duration: '30:15' },
-      { _id: 'v2', duration: '28:30' },
-      { _id: 'v3', duration: '32:45' },
-      { _id: 'v4', duration: '29:20' },
-      { _id: 'v5', duration: '31:10' },
-      { _id: 'v6', duration: '27:50' }
-    ]
-  },
-  {
-    _id: 'sample-course-12',
-    title: 'Risk Management in Trading',
-    description: 'Essential risk management techniques for traders. Learn position sizing, stop-loss strategies, risk-reward ratios, and how to protect your capital while maximizing profits.',
-    thumbnailURL: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop',
-    price: 69.99,
-    category: 'trading',
-    level: 'intermediate',
-    totalEnrollments: 1420,
-    tags: ['Risk Management', 'Trading', 'Protection'],
-    videos: [
-      { _id: 'v1', duration: '24:30' },
-      { _id: 'v2', duration: '26:15' },
-      { _id: 'v3', duration: '25:45' },
-      { _id: 'v4', duration: '27:20' },
-      { _id: 'v5', duration: '23:50' }
-    ]
-  }
-];
 
 const CoursesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -254,113 +23,43 @@ const CoursesPage: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [goToPageInput, setGoToPageInput] = useState<string>('');
   
-  // TEMPORARILY DISABLED: Build filters for React Query (not needed when using sample courses only)
-  // const filters: CourseFilters = useMemo(() => ({
-  //   page: currentPage,
-  //   limit: itemsPerPage,
-  //   search: searchTerm,
-  //   category: selectedCategory,
-  //   level: selectedLevel,
-  //   tag: selectedTag,
-  //   priceRange: priceRange,
-  // }), [currentPage, itemsPerPage, searchTerm, selectedCategory, selectedLevel, selectedTag, priceRange]);
+  // Build filters for React Query
+  const filters: CourseFilters = useMemo(() => ({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm,
+    category: selectedCategory,
+    level: selectedLevel,
+    tag: selectedTag,
+    priceRange: priceRange,
+  }), [currentPage, itemsPerPage, searchTerm, selectedCategory, selectedLevel, selectedTag, priceRange]);
   
-  // TEMPORARILY DISABLED: Use React Query for fetching courses
-  // const { 
-  //   data: coursesResponse, 
-  //   isLoading: loading, 
-  //   error,
-  //   refetch 
-  // } = useCourses(filters);
+  // Use React Query for fetching courses from backend
+  const { 
+    data: coursesResponse, 
+    isLoading: loading, 
+    error,
+    refetch 
+  } = useCourses(filters);
   
-  // TEMPORARILY: Use only sample courses (backend fetching disabled)
-  const loading = false;
-  const error = null;
-  const coursesResponse = null;
-  const apiCourses: ApiCourse[] = [];
-  const useSampleCourses = true; // Always use sample courses
-  
-  // Placeholder refetch function
-  const refetch = useCallback(() => {
-    console.log('Refetch called - using sample courses only');
-  }, []);
-  
-  // Apply client-side filtering to sample courses
-  const filteredSampleCourses = useMemo(() => {
-    let filtered = [...sampleCourses];
-    
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        course =>
-          course.title.toLowerCase().includes(searchLower) ||
-          course.description.toLowerCase().includes(searchLower) ||
-          course.tags?.some(tag => tag.toLowerCase().includes(searchLower))
-      );
+  // Extract courses from API response
+  const courses: ApiCourse[] = useMemo(() => {
+    if (coursesResponse?.courses) {
+      return coursesResponse.courses;
     }
-    
-    // Apply category filter
-    if (selectedCategory) {
-      filtered = filtered.filter(course => 
-        course.category?.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-    
-    // Apply level filter
-    if (selectedLevel) {
-      filtered = filtered.filter(course => 
-        course.level?.toLowerCase() === selectedLevel.toLowerCase()
-      );
-    }
-    
-    // Apply tag filter
-    if (selectedTag) {
-      filtered = filtered.filter(course => 
-        course.tags?.some(tag => tag.toLowerCase() === selectedTag.toLowerCase())
-      );
-    }
-    
-    // Apply price range filter
-    if (priceRange) {
-      filtered = filtered.filter(course => {
-        switch (priceRange) {
-          case 'free':
-            return course.price === 0;
-          case 'under-50':
-            return course.price > 0 && course.price < 50;
-          case '50-100':
-            return course.price >= 50 && course.price <= 100;
-          case 'over-100':
-            return course.price > 100;
-          default:
-            return true;
-        }
-      });
-    }
-    
-    return filtered;
-  }, [searchTerm, selectedCategory, selectedLevel, selectedTag, priceRange]);
+    return [];
+  }, [coursesResponse]);
   
-  // Paginate filtered sample courses
-  const paginatedSampleCourses = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredSampleCourses.slice(start, end);
-  }, [filteredSampleCourses, currentPage, itemsPerPage]);
+  // Calculate pagination from API response
+  const totalPages = useMemo(() => {
+    return coursesResponse?.pagination?.pages || 1;
+  }, [coursesResponse?.pagination?.pages]);
   
-  // Calculate pagination for sample courses
-  const sampleTotalPages = useMemo(() => {
-    return Math.ceil(filteredSampleCourses.length / itemsPerPage);
-  }, [filteredSampleCourses.length, itemsPerPage]);
-  
-  // TEMPORARILY: Always use sample courses (backend disabled)
-  const useFallback = true; // Always true since we're using sample courses only
-  const courses = paginatedSampleCourses;
-  const totalPages = sampleTotalPages;
-  const totalItems = filteredSampleCourses.length;
+  const totalItems = useMemo(() => {
+    return coursesResponse?.pagination?.total || courses.length;
+  }, [coursesResponse?.pagination?.total, courses.length]);
 
-  // Use courses directly since filtering is now handled server-side (or client-side for samples)
+  // Use courses directly - filtering is handled server-side
   const displayedCourses = courses;
 
   // Check if user is authenticated - immediate check
@@ -391,13 +90,12 @@ const CoursesPage: React.FC = () => {
   // Handle "Go to page" input
   const handleGoToPage = useCallback(() => {
     const page = parseInt(goToPageInput);
-    const maxPages = Math.ceil(filteredSampleCourses.length / itemsPerPage);
-    if (page >= 1 && page <= maxPages) {
+    if (page >= 1 && page <= totalPages) {
       handlePageChange(page);
     } else {
       setGoToPageInput(''); // Clear invalid input
     }
-  }, [goToPageInput, filteredSampleCourses.length, itemsPerPage, handlePageChange]);
+  }, [goToPageInput, totalPages, handlePageChange]);
 
   const handleGoToPageKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -464,8 +162,8 @@ const CoursesPage: React.FC = () => {
       'investing': 'investing'
     };
     
-    // Get categories from sample courses and map them to new values
-    const existingCategories = [...new Set(sampleCourses.map(course => {
+    // Get categories from API courses and map them to new values
+    const existingCategories = [...new Set(courses.map(course => {
       const category = course.category ?? '';
       return categoryMapping[category] || category;
     }).filter(Boolean))];
@@ -481,26 +179,24 @@ const CoursesPage: React.FC = () => {
     });
     
     return allCategories;
-  }, []); // No dependencies since we're using static sample courses
+  }, [courses]);
 
   const levels = useMemo(() => {
-    const allCourses = sampleCourses; // Always use sample courses
     const uniqueLevels = [
       ...new Set(
-        allCourses
+        courses
           .map(course => course.level)
           .filter((level): level is string => typeof level === 'string' && level.length > 0)
       )
     ];
     return uniqueLevels.sort();
-  }, [courses, useSampleCourses]);
+  }, [courses]);
 
   const tags = useMemo(() => {
-    const allCourses = sampleCourses; // Always use sample courses
-    const allTags = allCourses.flatMap(course => course.tags || []);
+    const allTags = courses.flatMap(course => course.tags || []);
     const uniqueTags = [...new Set(allTags)];
     return uniqueTags.sort();
-  }, [courses, useSampleCourses]);
+  }, [courses]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -585,7 +281,7 @@ const CoursesPage: React.FC = () => {
         );})}
       </div>
     );
-  }, [displayedCourses, loading, error, totalItems, handlePurchaseSuccess, handleRefetch, t, useFallback]);
+  }, [displayedCourses, loading, error, totalItems, handlePurchaseSuccess, handleRefetch, t]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white pt-16 sm:pt-20 md:pt-24 pb-6 sm:pb-8 md:pb-12">
@@ -837,11 +533,6 @@ const CoursesPage: React.FC = () => {
                   )}
                 </span>
               </div>
-              {useFallback && !loading && (
-                <span className="px-2.5 py-1 text-xs font-medium text-cyan-300 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
-                  {t('courses.sample_data_notice', 'Sample Courses')}
-                </span>
-              )}
             </div>
           </div>
         </div>

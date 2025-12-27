@@ -4,25 +4,50 @@ if (process.env.STRIPE_SECRET_KEY) {
   const Stripe = require('stripe');
   stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-  createCheckoutSession = async ({ user, course, successUrl, cancelUrl }) => {
+  createCheckoutSession = async ({ user, course, bundle, successUrl, cancelUrl }) => {
     try {
       console.log('🔧 Creating Stripe checkout session...');
       console.log(`   - User: ${user.email}`);
-      console.log(`   - Course: ${course.title} ($${course.price})`);
-      console.log(`   - Success URL: ${successUrl}`);
-      console.log(`   - Cancel URL: ${cancelUrl}`);
-
+      
       // Get user ID from token (handle both userId and _id formats)
       const userId = user.userId || user._id;
-      const courseId = course._id;
 
       if (!userId) {
         throw new Error('User ID is required');
       }
 
-      if (!courseId) {
-        throw new Error('Course ID is required');
+      let productName, productDescription, productImages, unitAmount, metadata;
+
+      if (bundle) {
+        console.log(`   - Bundle: ${bundle.title} ($${bundle.price})`);
+        productName = bundle.title;
+        productDescription = bundle.description || 'Course bundle';
+        productImages = bundle.thumbnailURL ? [bundle.thumbnailURL] : [];
+        unitAmount = Math.round(bundle.price * 100);
+        metadata = {
+          userId: userId.toString(),
+          bundleId: bundle._id.toString(),
+          userEmail: user.email,
+          type: 'bundle'
+        };
+      } else if (course) {
+        console.log(`   - Course: ${course.title} ($${course.price})`);
+        productName = course.title;
+        productDescription = course.description || 'Educational course';
+        productImages = course.thumbnailURL ? [course.thumbnailURL] : [];
+        unitAmount = Math.round(course.price * 100);
+        metadata = {
+          userId: userId.toString(),
+          courseId: course._id.toString(),
+          userEmail: user.email,
+          type: 'course'
+        };
+      } else {
+        throw new Error('Either course or bundle is required');
       }
+
+      console.log(`   - Success URL: ${successUrl}`);
+      console.log(`   - Cancel URL: ${cancelUrl}`);
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -32,11 +57,11 @@ if (process.env.STRIPE_SECRET_KEY) {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: course.title,
-                description: course.description || 'Educational course',
-                images: course.thumbnailURL ? [course.thumbnailURL] : [],
+                name: productName,
+                description: productDescription,
+                images: productImages,
               },
-              unit_amount: Math.round(course.price * 100), // Convert to cents
+              unit_amount: unitAmount, // Convert to cents
             },
             quantity: 1,
           },
@@ -44,11 +69,7 @@ if (process.env.STRIPE_SECRET_KEY) {
         mode: 'payment',
         success_url: successUrl,
         cancel_url: cancelUrl,
-        metadata: {
-          userId: userId.toString(),
-          courseId: courseId.toString(),
-          userEmail: user.email,
-        },
+        metadata: metadata,
         // Add billing address collection for better fraud prevention
         billing_address_collection: 'required',
         // Add customer creation for future reference
@@ -210,32 +231,44 @@ if (process.env.STRIPE_SECRET_KEY) {
   console.log('⚠️  Stripe not configured - using development mode');
   stripe = null;
   
-  createCheckoutSession = async ({ user, course, successUrl, cancelUrl }) => {
+  createCheckoutSession = async ({ user, course, bundle, successUrl, cancelUrl }) => {
     console.log('🔧 Creating development checkout session...');
     console.log(`   - User: ${user.email}`);
-    console.log(`   - Course: ${course.title} ($${course.price})`);
     
     // Get user ID from token (handle both userId and _id formats)
     const userId = user.userId || user._id;
-    const courseId = course._id;
 
     if (!userId) {
       throw new Error('User ID is required');
     }
 
-    if (!courseId) {
-      throw new Error('Course ID is required');
+    let metadata;
+
+    if (bundle) {
+      console.log(`   - Bundle: ${bundle.title} ($${bundle.price})`);
+      metadata = {
+        userId: userId.toString(),
+        bundleId: bundle._id.toString(),
+        userEmail: user.email,
+        type: 'bundle'
+      };
+    } else if (course) {
+      console.log(`   - Course: ${course.title} ($${course.price})`);
+      metadata = {
+        userId: userId.toString(),
+        courseId: course._id.toString(),
+        userEmail: user.email,
+        type: 'course'
+      };
+    } else {
+      throw new Error('Either course or bundle is required');
     }
     
     // Simulate a Stripe session object
     const session = {
       id: `dev_session_${Date.now()}`,
       url: successUrl || 'http://localhost:5173/checkout/success',
-      metadata: {
-        userId: userId.toString(),
-        courseId: courseId.toString(),
-        userEmail: user.email,
-      }
+      metadata: metadata
     };
     
     console.log('✅ Development session created');

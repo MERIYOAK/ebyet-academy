@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 import { useTranslation } from 'react-i18next';
 
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Users, Star, Play, ShoppingCart, CheckCircle, Loader } from 'lucide-react';
+import { Clock, Star, Play, ShoppingCart, CheckCircle, Loader } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
 
 interface CourseCardProps {
@@ -232,13 +232,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
       </div>
 
              <div className="p-4 xxs:p-6 flex flex-col flex-grow bg-gray-800 sm:bg-gradient-to-b sm:from-gray-800 sm:to-gray-900/30">
-                 <div className="flex items-center justify-between mb-2">
-           <div className="flex items-center space-x-1 text-gray-400 text-xs xxs:text-sm">
-             <Users className="h-3 w-3 xxs:h-4 xxs:w-4" />
-             <span>{students.toLocaleString()} {t('course_card.students')}</span>
-           </div>
-         </div>
-
                  <h3 className="text-base xxs:text-lg sm:text-xl font-bold text-white mb-2 line-clamp-2 h-12 xxs:h-14 sm:h-16 group-hover:text-cyan-400 transition-all duration-700 ease-in-out drop-shadow-sm group-hover:drop-shadow-md group-hover:translate-x-1">
            {title}
          </h3>

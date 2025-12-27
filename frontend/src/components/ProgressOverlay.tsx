@@ -61,7 +61,7 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-red-600 h-2 rounded-full transition-all duration-300 ease-out"
+                className="bg-cyan-500 h-2 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
@@ -71,7 +71,7 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
         {/* Status Icon */}
         <div className="flex items-center justify-center mb-4">
           {status === 'loading' && (
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
           )}
           {status === 'success' && (
             <div className="rounded-full h-8 w-8 bg-green-100 flex items-center justify-center">

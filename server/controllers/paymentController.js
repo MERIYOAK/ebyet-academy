@@ -1,12 +1,14 @@
 const { createCheckoutSession, stripe, verifyWebhook } = require('../utils/stripe');
 const Course = require('../models/Course');
+const Bundle = require('../models/Bundle');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
 const mongoose = require('mongoose');
 
 /**
- * Create a Stripe checkout session for course purchase
+ * Create a Stripe checkout session for course or bundle purchase
  * POST /api/payments/create-checkout-session
+ * Body: { courseId } OR { bundleId }
  */
 exports.createCheckoutSession = async (req, res) => {
   try {
@@ -24,31 +26,24 @@ exports.createCheckoutSession = async (req, res) => {
       });
     }
 
-    const { courseId } = req.body;
+    const { courseId, bundleId } = req.body;
     
-    if (!courseId) {
+    if (!courseId && !bundleId) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Course ID is required' 
+        message: 'Either courseId or bundleId is required' 
       });
     }
 
-    // Find the course
-    const course = await Course.findById(courseId);
-    if (!course) {
-      console.log(`❌ Course not found: ${courseId}`);
-      return res.status(404).json({ 
+    if (courseId && bundleId) {
+      return res.status(400).json({ 
         success: false, 
-        message: 'Course not found' 
+        message: 'Cannot purchase both course and bundle in one session' 
       });
     }
-
-    console.log(`✅ Course found: ${course.title} ($${course.price})`);
 
     // Get user ID from token (handle both userId and _id formats)
     const userId = req.user.userId || req.user._id;
-
-    // Check if user already purchased this course
     const user = await User.findById(userId);
     if (!user) {
       console.log(`❌ User not found in database: ${userId}`);
@@ -58,75 +53,147 @@ exports.createCheckoutSession = async (req, res) => {
       });
     }
 
-    // Initialize purchasedCourses array if it doesn't exist
-    if (!user.purchasedCourses) {
-      user.purchasedCourses = [];
-      await user.save();
-    }
+    // Initialize arrays if they don't exist
+    if (!user.purchasedCourses) user.purchasedCourses = [];
+    if (!user.purchasedBundles) user.purchasedBundles = [];
 
-    if (user.purchasedCourses.includes(courseId)) {
-      console.log(`⚠️  User already purchased this course`);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You already own this course' 
-      });
+    let course, bundle, itemId, itemType, successUrl, cancelUrl;
+
+    if (courseId) {
+      // Handle course purchase
+      course = await Course.findById(courseId);
+      if (!course) {
+        console.log(`❌ Course not found: ${courseId}`);
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Course not found' 
+        });
+      }
+
+      if (user.purchasedCourses.includes(courseId)) {
+        console.log(`⚠️  User already purchased this course`);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'You already own this course' 
+        });
+      }
+
+      itemId = courseId;
+      itemType = 'course';
+      successUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success?courseId=${courseId}`;
+      cancelUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/cancel?courseId=${courseId}`;
+      console.log(`✅ Course found: ${course.title} ($${course.price})`);
+
+    } else if (bundleId) {
+      // Handle bundle purchase
+      bundle = await Bundle.findById(bundleId);
+      if (!bundle) {
+        console.log(`❌ Bundle not found: ${bundleId}`);
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Bundle not found' 
+        });
+      }
+
+      if (user.purchasedBundles.includes(bundleId)) {
+        console.log(`⚠️  User already purchased this bundle`);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'You already own this bundle' 
+        });
+      }
+
+      itemId = bundleId;
+      itemType = 'bundle';
+      successUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success?bundleId=${bundleId}`;
+      cancelUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/cancel?bundleId=${bundleId}`;
+      console.log(`✅ Bundle found: ${bundle.title} ($${bundle.price})`);
     }
 
     // If Stripe is not configured, mark as purchased immediately (development mode)
     if (!stripe) {
       console.log('⚠️  Stripe not configured - marking as purchased in development mode');
       
-      // Add course to user's purchased courses
-      await User.findByIdAndUpdate(
-        userId, 
-        { $addToSet: { purchasedCourses: courseId } }
-      );
-
-      // Enroll the student in the course (increments totalEnrollments)
-      await course.enrollStudent(userId);
-      console.log(`✅ Student enrolled in course: ${course.title}`);
-      console.log(`   - New enrollment count: ${course.totalEnrollments}`);
-      
-      // Create a payment record for development mode
-      const devPaymentData = {
-        userId: userId,
-        courseId: courseId,
-        stripeSessionId: `dev_session_${Date.now()}`,
-        amount: course.price,
-        currency: 'usd',
-        status: 'completed',
-        paymentMethod: 'card',
-        metadata: {
-          userEmail: req.user.email,
-          courseTitle: course.title,
-          paymentDate: new Date()
+      if (course) {
+        // Add course to user's purchased courses
+        await User.findByIdAndUpdate(userId, { $addToSet: { purchasedCourses: courseId } });
+        // Enroll the student in the course
+        await course.enrollStudent(userId);
+        console.log(`✅ Student enrolled in course: ${course.title}`);
+        
+        const devPaymentData = {
+          userId: userId,
+          courseId: courseId,
+          stripeSessionId: `dev_session_${Date.now()}`,
+          amount: course.price,
+          currency: 'usd',
+          status: 'completed',
+          paymentMethod: 'card',
+          metadata: {
+            userEmail: req.user.email,
+            courseTitle: course.title,
+            paymentDate: new Date()
+          }
+        };
+        await Payment.findOneAndUpdate(
+          { userId: userId, courseId: courseId, status: 'completed' },
+          devPaymentData,
+          { upsert: true, new: true }
+        );
+      } else if (bundle) {
+        // Add bundle to user's purchased bundles
+        await User.findByIdAndUpdate(userId, { $addToSet: { purchasedBundles: bundleId } });
+        // Enroll the student in the bundle
+        await bundle.enrollStudent(userId);
+        // Add all bundle courses to user's purchased courses
+        await User.findByIdAndUpdate(userId, { $addToSet: { purchasedCourses: { $each: bundle.courseIds } } });
+        // Enroll in all courses in the bundle
+        for (const courseIdInBundle of bundle.courseIds) {
+          const courseInBundle = await Course.findById(courseIdInBundle);
+          if (courseInBundle) {
+            try {
+              await courseInBundle.enrollStudent(userId);
+            } catch (err) {
+              // Already enrolled, skip
+              console.log(`⚠️  User already enrolled in course: ${courseInBundle.title}`);
+            }
+          }
         }
-      };
-
-      // Create or update payment record
-      await Payment.findOneAndUpdate(
-        { userId: userId, courseId: courseId, status: 'completed' },
-        devPaymentData,
-        { upsert: true, new: true }
-      );
-      
-      console.log(`✅ Course added to user's purchased courses in development mode`);
-      console.log(`✅ Payment record created: $${course.price}`);
+        console.log(`✅ Student enrolled in bundle: ${bundle.title}`);
+        
+        const devPaymentData = {
+          userId: userId,
+          bundleId: bundleId,
+          stripeSessionId: `dev_session_${Date.now()}`,
+          amount: bundle.price,
+          currency: 'usd',
+          status: 'completed',
+          paymentMethod: 'card',
+          metadata: {
+            userEmail: req.user.email,
+            bundleTitle: bundle.title,
+            paymentDate: new Date()
+          }
+        };
+        await Payment.findOneAndUpdate(
+          { userId: userId, bundleId: bundleId, status: 'completed' },
+          devPaymentData,
+          { upsert: true, new: true }
+        );
+      }
       
       return res.json({ 
         success: true,
-        url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success?courseId=${courseId}`,
-        message: 'Course purchased successfully (development mode)'
+        url: successUrl,
+        message: `${itemType === 'course' ? 'Course' : 'Bundle'} purchased successfully (development mode)`
       });
     }
 
     // Create Stripe checkout session
-    const successUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success?courseId=${courseId}`;
-    const cancelUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/cancel?courseId=${courseId}`;
-
     const session = await createCheckoutSession({
       user: req.user,
       course,
+      bundle,
       successUrl,
       cancelUrl,
     });
@@ -237,22 +304,23 @@ async function handleCheckoutSessionCompleted(session) {
   console.log(`   - Metadata:`, session.metadata);
 
   try {
-    const { userId, courseId, userEmail } = session.metadata;
+    const { userId, courseId, bundleId, userEmail, type } = session.metadata;
 
-    if (!userId || !courseId) {
-      throw new Error('Missing userId or courseId in session metadata');
+    if (!userId || (!courseId && !bundleId)) {
+      throw new Error('Missing userId or item ID (courseId/bundleId) in session metadata');
     }
 
-    // Verify the course exists
-    const course = await Course.findById(courseId);
-    if (!course) {
-      throw new Error(`Course not found: ${courseId}`);
-    }
+    const itemType = type || (bundleId ? 'bundle' : 'course');
+    const itemId = bundleId || courseId;
 
-    // Update user's purchased courses
+    // Update user's purchased items
+    const updateQuery = itemType === 'bundle' 
+      ? { $addToSet: { purchasedBundles: bundleId } }
+      : { $addToSet: { purchasedCourses: courseId } };
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $addToSet: { purchasedCourses: courseId } },
+      updateQuery,
       { new: true }
     );
 
@@ -260,26 +328,92 @@ async function handleCheckoutSessionCompleted(session) {
       throw new Error(`User not found: ${userId}`);
     }
 
-    // Enroll the student in the course (increments totalEnrollments)
-    await course.enrollStudent(userId);
-    console.log(`✅ Student enrolled in course: ${course.title}`);
-    console.log(`   - New enrollment count: ${course.totalEnrollments}`);
+    let paymentData;
 
-    // Store payment information
-    const paymentData = {
-      userId: userId,
-      courseId: courseId,
-      stripeSessionId: session.id,
-      amount: session.amount_total / 100, // Convert from cents to dollars
-      currency: session.currency,
-      status: 'completed',
-      paymentMethod: 'card',
-      metadata: {
-        userEmail: userEmail,
-        courseTitle: course.title,
-        paymentDate: new Date()
+    if (itemType === 'bundle') {
+      // Handle bundle purchase
+      const bundle = await Bundle.findById(bundleId);
+      if (!bundle) {
+        throw new Error(`Bundle not found: ${bundleId}`);
       }
-    };
+
+      // Enroll the student in the bundle
+      await bundle.enrollStudent(userId);
+      console.log(`✅ Student enrolled in bundle: ${bundle.title}`);
+
+      // Add all bundle courses to user's purchased courses
+      await User.findByIdAndUpdate(
+        userId,
+        { $addToSet: { purchasedCourses: { $each: bundle.courseIds } } }
+      );
+
+      // Enroll in all courses in the bundle
+      for (const courseIdInBundle of bundle.courseIds) {
+        const courseInBundle = await Course.findById(courseIdInBundle);
+        if (courseInBundle) {
+          try {
+            await courseInBundle.enrollStudent(userId);
+          } catch (err) {
+            // Already enrolled, skip
+            console.log(`⚠️  User already enrolled in course: ${courseInBundle.title}`);
+          }
+        }
+      }
+
+      paymentData = {
+        userId: userId,
+        bundleId: bundleId,
+        stripeSessionId: session.id,
+        amount: session.amount_total / 100,
+        currency: session.currency,
+        status: 'completed',
+        paymentMethod: 'card',
+        metadata: {
+          userEmail: userEmail,
+          bundleTitle: bundle.title,
+          paymentDate: new Date()
+        }
+      };
+
+      console.log(`✅ Bundle access granted successfully`);
+      console.log(`   - User: ${updatedUser.email}`);
+      console.log(`   - Bundle: ${bundle.title}`);
+      console.log(`   - Total purchased bundles: ${updatedUser.purchasedBundles?.length || 0}`);
+      console.log(`   - Payment recorded: $${paymentData.amount}`);
+
+    } else {
+      // Handle course purchase
+      const course = await Course.findById(courseId);
+      if (!course) {
+        throw new Error(`Course not found: ${courseId}`);
+      }
+
+      // Enroll the student in the course (increments totalEnrollments)
+      await course.enrollStudent(userId);
+      console.log(`✅ Student enrolled in course: ${course.title}`);
+      console.log(`   - New enrollment count: ${course.totalEnrollments}`);
+
+      paymentData = {
+        userId: userId,
+        courseId: courseId,
+        stripeSessionId: session.id,
+        amount: session.amount_total / 100,
+        currency: session.currency,
+        status: 'completed',
+        paymentMethod: 'card',
+        metadata: {
+          userEmail: userEmail,
+          courseTitle: course.title,
+          paymentDate: new Date()
+        }
+      };
+
+      console.log(`✅ Course access granted successfully`);
+      console.log(`   - User: ${updatedUser.email}`);
+      console.log(`   - Course: ${course.title}`);
+      console.log(`   - Total purchased courses: ${updatedUser.purchasedCourses.length}`);
+      console.log(`   - Payment recorded: $${paymentData.amount}`);
+    }
 
     // Create or update payment record
     await Payment.findOneAndUpdate(
@@ -287,15 +421,6 @@ async function handleCheckoutSessionCompleted(session) {
       paymentData,
       { upsert: true, new: true }
     );
-
-    console.log(`✅ Course access granted successfully`);
-    console.log(`   - User: ${updatedUser.email}`);
-    console.log(`   - Course: ${course.title}`);
-    console.log(`   - Total purchased courses: ${updatedUser.purchasedCourses.length}`);
-    console.log(`   - Payment recorded: $${paymentData.amount}`);
-
-    // You could also send an email confirmation here
-    // await sendPurchaseConfirmationEmail(userEmail, course.title);
 
   } catch (error) {
     console.error('❌ Error processing checkout completion:', error);

@@ -21,7 +21,7 @@ const LoadingMessage: React.FC<LoadingMessageProps> = ({
     <div className={`flex items-center justify-center py-8 px-4 ${className}`}>
       <div className="text-center">
         {showSpinner && (
-          <Loader2 className="h-8 w-8 animate-spin text-red-600 mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-500 mx-auto mb-4" />
         )}
         <p className="text-gray-600 text-lg font-medium">
           {defaultMessage}

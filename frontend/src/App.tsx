@@ -14,6 +14,7 @@ import AdminLayout from './layouts/AdminLayout';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import ScrollManager from './components/ScrollManager';
 import SessionMonitorWrapper from './components/SessionMonitorWrapper';
+import MetaTagsUpdater from './components/MetaTagsUpdater';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -36,6 +37,12 @@ import AdminVideoPlayerPage from './pages/AdminVideoPlayerPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminBundlesPage from './pages/AdminBundlesPage';
+import AdminBundleUploadPage from './pages/AdminBundleUploadPage';
+import AdminBundleViewPage from './pages/AdminBundleViewPage';
+import AdminBundleEditPage from './pages/AdminBundleEditPage';
+import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
+import AdminNewsletterPage from './pages/AdminNewsletterPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import PaymentFailurePage from './pages/PaymentFailurePage';
@@ -79,6 +86,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <MetaTagsUpdater />
         <SessionMonitorWrapper>
           <ScrollManager>
             <PaymentFailureHandler />
@@ -130,6 +138,12 @@ function App() {
           <Route path="courses/:courseId/videos/:videoId" element={<AdminVideoPlayerPage />} />
           <Route path="courses/:courseId/videos/upload" element={<AdminVideoUploadPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="bundles" element={<AdminBundlesPage />} />
+          <Route path="bundles/upload" element={<AdminBundleUploadPage />} />
+          <Route path="bundles/:bundleId" element={<AdminBundleViewPage />} />
+          <Route path="bundles/:bundleId/edit" element={<AdminBundleEditPage />} />
+          <Route path="announcements" element={<AdminAnnouncementsPage />} />
+          <Route path="newsletter" element={<AdminNewsletterPage />} />
         </Route>
             </Routes>
           </ScrollManager>

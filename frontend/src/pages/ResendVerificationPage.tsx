@@ -1,32 +1,33 @@
 import React, { useState } from 'react';
 import { buildApiUrl } from '../config/environment';
-
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import AuthForm from '../components/AuthForm';
 
 const ResendVerificationPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const fields = [
     {
       name: 'email',
-      label: 'Email Address',
+      label: t('auth.verify_email.email'),
       type: 'email',
-      placeholder: 'Enter your email address',
+      placeholder: t('auth.verify_email.enter_email'),
       required: true
     }
   ];
 
   const links = [
     {
-      text: 'Remember your password?',
-      linkText: 'Sign in here',
+      text: t('auth.reset_password.remember_password'),
+      linkText: t('auth.reset_password.sign_in_here'),
       href: '/login'
     },
     {
-      text: "Don't have an account?",
-      linkText: 'Sign up here',
+      text: t('auth.reset_password.no_account'),
+      linkText: t('auth.reset_password.sign_up_here'),
       href: '/register'
     }
   ];
@@ -50,14 +51,14 @@ const ResendVerificationPage = () => {
       const result = await response.json();
 
       if (response.ok) {
-        alert(result.message || 'Verification email sent! Please check your inbox.');
+        alert(result.message || t('auth.verify_email.verification_sent'));
         navigate('/login');
       } else {
-        alert(result.message || 'Failed to send verification email. Please try again.');
+        alert(result.message || t('auth.verify_email.verification_error'));
       }
     } catch (error) {
       console.error('Resend verification error:', error);
-      alert('Failed to send verification email. Please check your connection and try again.');
+      alert(t('auth.verify_email.network_error'));
     } finally {
       setIsLoading(false);
     }
@@ -65,10 +66,10 @@ const ResendVerificationPage = () => {
 
   return (
     <AuthForm
-      title="Resend Verification Email"
-      subtitle="Enter your email address and we'll send you a new verification link"
+      title={t('auth.verify_email.resend_verification')}
+      subtitle={t('auth.verify_email.resend_subtitle')}
       fields={fields}
-      submitText={isLoading ? "Sending..." : "Send Verification Email"}
+      submitText={isLoading ? t('auth.verify_email.sending') : t('auth.verify_email.send_verification_email')}
       onSubmit={handleSubmit}
       links={links}
     />

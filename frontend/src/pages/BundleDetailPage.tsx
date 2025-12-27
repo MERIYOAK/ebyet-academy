@@ -1,116 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, BookOpen, ShoppingCart, Tag, CheckCircle, Clock, Users, Play } from 'lucide-react';
-import { getBundleById, Bundle } from '../data/mockBundles';
-import CourseCard from '../components/CourseCard';
+import { BookOpen, ShoppingCart, Tag, CheckCircle, Clock, Play } from 'lucide-react';
 import LoadingMessage from '../components/LoadingMessage';
 import { buildApiUrl } from '../config/environment';
-
-// Simplified course interface for bundle display
-interface SimplifiedCourse {
-  _id: string;
-  title: string;
-  description: string;
-  thumbnailURL?: string;
-  price: number;
-  totalEnrollments?: number;
-  videos?: Array<{ _id: string; duration?: string }>;
-  tags?: string[];
-}
+import { useBundle, ApiBundle } from '../hooks/useBundles';
 
 const BundleDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [bundle, setBundle] = useState<Bundle | null>(null);
-  const [courses, setCourses] = useState<SimplifiedCourse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // Fetch bundle data (from mock)
-  useEffect(() => {
-    if (!id) {
-      setError(t('bundle_detail.bundle_not_found', 'Bundle not found'));
-      setLoading(false);
-      return;
-    }
+  // Fetch bundle data from API
+  const { 
+    data: bundleData, 
+    isLoading: loading, 
+    error: apiError 
+  } = useBundle(id || '');
 
-    const bundleData = getBundleById(id);
-    if (!bundleData) {
-      setError(t('bundle_detail.bundle_not_found', 'Bundle not found'));
-      setLoading(false);
-      return;
+  // Extract bundle and courses from API response
+  const bundle = useMemo(() => {
+    if (bundleData) {
+      return bundleData;
     }
+    return null;
+  }, [bundleData]);
 
-    setBundle(bundleData);
-    
-    // Fetch course details for included courses
-    // Note: This is mock data - in real implementation, we'd fetch from API
-    fetchIncludedCourses(bundleData.courseIds);
-  }, [id, t]);
-
-  // Mock function to fetch course details
-  // In real implementation, this would call the API
-  const fetchIncludedCourses = async (courseIds: string[]) => {
-    try {
-      setLoading(true);
-      
-      // Try to fetch courses from API if available
-      // For now, we'll create placeholder courses based on IDs
-      const fetchedCourses: SimplifiedCourse[] = [];
-      
-      for (const courseId of courseIds) {
-        try {
-          const response = await fetch(buildApiUrl(`/api/courses/${courseId}`));
-          if (response.ok) {
-            const courseData = await response.json();
-            fetchedCourses.push({
-              _id: courseData._id || courseId,
-              title: courseData.title || `Course ${courseId}`,
-              description: courseData.description || '',
-              thumbnailURL: courseData.thumbnailURL,
-              price: courseData.price || 0,
-              totalEnrollments: courseData.totalEnrollments || 0,
-              videos: courseData.videos || [],
-              tags: courseData.tags || []
-            });
-          } else {
-            // If course not found, create a placeholder
-            fetchedCourses.push({
-              _id: courseId,
-              title: `Course ${courseId}`,
-              description: t('bundle_detail.course_placeholder_description', 'This course is included in the bundle.'),
-              price: 0,
-              totalEnrollments: 0,
-              videos: [],
-              tags: []
-            });
-          }
-        } catch (err) {
-          // Create placeholder if fetch fails
-          fetchedCourses.push({
-            _id: courseId,
-            title: `Course ${courseId}`,
-            description: t('bundle_detail.course_placeholder_description', 'This course is included in the bundle.'),
-            price: 0,
-            totalEnrollments: 0,
-            videos: [],
-            tags: []
-          });
-        }
-      }
-      
-      setCourses(fetchedCourses);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching courses:', err);
-      setError(t('bundle_detail.error_loading_courses', 'Error loading courses'));
-      setLoading(false);
+  const courses = useMemo(() => {
+    if (bundle?.courseIds) {
+      return bundle.courseIds.map(course => ({
+        _id: course._id,
+        title: course.title,
+        description: course.description,
+        thumbnailURL: course.thumbnailURL,
+        price: course.price,
+        totalEnrollments: course.totalEnrollments,
+        videos: course.videos || [],
+        tags: course.tags || []
+      }));
     }
-  };
+    return [];
+  }, [bundle]);
+
+  const error = useMemo(() => {
+    if (apiError) {
+      return apiError.message || t('bundle_detail.bundle_not_found', 'Bundle not found');
+    }
+    if (!loading && !bundle && id) {
+      return t('bundle_detail.bundle_not_found', 'Bundle not found');
+    }
+    return null;
+  }, [apiError, loading, bundle, id, t]);
 
   // Calculate savings
   const savingsAmount = bundle && bundle.originalValue
@@ -120,14 +62,52 @@ const BundleDetailPage: React.FC = () => {
     ? Math.round(((bundle.originalValue - bundle.price) / bundle.originalValue) * 100)
     : null;
 
-  // Handle bundle purchase (placeholder - non-functional)
-  const handlePurchase = () => {
-    setIsPurchasing(true);
-    // TODO: Implement bundle purchase logic when backend is ready
-    setTimeout(() => {
+  // Handle bundle purchase
+  const handlePurchase = async () => {
+    if (!bundle || !id) return;
+
+    try {
+      setIsPurchasing(true);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Redirect to login if not authenticated
+        navigate('/login', { state: { from: `/bundles/${id}` } });
+        return;
+      }
+
+      const response = await fetch(buildApiUrl('/api/payment/create-checkout-session'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          bundleId: id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create checkout session');
+      }
+
+      console.log('✅ Checkout session created:', data);
+      
+      // Store session info for potential failure handling
+      sessionStorage.setItem('stripeSessionId', data.sessionId || 'unknown');
+      sessionStorage.setItem('checkoutStartTime', Date.now().toString());
+      
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+
+    } catch (error) {
+      console.error('❌ Purchase error:', error);
+      alert(error instanceof Error ? error.message : 'Purchase failed');
+    } finally {
       setIsPurchasing(false);
-      alert(t('bundle_detail.purchase_placeholder', 'Bundle purchase functionality will be available soon!'));
-    }, 1000);
+    }
   };
 
   if (loading) {
@@ -139,12 +119,6 @@ const BundleDetailPage: React.FC = () => {
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">{error || t('bundle_detail.bundle_not_found', 'Bundle not found')}</h1>
-          <Link
-            to="/bundles"
-            className="text-cyan-400 hover:text-cyan-300 underline"
-          >
-            {t('bundle_detail.back_to_bundles', 'Back to Bundles')}
-          </Link>
         </div>
       </div>
     );
@@ -152,16 +126,9 @@ const BundleDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header with Back Button */}
+      {/* Header */}
       <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 py-6 sm:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/bundles"
-            className="inline-flex items-center text-cyan-400 hover:text-cyan-300 mb-4 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            <span>{t('bundle_detail.back_to_bundles', 'Back to Bundles')}</span>
-          </Link>
         </div>
       </div>
 
@@ -190,13 +157,11 @@ const BundleDetailPage: React.FC = () => {
                 <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-cyan-400" />
                 {t('bundle_detail.included_courses', 'Included Courses')}
                 <span className="text-lg sm:text-xl text-gray-400 font-normal">
-                  ({bundle.courseIds.length})
+                  ({courses.length})
                 </span>
               </h2>
 
-              {loading ? (
-                <LoadingMessage message={t('bundle_detail.loading_courses', 'Loading courses...')} />
-              ) : courses.length > 0 ? (
+              {courses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {courses.map((course) => (
                     <div
@@ -215,12 +180,6 @@ const BundleDetailPage: React.FC = () => {
                             <div className="flex items-center gap-1">
                               <Play className="h-4 w-4" />
                               <span>{course.videos.length} {t('bundle_detail.lessons', 'lessons')}</span>
-                            </div>
-                          )}
-                          {course.totalEnrollments !== undefined && (
-                            <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              <span>{course.totalEnrollments.toLocaleString()}</span>
                             </div>
                           )}
                         </div>
@@ -266,7 +225,7 @@ const BundleDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2 text-gray-300">
                   <BookOpen className="h-5 w-5 text-cyan-400" />
                   <span>
-                    {bundle.courseIds.length} {bundle.courseIds.length === 1 ? t('bundle_detail.course', 'Course') : t('bundle_detail.courses', 'Courses')}
+                    {courses.length} {courses.length === 1 ? t('bundle_detail.course', 'Course') : t('bundle_detail.courses', 'Courses')}
                   </span>
                 </div>
                 {bundle.originalValue && (
@@ -280,28 +239,34 @@ const BundleDetailPage: React.FC = () => {
               </div>
 
               {/* Purchase Button */}
-              <button
-                onClick={handlePurchase}
-                disabled={isPurchasing}
-                className="w-full bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 text-white font-semibold py-3 sm:py-4 px-6 rounded-lg transition-all duration-500 ease-in-out transform hover:scale-105 hover:-translate-y-1 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 text-base sm:text-lg disabled:cursor-not-allowed"
-              >
-                {isPurchasing ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>{t('bundle_detail.processing', 'Processing...')}</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-5 w-5" />
-                    <span>{t('bundle_detail.buy_bundle', 'Buy Bundle')}</span>
-                  </>
-                )}
-              </button>
+              {!bundle?.userHasPurchased && (
+                <button
+                  onClick={handlePurchase}
+                  disabled={isPurchasing}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 text-white font-semibold py-3 sm:py-4 px-6 rounded-lg transition-all duration-500 ease-in-out transform hover:scale-105 hover:-translate-y-1 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 text-base sm:text-lg disabled:cursor-not-allowed"
+                >
+                  {isPurchasing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>{t('bundle_detail.processing', 'Processing...')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-5 w-5" />
+                      <span>{t('bundle_detail.buy_bundle', 'Buy Bundle')}</span>
+                    </>
+                  )}
+                </button>
+              )}
 
-              {/* Note */}
-              <p className="mt-4 text-xs text-gray-400 text-center">
-                {t('bundle_detail.purchase_note', 'This is a placeholder. Purchase functionality will be available soon.')}
-              </p>
+              {/* Show purchase status if already purchased */}
+              {bundle?.userHasPurchased && (
+                <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
+                  <p className="text-sm text-green-400 font-semibold">
+                    {t('bundle_detail.already_purchased', 'You already own this bundle')}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

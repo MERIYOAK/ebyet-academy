@@ -29,6 +29,7 @@ const AdminNavbar: React.FC = () => {
   const navigation = useMemo(() => ([
     { name: 'Dashboard', href: '/admin/dashboard' },
     { name: 'Courses', href: '/admin/courses' },
+    { name: 'Bundles', href: '/admin/bundles' },
     { name: 'Users', href: '/admin/users' },
   ]), []);
 

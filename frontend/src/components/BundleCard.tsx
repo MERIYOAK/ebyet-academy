@@ -2,10 +2,20 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, ShoppingCart, Tag } from 'lucide-react';
-import { Bundle } from '../data/mockBundles';
 
 interface BundleCardProps {
-  bundle: Bundle;
+  bundle: {
+    id: string;
+    title: string;
+    description: string;
+    longDescription?: string;
+    price: number;
+    originalValue?: number;
+    courseIds: string[];
+    thumbnailURL?: string;
+    category?: string;
+    featured?: boolean;
+  };
   className?: string;
 }
 
@@ -51,7 +61,7 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
                 boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2)'
               }}
             >
-              {t('bundle_card.save_percentage', { percentage: savingsPercentage }, `Save ${savingsPercentage}%`)}
+              {t('bundle_card.save_percentage', `Save ${savingsPercentage}%`, { percentage: savingsPercentage })}
             </span>
           </div>
         )}

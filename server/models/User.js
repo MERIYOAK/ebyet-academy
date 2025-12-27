@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   tokenVersion: { type: Number, default: 1 }, // For token invalidation
   purchasedCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
+  purchasedBundles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bundle' }],
   // Extended profile fields
   firstName: { type: String, default: null },
   lastName: { type: String, default: null },

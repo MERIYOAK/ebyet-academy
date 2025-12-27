@@ -23,7 +23,7 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
           <div className="space-y-4">
             <Link to="/" className="inline-block">
               <h3 className="text-2xl font-bold text-white mb-4">
-                IBYET Investing
+                {t('brand.name')}
               </h3>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed">
@@ -181,7 +181,7 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-gray-400 text-sm text-center sm:text-left">
               <p>
-                © {currentYear} IBYET Investing. {t('footer.all_rights_reserved', 'All rights reserved.')}
+                © {currentYear} {t('brand.name')}. {t('footer.copyright')}
               </p>
             </div>
             <div className="flex items-center gap-2 text-gray-400 text-sm">

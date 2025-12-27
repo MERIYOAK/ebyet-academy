@@ -153,17 +153,17 @@ const CertificateVerificationPage = () => {
         <meta name="twitter:image" content={shareImage} />
       </Helmet>
 
-      {/* Header */}
-      <div className="relative bg-gray-800 shadow-lg border-b border-gray-700">
-        <div className="max-w-6xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8">
-          <div className="py-8 xxs:py-10 sm:py-12 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 xxs:w-18 xxs:h-18 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4 xxs:mb-6 shadow-lg transform hover:scale-110 transition-transform duration-300">
-              <Shield className="w-8 h-8 xxs:w-9 xxs:h-9 sm:w-10 sm:h-10 text-white" />
+      {/* Hero Header Section */}
+      <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 border-b border-gray-700/50">
+        <div className="max-w-6xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 pt-20 xxs:pt-24 pb-8 xxs:pb-12">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 xxs:w-20 xxs:h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-3xl mb-6 xxs:mb-8 shadow-lg transform hover:scale-110 transition-transform duration-300">
+              <Shield className="w-8 h-8 xxs:w-10 xxs:h-10 sm:w-12 sm:h-12 text-white" />
             </div>
-                         <h1 className="text-2xl xxs:text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3 xxs:mb-4 pb-2 sm:pb-3 md:pb-4 animate-fade-in-up">
+            <h1 className="text-3xl xxs:text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-4 pb-2 sm:pb-3">
               {t('certificate_verification.page_title')}
             </h1>
-            <p className="text-sm xxs:text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed px-2">
+            <p className="text-gray-300 text-base xxs:text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
               {t('certificate_verification.page_subtitle')}
             </p>
           </div>
@@ -224,24 +224,28 @@ const CertificateVerificationPage = () => {
            </form>
         </div>
 
-                 {/* Error Message */}
-         {error && (
-           <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 xxs:p-6 mb-6 xxs:mb-8 transform animate-fade-in-up">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 rounded-3xl p-5 xxs:p-6 sm:p-8 mb-6 xxs:mb-8 transform animate-fade-in-up">
             <div className="flex items-start">
-              <XCircle className="w-5 h-5 xxs:w-6 xxs:h-6 text-red-400 mr-2 xxs:mr-3 mt-0.5" />
-              <div className="w-full">
-                <p className="text-sm xxs:text-base text-red-300 font-semibold">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
+                  <XCircle className="w-5 h-5 xxs:w-6 xxs:h-6 text-red-400" />
+                </div>
+              </div>
+              <div className="w-full ml-4">
+                <p className="text-sm xxs:text-base text-red-300 font-semibold mb-2">
                   {error.includes('not found') ? t('certificate_verification.certificate_not_found') : t('certificate_verification.verification_failed')}
                 </p>
                 {certificateId && (
-                  <p className="mt-1 text-xs xxs:text-sm text-red-300">
-                    {t('certificate_verification.searched_id')}: <span className="font-mono bg-red-500/30 text-red-200 px-1.5 py-0.5 rounded">{certificateId}</span>
+                  <p className="mt-2 mb-3 text-xs xxs:text-sm text-red-300">
+                    {t('certificate_verification.searched_id')}: <span className="font-mono bg-red-500/30 text-red-200 px-2 py-1 rounded-lg">{certificateId}</span>
                   </p>
                 )}
-                <div className="mt-2 text-xs xxs:text-sm text-red-300 space-y-1">
+                <div className="mt-3 text-xs xxs:text-sm text-red-300 space-y-2">
                   {error.includes('not found') ? (
                     <>
-                      <p>{t('certificate_verification.check_typos')}</p>
+                      <p className="font-medium">{t('certificate_verification.check_typos')}</p>
                       <ul className="list-disc ml-5 space-y-1">
                         <li>{t('certificate_verification.typo_in_id')}</li>
                         <li>{t('certificate_verification.wrong_format')}</li>
@@ -252,20 +256,20 @@ const CertificateVerificationPage = () => {
                     <p>{error}</p>
                   )}
                 </div>
-                <div className="mt-3 flex items-center gap-3">
+                <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       const input = document.getElementById('certificateId') as HTMLInputElement | null;
                       if (input) input.focus();
                     }}
-                    className="text-xs xxs:text-sm px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white transition-all duration-200"
+                    className="text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white transition-all duration-200 font-medium"
                   >
                     {t('certificate_verification.try_again')}
                   </button>
                   <Link
                     to="/help-center"
-                    className="text-xs xxs:text-sm px-3 py-1.5 rounded-lg bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600 hover:text-white transition-colors"
+                    className="text-sm px-4 py-2.5 rounded-xl bg-gray-700/50 text-gray-300 border border-gray-600 hover:bg-gray-600 hover:text-white transition-colors text-center font-medium"
                   >
                     {t('certificate_verification.get_help')}
                   </Link>
@@ -275,14 +279,16 @@ const CertificateVerificationPage = () => {
           </div>
         )}
 
-                 {/* Success Message */}
-         {showSuccess && certificate && (
-           <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4 xxs:p-6 mb-6 xxs:mb-8 transform animate-fade-in-up">
+        {/* Success Message */}
+        {showSuccess && certificate && (
+          <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 border border-green-500/30 rounded-3xl p-5 xxs:p-6 sm:p-8 mb-6 xxs:mb-8 transform animate-fade-in-up">
             <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 xxs:w-6 xxs:h-6 text-green-400 mr-2 xxs:mr-3" />
-                               <p className="text-sm xxs:text-base text-green-300 font-medium">
-                   {t('certificate_verification.verified_successfully')}
-                 </p>
+              <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-green-500/20 rounded-xl flex items-center justify-center mr-4">
+                <CheckCircle className="w-6 h-6 xxs:w-7 xxs:h-7 text-green-400" />
+              </div>
+              <p className="text-sm xxs:text-base text-green-300 font-semibold">
+                {t('certificate_verification.verified_successfully')}
+              </p>
             </div>
           </div>
         )}
@@ -291,11 +297,11 @@ const CertificateVerificationPage = () => {
         {certificate && verification && (
           <div className="space-y-6 xxs:space-y-8">
             {/* Verification Status Card */}
-                         <div className={`bg-gradient-to-r ${
-               verification.isValid 
-                 ? 'from-green-500 to-emerald-600' 
-                 : 'from-red-500 to-pink-600'
-             } rounded-2xl shadow-xl p-4 xxs:p-6 sm:p-8 text-white transform animate-fade-in-up`}>
+            <div className={`bg-gradient-to-br ${
+              verification.isValid 
+                ? 'from-green-500 via-emerald-500 to-teal-500' 
+                : 'from-red-500 via-pink-500 to-rose-500'
+            } rounded-3xl shadow-2xl p-6 xxs:p-8 sm:p-10 text-white transform animate-fade-in-up`}>
               <div className="flex flex-col xxs:flex-row items-start xxs:items-center justify-between space-y-4 xxs:space-y-0">
                 <div className="flex items-center space-x-3 xxs:space-x-4">
                   <div className="w-12 h-12 xxs:w-14 xxs:h-14 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -326,90 +332,90 @@ const CertificateVerificationPage = () => {
             {/* Certificate Information Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xxs:gap-8">
               {/* Student Information */}
-              <div className="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-4 xxs:p-6 sm:p-8 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-                <div className="flex items-center mb-4 xxs:mb-6">
-                  <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mr-3 xxs:mr-4">
-                    <User className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
+              <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8 transform hover:scale-[1.02] hover:border-cyan-500/30 transition-all duration-300">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                    <User className="w-6 h-6 xxs:w-7 xxs:h-7 text-white" />
                   </div>
                   <h3 className="text-xl xxs:text-2xl font-bold text-white">{t('certificate_verification.student_information')}</h3>
                 </div>
-                <div className="space-y-3 xxs:space-y-4">
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                    <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.student_name')}</p>
+                <div className="space-y-4">
+                  <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                    <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.student_name')}</p>
                     <p className="text-base xxs:text-lg font-semibold text-white">{certificate.studentName}</p>
                   </div>
                 </div>
               </div>
 
               {/* Course Information */}
-              <div className="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-4 xxs:p-6 sm:p-8 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-                <div className="flex items-center mb-4 xxs:mb-6">
-                  <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-3 xxs:mr-4">
-                    <BookOpen className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
+              <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8 transform hover:scale-[1.02] hover:border-green-500/30 transition-all duration-300">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                    <BookOpen className="w-6 h-6 xxs:w-7 xxs:h-7 text-white" />
                   </div>
                   <h3 className="text-xl xxs:text-2xl font-bold text-white">{t('certificate_verification.course_information')}</h3>
                 </div>
-                <div className="space-y-3 xxs:space-y-4">
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                    <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.course_title')}</p>
+                <div className="space-y-4">
+                  <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                    <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.course_title')}</p>
                     <p className="text-base xxs:text-lg font-semibold text-white">{certificate.courseTitle}</p>
                   </div>
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                    <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.instructor')}</p>
+                  <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                    <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.instructor')}</p>
                     <p className="text-base xxs:text-lg font-semibold text-white">{certificate.instructorName}</p>
                   </div>
                 </div>
               </div>
 
               {/* Completion Details */}
-              <div className="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-4 xxs:p-6 sm:p-8 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-                <div className="flex items-center mb-4 xxs:mb-6">
-                  <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mr-3 xxs:mr-4">
-                    <Calendar className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
+              <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8 transform hover:scale-[1.02] hover:border-orange-500/30 transition-all duration-300">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                    <Calendar className="w-6 h-6 xxs:w-7 xxs:h-7 text-white" />
                   </div>
                   <h3 className="text-xl xxs:text-2xl font-bold text-white">{t('certificate_verification.completion_details')}</h3>
                 </div>
-                <div className="space-y-3 xxs:space-y-4">
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                    <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.completion_date')}</p>
+                <div className="space-y-4">
+                  <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                    <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.completion_date')}</p>
                     <p className="text-base xxs:text-lg font-semibold text-white">{formatDate(certificate.completionDate)}</p>
                   </div>
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                    <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.date_issued')}</p>
+                  <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                    <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.date_issued')}</p>
                     <p className="text-base xxs:text-lg font-semibold text-white">{formatDate(certificate.dateIssued)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Course Statistics */}
-              <div className="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-4 xxs:p-6 sm:p-8 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-                <div className="flex items-center mb-4 xxs:mb-6">
-                  <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mr-3 xxs:mr-4">
-                    <FileText className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
+              <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8 transform hover:scale-[1.02] hover:border-purple-500/30 transition-all duration-300">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                    <FileText className="w-6 h-6 xxs:w-7 xxs:h-7 text-white" />
                   </div>
                   <h3 className="text-xl xxs:text-2xl font-bold text-white">{t('certificate_verification.course_statistics')}</h3>
                 </div>
-                <div className="space-y-3 xxs:space-y-4">
-                  <div className="grid grid-cols-2 gap-3 xxs:gap-4">
-                    <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                      <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.total_lessons')}</p>
-                      <p className="text-xl xxs:text-2xl font-bold text-white">{certificate.totalLessons}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                      <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.total_lessons')}</p>
+                      <p className="text-2xl xxs:text-3xl font-bold text-white">{certificate.totalLessons}</p>
                     </div>
-                    <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                      <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.completed')}</p>
-                      <p className="text-xl xxs:text-2xl font-bold text-white">{certificate.completedLessons}</p>
+                    <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                      <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-2">{t('certificate_verification.completed')}</p>
+                      <p className="text-2xl xxs:text-3xl font-bold text-white">{certificate.completedLessons}</p>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-3 xxs:p-4 border border-gray-700">
-                    <p className="text-xs xxs:text-sm text-gray-400 font-medium">{t('certificate_verification.completion_rate')}</p>
-                    <div className="flex items-center space-x-2 xxs:space-x-3">
-                      <div className="flex-1 bg-gray-700 rounded-full h-2 xxs:h-3">
+                  <div className="bg-gray-900/60 rounded-2xl p-4 xxs:p-5 border border-gray-700/50">
+                    <p className="text-xs xxs:text-sm text-gray-400 font-medium mb-3">{t('certificate_verification.completion_rate')}</p>
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 bg-gray-700/50 rounded-full h-3">
                         <div 
-                          className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 xxs:h-3 rounded-full transition-all duration-1000"
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000"
                           style={{ width: `${certificate.completionPercentage}%` }}
                         ></div>
                       </div>
-                      <p className="text-base xxs:text-lg font-bold text-white">{certificate.completionPercentage}%</p>
+                      <p className="text-lg xxs:text-xl font-bold text-white">{certificate.completionPercentage}%</p>
                     </div>
                   </div>
                 </div>
@@ -417,69 +423,71 @@ const CertificateVerificationPage = () => {
             </div>
 
             {/* Platform Information */}
-            <div className="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-4 xxs:p-6 sm:p-8 text-center">
-              <div className="flex items-center justify-center mb-3 xxs:mb-4">
-                <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mr-3 xxs:mr-4">
-                  <Award className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
+            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8 sm:p-10 text-center">
+              <div className="flex items-center justify-center mb-4 xxs:mb-6">
+                <div className="w-14 h-14 xxs:w-16 xxs:h-16 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                  <Award className="w-7 h-7 xxs:w-8 xxs:h-8 text-white" />
                 </div>
                 <h3 className="text-xl xxs:text-2xl font-bold text-white">{t('certificate_verification.platform_information')}</h3>
               </div>
-              <p className="text-base xxs:text-lg text-gray-300 mb-3 xxs:mb-4">
+              <p className="text-base xxs:text-lg text-gray-300 mb-4">
                 {t('certificate_verification.issued_by')} <span className="font-bold text-cyan-400">{certificate.platformName}</span>
               </p>
-              <p className="text-xs xxs:text-sm text-gray-400">
+              <p className="text-sm xxs:text-base text-gray-400">
                 {t('certificate_verification.blockchain_verification')}
               </p>
             </div>
 
-                         {/* Verification Notice */}
-             <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 xxs:p-6 text-center">
-               <div className="flex items-center justify-center mb-2 xxs:mb-3">
-                 <Shield className="w-5 h-5 xxs:w-6 xxs:h-6 text-blue-400 mr-2" />
-                 <p className="text-sm xxs:text-base text-blue-300 font-medium">{t('certificate_verification.verification_complete')}</p>
-               </div>
-               <p className="text-xs xxs:text-sm text-blue-300">
-                 {t('certificate_verification.public_verification_notice')}
-               </p>
-             </div>
+            {/* Verification Notice */}
+            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border border-blue-500/30 rounded-3xl p-5 xxs:p-6 sm:p-8 text-center">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mr-3">
+                  <Shield className="w-5 h-5 xxs:w-6 xxs:h-6 text-blue-400" />
+                </div>
+                <p className="text-sm xxs:text-base text-blue-300 font-semibold">{t('certificate_verification.verification_complete')}</p>
+              </div>
+              <p className="text-xs xxs:text-sm text-blue-300/90">
+                {t('certificate_verification.public_verification_notice')}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Instructions */}
-        <div className="mt-12 xxs:mt-14 sm:mt-16 bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-4 xxs:p-6 sm:p-8">
-          <div className="text-center mb-6 xxs:mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 xxs:w-14 xxs:h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full mb-3 xxs:mb-4 shadow-lg">
-              <Sparkles className="w-6 h-6 xxs:w-7 xxs:h-7 sm:w-8 sm:h-8 text-white" />
+        <div className="mt-12 xxs:mt-14 sm:mt-16 bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8 sm:p-10">
+          <div className="text-center mb-8 xxs:mb-10">
+            <div className="inline-flex items-center justify-center w-14 h-14 xxs:w-16 xxs:h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl mb-4 xxs:mb-6 shadow-lg">
+              <Sparkles className="w-7 h-7 xxs:w-8 xxs:h-8 sm:w-10 sm:h-10 text-white" />
             </div>
-            <h3 className="text-xl xxs:text-2xl font-bold text-white mb-3 xxs:mb-4">{t('certificate_verification.how_to_verify')}</h3>
+            <h3 className="text-2xl xxs:text-3xl font-bold text-white mb-4">{t('certificate_verification.how_to_verify')}</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xxs:gap-6">
-            <div className="text-center p-4 xxs:p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-              <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-cyan-500 rounded-full flex items-center justify-center mx-auto mb-3 xxs:mb-4">
-                <span className="text-white font-bold text-base xxs:text-lg">1</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 xxs:gap-6">
+            <div className="text-center p-5 xxs:p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 transform hover:scale-105 hover:border-cyan-500/30 transition-all duration-300">
+              <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-white font-bold text-lg xxs:text-xl">1</span>
               </div>
-              <h4 className="font-semibold text-white mb-2 text-sm xxs:text-base">{t('certificate_verification.step_1')}</h4>
+              <h4 className="font-semibold text-white mb-3 text-sm xxs:text-base">{t('certificate_verification.step_1')}</h4>
               <p className="text-gray-300 text-xs xxs:text-sm">{t('certificate_verification.step_1_desc')}</p>
             </div>
-            <div className="text-center p-4 xxs:p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-              <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 xxs:mb-4">
-                <span className="text-white font-bold text-base xxs:text-lg">2</span>
+            <div className="text-center p-5 xxs:p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 transform hover:scale-105 hover:border-green-500/30 transition-all duration-300">
+              <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-white font-bold text-lg xxs:text-xl">2</span>
               </div>
-              <h4 className="font-semibold text-white mb-2 text-sm xxs:text-base">{t('certificate_verification.step_2')}</h4>
+              <h4 className="font-semibold text-white mb-3 text-sm xxs:text-base">{t('certificate_verification.step_2')}</h4>
               <p className="text-gray-300 text-xs xxs:text-sm">{t('certificate_verification.step_2_desc')}</p>
             </div>
-            <div className="text-center p-4 xxs:p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-              <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 xxs:mb-4">
-                <span className="text-white font-bold text-base xxs:text-lg">3</span>
+            <div className="text-center p-5 xxs:p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 transform hover:scale-105 hover:border-purple-500/30 transition-all duration-300">
+              <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-white font-bold text-lg xxs:text-xl">3</span>
               </div>
-              <h4 className="font-semibold text-white mb-2 text-sm xxs:text-base">{t('certificate_verification.step_3')}</h4>
+              <h4 className="font-semibold text-white mb-3 text-sm xxs:text-base">{t('certificate_verification.step_3')}</h4>
               <p className="text-gray-300 text-xs xxs:text-sm">{t('certificate_verification.step_3_desc')}</p>
             </div>
-            <div className="text-center p-4 xxs:p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 transform hover:scale-105 hover:border-gray-600 transition-all duration-300">
-              <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 xxs:mb-4">
-                <span className="text-white font-bold text-base xxs:text-lg">4</span>
+            <div className="text-center p-5 xxs:p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 transform hover:scale-105 hover:border-orange-500/30 transition-all duration-300">
+              <div className="w-12 h-12 xxs:w-14 xxs:h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-white font-bold text-lg xxs:text-xl">4</span>
               </div>
-              <h4 className="font-semibold text-white mb-2 text-sm xxs:text-base">{t('certificate_verification.step_4')}</h4>
+              <h4 className="font-semibold text-white mb-3 text-sm xxs:text-base">{t('certificate_verification.step_4')}</h4>
               <p className="text-gray-300 text-xs xxs:text-sm">{t('certificate_verification.step_4_desc')}</p>
             </div>
           </div>

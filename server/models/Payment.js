@@ -9,7 +9,12 @@ const paymentSchema = new mongoose.Schema({
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
-    required: true
+    required: function() { return !this.bundleId; }
+  },
+  bundleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Bundle',
+    required: function() { return !this.courseId; }
   },
   stripeSessionId: {
     type: String,
@@ -40,6 +45,7 @@ const paymentSchema = new mongoose.Schema({
   metadata: {
     userEmail: String,
     courseTitle: String,
+    bundleTitle: String,
     paymentDate: Date
   },
   createdAt: {
@@ -60,6 +66,7 @@ paymentSchema.pre('save', function(next) {
 
 // Create indexes for better query performance
 paymentSchema.index({ userId: 1, courseId: 1 });
+paymentSchema.index({ userId: 1, bundleId: 1 });
 paymentSchema.index({ status: 1 });
 paymentSchema.index({ createdAt: -1 });
 

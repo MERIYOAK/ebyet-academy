@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Clock, BookOpen, CheckCircle, Users, ArrowLeft, Award } from 'lucide-react';
+import { Clock, BookOpen, CheckCircle, Users, Award } from 'lucide-react';
 import WhatsAppGroupButton from '../components/WhatsAppGroupButton';
 import { buildApiUrl } from '../config/environment';
 import { formatDuration } from '../utils/durationFormatter';
@@ -94,7 +94,7 @@ const UserCourseDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 pt-16 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 mx-auto mb-4" />
           <p className="text-gray-600">{t('course_detail.loading_course')}</p>
         </div>
       </div>
@@ -106,7 +106,6 @@ const UserCourseDetailPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 pt-16 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">{error || t('course_detail.course_not_found')}</p>
-          <Link to="/dashboard" className="text-red-600 hover:text-red-700 font-semibold">{t('course_detail.back_to_dashboard')}</Link>
         </div>
       </div>
     );
@@ -115,16 +114,6 @@ const UserCourseDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center space-x-2 text-gray-300 hover:text-cyan-400"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>{t('course_detail.back_to_dashboard')}</span>
-          </button>
-        </div>
 
         {/* Hero card */}
         <div className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-700">

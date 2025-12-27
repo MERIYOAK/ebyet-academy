@@ -305,63 +305,70 @@ const CertificatesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <div className="bg-gray-800 shadow-sm border-b border-gray-700 pt-20 xxs:pt-16">
-        <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-3 xxs:space-x-4 py-4 xxs:py-6">
-            <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-              <Award className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl xxs:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-1 sm:pb-2">{t('certificates.my_certificates')}</h1>
-              <p className="mt-1 text-gray-300 text-sm xxs:text-base">
-                {t('certificates.congratulations')}
-              </p>
+      {/* Hero Header Section */}
+      <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 border-b border-gray-700/50">
+        <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 pt-20 xxs:pt-24 pb-8 xxs:pb-12">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 xxs:gap-8">
+            <div className="flex-1">
+              <div className="flex items-center space-x-4 xxs:space-x-5 mb-4">
+                <div className="w-14 h-14 xxs:w-16 xxs:h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Award className="w-7 h-7 xxs:w-8 xxs:h-8 sm:w-10 sm:h-10 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl xxs:text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
+                    {t('certificates.my_certificates')}
+                  </h1>
+                  <p className="text-gray-300 text-base xxs:text-lg">
+                    {t('certificates.congratulations')}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-6 xxs:py-8">
+      <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-6 xxs:py-8 sm:py-12">
         {certificates.length === 0 ? (
-          <div className="text-center py-12 xxs:py-16">
-            <div className="bg-white rounded-2xl shadow-lg p-6 xxs:p-8 sm:p-12 max-w-md mx-auto">
-              <div className="text-gray-400 mb-4 xxs:mb-6">
-                <div className="w-16 h-16 xxs:w-20 xxs:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 xxs:mb-4">
-                  <BookOpen className="w-8 h-8 xxs:w-10 xxs:h-10" />
+          <div className="text-center py-12 xxs:py-16 sm:py-20">
+            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-8 xxs:p-12 sm:p-16 max-w-lg mx-auto">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-20 h-20 xxs:w-24 xxs:h-24 bg-gradient-to-br from-gray-700/50 to-gray-800/50 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-10 h-10 xxs:w-12 xxs:h-12 text-gray-400" />
                 </div>
               </div>
-              <h3 className="text-lg xxs:text-xl font-semibold text-gray-900 mb-2 xxs:mb-3">{t('certificates.no_certificates')}</h3>
-              <p className="text-gray-600 mb-6 xxs:mb-8 text-sm xxs:text-base">
+              <h3 className="text-xl xxs:text-2xl font-semibold text-white mb-3">{t('certificates.no_certificates')}</h3>
+              <p className="text-gray-400 mb-8 text-sm xxs:text-base">
                 {t('certificates.complete_courses')}
               </p>
               <Link
                 to="/courses"
-                className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-6 xxs:px-8 py-2 xxs:py-3 rounded-lg transition-all duration-200 font-medium shadow-lg hover:shadow-xl text-sm xxs:text-base"
+                className="inline-flex items-center px-6 xxs:px-8 py-3 xxs:py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 text-sm xxs:text-base"
               >
+                <BookOpen className="h-5 w-5 mr-2" />
                 {t('certificates.browse_courses')}
               </Link>
             </div>
           </div>
         ) : (
           <>
-            {/* Stats */}
-            <div className="mb-6 xxs:mb-8">
-              <div className="bg-white rounded-xl shadow-sm p-4 xxs:p-6">
-                <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-3 xxs:space-y-0">
-                  <div className="flex items-center space-x-3 xxs:space-x-4">
-                    <div className="w-10 h-10 xxs:w-12 xxs:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 xxs:w-6 xxs:h-6 text-white" />
+            {/* Stats Card */}
+            <div className="mb-8 xxs:mb-10 sm:mb-12">
+              <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8">
+                <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between gap-6">
+                  <div className="flex items-center space-x-4 xxs:space-x-5">
+                    <div className="w-14 h-14 xxs:w-16 xxs:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Sparkles className="w-7 w-7 xxs:w-8 xxs:h-8 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl xxs:text-2xl font-bold text-gray-900">{certificates.length}</h2>
-                      <p className="text-gray-600 text-sm xxs:text-base">{t('certificates.certificates_earned')}</p>
+                      <h2 className="text-3xl xxs:text-4xl font-bold text-white">{certificates.length}</h2>
+                      <p className="text-gray-300 text-sm xxs:text-base">{t('certificates.certificates_earned')}</p>
                     </div>
                   </div>
                   <div className="text-center xxs:text-right">
-                    <p className="text-xs xxs:text-sm text-gray-500">{t('certificates.latest_achievement')}</p>
-                    <p className="font-semibold text-gray-900 text-sm xxs:text-base">
+                    <p className="text-xs xxs:text-sm text-gray-400 mb-1">{t('certificates.latest_achievement')}</p>
+                    <p className="font-semibold text-cyan-400 text-base xxs:text-lg">
                       {certificates.length > 0 ? formatDate(certificates[0].completionDate) : 'N/A'}
                     </p>
                   </div>
@@ -370,23 +377,23 @@ const CertificatesPage = () => {
             </div>
 
             {/* Certificates Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xxs:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 xxs:gap-6 sm:gap-8">
               {certificates.map((certificate) => (
                 <div
                   key={certificate.certificateId}
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
+                  className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden transform hover:scale-[1.02] hover:shadow-cyan-500/20 relative"
                 >
                   {/* Certificate Header */}
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 xxs:p-6 text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-16 h-16 xxs:w-20 xxs:h-20 bg-white bg-opacity-10 rounded-full -mr-8 xxs:-mr-10 -mt-8 xxs:-mt-10"></div>
-                    <div className="absolute bottom-0 left-0 w-12 h-12 xxs:w-16 xxs:h-16 bg-white bg-opacity-10 rounded-full -ml-6 xxs:-ml-8 -mb-6 xxs:-mb-8"></div>
+                  <div className="bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 p-5 xxs:p-6 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 xxs:w-32 xxs:h-32 bg-white/10 rounded-full -mr-12 xxs:-mr-16 -mt-12 xxs:-mt-16"></div>
+                    <div className="absolute bottom-0 left-0 w-20 h-20 xxs:w-24 xxs:h-24 bg-white/10 rounded-full -ml-10 xxs:-ml-12 -mb-10 xxs:-mb-12"></div>
                     <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
                           <CheckCircle className="w-5 h-5 xxs:w-6 xxs:h-6" />
                           <span className="font-semibold text-sm xxs:text-base">{t('certificates.certificate')}</span>
                         </div>
-                        <span className="text-xs xxs:text-sm opacity-90">#{certificate.certificateId.slice(-8)}</span>
+                        <span className="text-xs xxs:text-sm opacity-90 bg-white/20 px-2 py-1 rounded-lg">#{certificate.certificateId.slice(-8)}</span>
                       </div>
                       <div className="text-xs xxs:text-sm opacity-90">
                         {t('certificates.course_completed_successfully')}
@@ -395,65 +402,65 @@ const CertificatesPage = () => {
                   </div>
 
                   {/* Certificate Content */}
-                  <div className="p-4 xxs:p-6">
-                    <h3 className="text-base xxs:text-lg font-semibold text-white mb-2 xxs:mb-3 line-clamp-2">
+                  <div className="p-5 xxs:p-6">
+                    <h3 className="text-base xxs:text-lg font-semibold text-white mb-4 xxs:mb-5 line-clamp-2">
                       {certificate.courseTitle}
                     </h3>
                     
-                    <div className="space-y-2 xxs:space-y-3 mb-4 xxs:mb-6">
-                      <div className="flex items-center text-xs xxs:text-sm text-gray-300">
-                        <Calendar className="w-3 h-3 xxs:w-4 xxs:h-4 mr-2 text-gray-400" />
+                    <div className="space-y-3 xxs:space-y-4 mb-5 xxs:mb-6">
+                      <div className="flex items-center text-xs xxs:text-sm text-gray-300 bg-gray-900/50 rounded-xl px-3 py-2">
+                        <Calendar className="w-4 h-4 xxs:w-5 xxs:h-5 mr-2 text-cyan-400" />
                         <span>{t('certificates.completed')}: {formatDate(certificate.completionDate)}</span>
                       </div>
                       
-                      <div className="flex items-center text-xs xxs:text-sm text-gray-300">
-                        <Calendar className="w-3 h-3 xxs:w-4 xxs:h-4 mr-2 text-gray-400" />
+                      <div className="flex items-center text-xs xxs:text-sm text-gray-300 bg-gray-900/50 rounded-xl px-3 py-2">
+                        <Calendar className="w-4 h-4 xxs:w-5 xxs:h-5 mr-2 text-purple-400" />
                         <span>{t('certificates.issued')}: {formatDate(certificate.dateIssued)}</span>
                       </div>
                     </div>
 
-                                         {/* Action Buttons */}
-                     <div className="grid grid-cols-2 gap-2">
-                       <button
-                         onClick={() => downloadCertificate(certificate.certificateId, certificate.courseTitle)}
-                         disabled={downloading === certificate.certificateId}
-                         className="flex items-center justify-center space-x-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-2 xxs:px-3 py-2 rounded-lg transition-all duration-200 text-xs xxs:text-sm font-medium"
-                         title={t('certificates.download_pdf')}
-                       >
-                         {downloading === certificate.certificateId ? (
-                           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                         ) : (
-                           <Download className="w-3 h-3" />
-                         )}
-                         <span className="hidden xxs:inline">{t('certificates.download')}</span>
-                       </button>
-                       
-                       <button
-                         onClick={() => shareCertificate(certificate)}
-                         disabled={sharing === certificate.certificateId}
-                         className="flex items-center justify-center space-x-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-2 xxs:px-3 py-2 rounded-lg transition-all duration-200 text-xs xxs:text-sm font-medium"
-                         title={t('certificates.share_certificate')}
-                       >
-                         {sharing === certificate.certificateId ? (
-                           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                         ) : (
-                           <Share2 className="w-3 h-3" />
-                         )}
-                         <span className="hidden xxs:inline">
-                           {sharing === certificate.certificateId ? t('certificates.sharing') : t('certificates.share')}
-                         </span>
-                       </button>
-                     </div>
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <button
+                        onClick={() => downloadCertificate(certificate.certificateId, certificate.courseTitle)}
+                        disabled={downloading === certificate.certificateId}
+                        className="flex items-center justify-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-600 disabled:to-gray-600 text-white px-3 xxs:px-4 py-2.5 rounded-xl transition-all duration-200 text-xs xxs:text-sm font-medium shadow-lg hover:shadow-xl"
+                        title={t('certificates.download_pdf')}
+                      >
+                        {downloading === certificate.certificateId ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                        <span className="hidden xxs:inline">{t('certificates.download')}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => shareCertificate(certificate)}
+                        disabled={sharing === certificate.certificateId}
+                        className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-gray-600 disabled:to-gray-600 text-white px-3 xxs:px-4 py-2.5 rounded-xl transition-all duration-200 text-xs xxs:text-sm font-medium shadow-lg hover:shadow-xl"
+                        title={t('certificates.share_certificate')}
+                      >
+                        {sharing === certificate.certificateId ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        ) : (
+                          <Share2 className="w-4 h-4" />
+                        )}
+                        <span className="hidden xxs:inline">
+                          {sharing === certificate.certificateId ? t('certificates.sharing') : t('certificates.share')}
+                        </span>
+                      </button>
+                    </div>
 
                     {/* Verify Link */}
-                    <div className="mt-3 xxs:mt-4 pt-3 xxs:pt-4 border-t border-gray-700">
+                    <div className="pt-4 border-t border-gray-700/50">
                       <a
                         href={buildApiUrl(`/api/certificates/verify/${certificate.certificateId}`)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-1 text-xs text-gray-400 hover:text-cyan-400 transition-colors duration-200"
+                        className="flex items-center justify-center space-x-2 text-xs text-gray-400 hover:text-cyan-400 transition-colors duration-200"
                       >
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="w-4 h-4" />
                         <span>{t('certificates.verify_certificate')}</span>
                       </a>
                     </div>
@@ -461,9 +468,9 @@ const CertificatesPage = () => {
 
                   {/* Success Message Overlay */}
                   {showSuccess === certificate.certificateId && (
-                    <div className="absolute top-3 xxs:top-4 right-3 xxs:right-4 bg-green-500 text-white px-2 xxs:px-3 py-1 rounded-full text-xs shadow-lg z-10">
-                      <div className="flex items-center space-x-1">
-                        <CheckCircle className="w-3 h-3" />
+                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1.5 rounded-xl text-xs shadow-lg z-10 animate-fade-in">
+                      <div className="flex items-center space-x-1.5">
+                        <CheckCircle className="w-3.5 h-3.5" />
                         <span>{t('certificates.shared')}!</span>
                       </div>
                     </div>
@@ -471,8 +478,8 @@ const CertificatesPage = () => {
 
                   {/* Error Message */}
                   {error && (
-                    <div className="absolute top-3 xxs:top-4 left-3 xxs:left-4 bg-red-500 text-white px-2 xxs:px-3 py-1 rounded-full text-xs shadow-lg z-10 max-w-xs">
-                      <div className="flex items-center space-x-1">
+                    <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs shadow-lg z-10 max-w-xs">
+                      <div className="flex items-center space-x-1.5">
                         <span>⚠️</span>
                         <span>{error}</span>
                       </div>

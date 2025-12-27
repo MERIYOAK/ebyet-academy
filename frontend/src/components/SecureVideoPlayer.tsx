@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Play, 
   Pause, 
@@ -63,6 +64,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   watermarkData,
   forensicWatermark
 }) => {
+  const { t, i18n } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const watermarkCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -376,7 +378,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         user-select: none;
       `;
-      academyWatermark.textContent = 'IBYET INVESTING';
+      academyWatermark.textContent = t('brand.name').toUpperCase();
       container?.appendChild(academyWatermark);
 
       // Update watermark every second
@@ -399,7 +401,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
     const cleanup = obfuscateContent();
     return cleanup;
-  }, [drmEnabled, userId]);
+  }, [drmEnabled, userId, i18n.language, t]);
 
   // Enhanced recording detection with multiple methods
   useEffect(() => {
@@ -1215,7 +1217,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
             <p>Loading Secure Video Player...</p>
           </div>
         </div>

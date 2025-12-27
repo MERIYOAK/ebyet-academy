@@ -64,6 +64,21 @@ const UserNavbar: React.FC = () => {
     setIsMenuOpen(false);
   };
 
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (location.pathname === '/') {
+      // Already on home page, just scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // Navigate to home page first, then scroll to top
+      navigate('/');
+      // Use setTimeout to ensure navigation happens before scrolling
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
   // Fetch profile image when user is authenticated
   useEffect(() => {
     const fetchProfileImage = async () => {
@@ -126,11 +141,12 @@ const UserNavbar: React.FC = () => {
             {/* Brand Name - Left */}
             <Link
               to="/"
+              onClick={handleLogoClick}
               className="text-white font-bold text-base xs:text-lg sm:text-xl md:text-2xl hover:opacity-80 transition-opacity truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] md:max-w-none"
-              title="IBYET Investing"
+              title={t('brand.name')}
             >
-              <span className="hidden xs:inline">IBYET Investing</span>
-              <span className="xs:hidden">IBYET</span>
+              <span className="hidden xs:inline">{t('brand.name')}</span>
+              <span className="xs:hidden">{t('brand.name')}</span>
             </Link>
 
             {/* Navigation Links - Center (hidden on mobile) */}

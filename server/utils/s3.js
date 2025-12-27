@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 
-const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'persi-academy';
+const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,

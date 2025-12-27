@@ -1,21 +1,38 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, BookOpen, Award, Users, Clock, Star, HelpCircle, Mail, CheckCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, Award, Users, Clock, Star, HelpCircle, Mail, CheckCircle, Megaphone } from 'lucide-react';
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from 'react-icons/fa';
 import CourseCard from '../components/CourseCard';
 import BundleCard from '../components/BundleCard';
 import LoadingMessage from '../components/LoadingMessage';
-// import { useFeaturedCourses } from '../hooks/useCourses'; // Temporarily disabled - using sample data
+import { useFeaturedCourses } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
-import { getFeaturedBundles } from '../data/mockBundles';
+import { useFeaturedBundles } from '../hooks/useBundles';
+import { buildApiUrl } from '../config/environment';
 import heroImage from '../assets/images/hero-image.jpeg';
 
+interface Announcement {
+  _id: string;
+  title: {
+    en: string;
+    tg: string;
+  };
+  content: {
+    en: string;
+    tg: string;
+  };
+  date: string;
+  isActive: boolean;
+  order: number;
+}
 
 const HomePage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // Announcements state
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(true);
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const [isAnnouncementAutoPlaying, setIsAnnouncementAutoPlaying] = useState(true);
   
@@ -28,92 +45,32 @@ const HomePage = () => {
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [newsletterMessage, setNewsletterMessage] = useState('');
   
-  // TEMPORARY: Sample courses for frontend (will be replaced with backend later)
-  const sampleCourses = [
-    {
-      _id: 'sample-course-1',
-      title: 'Introduction to Stock Market Investing',
-      description: 'Learn the fundamentals of stock market investing, including how to analyze stocks, build a diversified portfolio, and make informed investment decisions. Perfect for beginners who want to start their investment journey.',
-      thumbnailURL: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=600&fit=crop',
-      price: 49.99,
-      videos: [
-        { duration: '15:30' },
-        { duration: '22:45' },
-        { duration: '18:20' },
-        { duration: '25:10' },
-        { duration: '20:00' }
-      ],
-      totalEnrollments: 1250,
-      tags: ['Investing', 'Stocks', 'Beginner']
-    },
-    {
-      _id: 'sample-course-2',
-      title: 'Advanced Trading Strategies',
-      description: 'Master advanced trading techniques including day trading, swing trading, and options strategies. Learn technical analysis, risk management, and how to develop your own trading system.',
-      thumbnailURL: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-      price: 79.99,
-      videos: [
-        { duration: '30:15' },
-        { duration: '28:40' },
-        { duration: '35:20' },
-        { duration: '32:50' },
-        { duration: '29:30' },
-        { duration: '27:10' }
-      ],
-      totalEnrollments: 890,
-      tags: ['Trading', 'Advanced', 'Strategies']
-    },
-    {
-      _id: 'sample-course-3',
-      title: 'Cryptocurrency Investment Guide',
-      description: 'Comprehensive guide to cryptocurrency investing. Learn about Bitcoin, Ethereum, altcoins, DeFi, NFTs, and how to safely store and trade digital assets. Stay ahead in the crypto market.',
-      thumbnailURL: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=600&fit=crop',
-      price: 59.99,
-      videos: [
-        { duration: '18:45' },
-        { duration: '24:30' },
-        { duration: '20:15' },
-        { duration: '22:00' },
-        { duration: '19:30' }
-      ],
-      totalEnrollments: 2100,
-      tags: ['Cryptocurrency', 'Bitcoin', 'Blockchain']
-    },
-    {
-      _id: 'sample-course-4',
-      title: 'Real Estate Investment Fundamentals',
-      description: 'Discover how to build wealth through real estate investing. Learn about property analysis, financing options, rental properties, and real estate investment strategies for long-term wealth building.',
-      thumbnailURL: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop',
-      price: 69.99,
-      videos: [
-        { duration: '25:20' },
-        { duration: '28:45' },
-        { duration: '23:10' },
-        { duration: '26:30' },
-        { duration: '24:50' },
-        { duration: '27:15' },
-        { duration: '22:40' }
-      ],
-      totalEnrollments: 1560,
-      tags: ['Real Estate', 'Property', 'Investment']
-    }
-  ];
-
-  // Use React Query for fetching featured courses (TEMPORARILY DISABLED - using sample data)
-  // const { data: featuredCourses = [], isLoading: loading, error } = useFeaturedCourses();
+  // Use React Query for fetching featured courses and bundles from API
+  const { data: featuredCourses = [], isLoading: coursesLoading, error: coursesError } = useFeaturedCourses();
+  const { data: featuredBundles = [], isLoading: bundlesLoading } = useFeaturedBundles();
   
-  // TEMPORARY: Use sample courses instead of backend (limit to 3 courses)
-  const featuredCourses = sampleCourses.slice(0, 3);
-  const loading = false;
-  const error = null as Error | null;
-  
-  // Investing quotes
+  // Investing quotes (bilingual)
   const investingQuotes = [
-    "The best investment you can make is in yourself.",
-    "Don't invest in things you don't understand.",
-    "The stock market is filled with individuals who know the price of everything, but the value of nothing.",
-    "Risk comes from not knowing what you're doing.",
-    "The goal of a successful trader is to make the best trades. Money is secondary."
+    {
+      en: "The best investment you can make is in yourself.",
+      tg: "ዝበለጸ ወፍሪ ኣብ ርእስኻ እትገብሮ ወፍሪ እዩ።"
+    },
+    {
+      en: "Don't invest in things you don't understand.",
+      tg: "ኣብ ዘይትርድኦ ነገራት ኣይተውፍር።"
+    },
+    {
+      en: "The stock market is filled with individuals who know the price of everything, but the value of nothing.",
+      tg: "ዕዳጋ ስቶክ ንኩሉ ቁጽራዊ ዋጋ ብዝፈልጡ ሰባት ዘዕለቅለቐ እኳ እንተኾነ: እቲ ርቱዕ ዋጋ ዝፈልጡ ግን ውሑዳት እዮም።"
+    },
+    {
+      en: "Risk comes from not knowing what you're doing.",
+      tg: "ሓደጋ ካብ እንታይ ከም እትገብር ዘለኻ ዘይምርዳእ እዩ ዝመጽእ።"
+    },
+    {
+      en: "The goal of a successful trader is to make the best trades. Money is secondary.",
+      tg: "ዕላማ ዕዉት ነጋዳይ ዝበለጸ ንግዲ ምግባር እዩ። ገንዘብ ካልኣይ ደረጃ እዩ።"
+    }
   ];
 
 
@@ -143,16 +100,41 @@ const HomePage = () => {
   // ];
 
 
+  // Fetch announcements from API
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        setAnnouncementsLoading(true);
+        const response = await fetch(buildApiUrl('/api/announcements/active'));
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch announcements');
+        }
+
+        const data = await response.json();
+        const activeAnnouncements = (data.announcements || []).filter((a: Announcement) => a.isActive);
+        setAnnouncements(activeAnnouncements);
+      } catch (error) {
+        console.error('Error fetching announcements:', error);
+        setAnnouncements([]);
+      } finally {
+        setAnnouncementsLoading(false);
+      }
+    };
+
+    fetchAnnouncements();
+  }, []);
+
   // Auto-rotate announcements
   useEffect(() => {
-    if (!isAnnouncementAutoPlaying) return;
+    if (!isAnnouncementAutoPlaying || announcements.length === 0) return;
     
     const interval = setInterval(() => {
-      setCurrentAnnouncementIndex((prev) => (prev + 1) % 3);
+      setCurrentAnnouncementIndex((prev) => (prev + 1) % announcements.length);
     }, 5000); // Change every 5 seconds
 
     return () => clearInterval(interval);
-  }, [isAnnouncementAutoPlaying]);
+  }, [isAnnouncementAutoPlaying, announcements.length]);
 
   // Auto-rotate quotes
   useEffect(() => {
@@ -167,7 +149,7 @@ const HomePage = () => {
 
 
   const featuredGrid = useMemo(() => {
-    if (loading) {
+    if (coursesLoading) {
       return (
         <div>
           <LoadingMessage 
@@ -183,12 +165,12 @@ const HomePage = () => {
       );
     }
     
-    if (error) {
+    if (coursesError) {
       return (
         <div className="text-center py-12">
           <div className="text-red-600 mb-4">
             <p className="text-lg font-medium">{t('home.error_loading_courses', 'Failed to load courses')}</p>
-            <p className="text-sm text-gray-500">{error instanceof Error ? error.message : String(error)}</p>
+            <p className="text-sm text-gray-500">{coursesError instanceof Error ? coursesError.message : String(coursesError)}</p>
           </div>
         </div>
       );
@@ -225,7 +207,7 @@ const HomePage = () => {
         );})}
       </div>
     );
-  }, [featuredCourses, loading, error, t]);
+  }, [featuredCourses, coursesLoading, coursesError, t]);
 
 
   return (
@@ -356,77 +338,149 @@ const HomePage = () => {
         onMouseEnter={() => setIsAnnouncementAutoPlaying(false)}
         onMouseLeave={() => setIsAnnouncementAutoPlaying(true)}
       >
-        <div className="max-w-7xl mx-auto px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12">
-          <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center">
-            {/* Announcements Slideshow */}
-            {[0, 1, 2].map((index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 w-full transition-opacity duration-1000 ease-in-out flex items-center ${
-                  index === currentAnnouncementIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                }`}
-                style={{
-                  willChange: index === currentAnnouncementIndex ? 'opacity' : 'auto',
-                }}
-              >
-                <div className="w-full space-y-3 xs:space-y-3.5 sm:space-y-4 md:space-y-5 lg:space-y-6">
-                  {/* Date */}
-                  <div 
-                    className="text-white/60 text-xs xs:text-sm sm:text-base md:text-lg font-medium"
-                    style={{
-                      textShadow: '0 1px 5px rgba(0, 0, 0, 0.5)',
-                    }}
-                  >
-                    {t(`home.announcement${index + 1}_date`, `Announcement ${index + 1} Date`)}
+        {/* Animated background particles - always visible */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full bg-cyan-500/10 animate-float"
+              style={{
+                width: `${40 + i * 15}px`,
+                height: `${40 + i * 15}px`,
+                left: `${10 + i * 12}%`,
+                top: `${20 + (i % 3) * 30}%`,
+                animationDelay: `${i * 0.5}s`,
+                animationDuration: `${4 + (i % 3)}s`,
+              }}
+            />
+          ))}
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 relative z-10">
+          {announcementsLoading ? (
+            <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center">
+              <div className="text-white/60 text-lg">{t('home.announcements.loading', 'Loading announcements...')}</div>
+            </div>
+          ) : announcements.length === 0 ? (
+            <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center overflow-hidden">
+              
+              {/* Main content */}
+              <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
+                {/* Animated icon with glow effect */}
+                <div className="relative mb-6">
+                  {/* Outer glow rings */}
+                  <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-2xl animate-pulse"></div>
+                  <div className="absolute -inset-4 bg-cyan-500/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                  
+                  {/* Icon container */}
+                  <div className="relative bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full p-6 xs:p-8 sm:p-10 border-2 border-cyan-500/30 backdrop-blur-sm">
+                    <Megaphone className="w-12 h-12 xs:w-16 xs:h-16 sm:w-20 sm:h-20 text-cyan-400 animate-bounce" style={{ animationDuration: '2s' }} />
                   </div>
                   
-                  {/* Announcement Title */}
-                  <h2 
-                    className="text-white font-bold leading-tight mb-3 xs:mb-3.5 sm:mb-4 md:mb-5"
-                    style={{
-                      fontSize: 'clamp(1.125rem, 3vw + 0.5rem, 2.25rem)',
-                      textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)',
-                      lineHeight: '1.2',
-                    }}
-                  >
-                    {t(`home.announcement${index + 1}_title`, `Announcement ${index + 1} Title`)}
-                  </h2>
-                  
-                  {/* Announcement Content */}
-                  <p 
-                    className="text-white/90 leading-relaxed max-w-4xl"
-                    style={{
-                      fontSize: 'clamp(0.875rem, 2vw + 0.25rem, 1.125rem)',
-                      textShadow: '0 1px 10px rgba(0, 0, 0, 0.5)',
-                      lineHeight: '1.6',
-                    }}
-                  >
-                    {t(`home.announcement${index + 1}_content`, `Announcement ${index + 1} Content`)}
-                  </p>
+                  {/* Rotating rings */}
+                  <div className="absolute -inset-2 border-2 border-cyan-500/20 rounded-full animate-spin" style={{ animationDuration: '8s' }}></div>
+                  <div className="absolute -inset-4 border border-cyan-500/10 rounded-full animate-spin" style={{ animationDuration: '12s', animationDirection: 'reverse' }}></div>
+                </div>
+                
+                {/* Text with gradient animation */}
+                <h3 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
+                  {t('home.announcements.no_announcements', 'No announcements available')}
+                </h3>
+                <p className="text-white/50 text-sm xs:text-base max-w-md">
+                  {t('home.announcements.no_announcements_subtitle', 'Check back soon for exciting updates and news!')}
+                </p>
+                
+                {/* Animated dots loader */}
+                <div className="flex gap-2 mt-6">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"
+                      style={{
+                        animationDelay: `${i * 0.3}s`,
+                        animationDuration: '1.5s',
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-          
-          {/* Announcement indicators */}
-          <div className="flex justify-center gap-2 mt-6 xs:mt-7 sm:mt-8 md:mt-10">
-            {[0, 1, 2].map((index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setCurrentAnnouncementIndex(index);
-                  setIsAnnouncementAutoPlaying(false);
-                  setTimeout(() => setIsAnnouncementAutoPlaying(true), 8000);
-                }}
-                className={`h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
-                  index === currentAnnouncementIndex 
-                    ? 'w-6 xs:w-8 bg-white' 
-                    : 'w-1.5 xs:w-2 bg-white/40 hover:bg-white/60'
-                }`}
-                aria-label={`Go to announcement ${index + 1}`}
-              />
-            ))}
-          </div>
+            </div>
+          ) : (
+            <>
+              <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center">
+                {/* Announcements Slideshow */}
+                {announcements.map((announcement, index) => (
+                  <div
+                    key={announcement._id}
+                    className={`absolute inset-0 w-full transition-opacity duration-1000 ease-in-out flex items-center ${
+                      index === currentAnnouncementIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                    }`}
+                    style={{
+                      willChange: index === currentAnnouncementIndex ? 'opacity' : 'auto',
+                    }}
+                  >
+                    <div className="w-full space-y-3 xs:space-y-3.5 sm:space-y-4 md:space-y-5 lg:space-y-6">
+                      {/* Date */}
+                      <div 
+                        className="text-white/60 text-xs xs:text-sm sm:text-base md:text-lg font-medium"
+                        style={{
+                          textShadow: '0 1px 5px rgba(0, 0, 0, 0.5)',
+                        }}
+                      >
+                        {announcement.date}
+                      </div>
+                      
+                      {/* Announcement Title */}
+                      <h2 
+                        className="text-white font-bold leading-tight mb-3 xs:mb-3.5 sm:mb-4 md:mb-5"
+                        style={{
+                          fontSize: 'clamp(1.125rem, 3vw + 0.5rem, 2.25rem)',
+                          textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)',
+                          lineHeight: '1.2',
+                        }}
+                      >
+                        {i18n.language === 'tg' ? announcement.title.tg : announcement.title.en}
+                      </h2>
+                      
+                      {/* Announcement Content */}
+                      <p 
+                        className="text-white/90 leading-relaxed max-w-4xl"
+                        style={{
+                          fontSize: 'clamp(0.875rem, 2vw + 0.25rem, 1.125rem)',
+                          textShadow: '0 1px 10px rgba(0, 0, 0, 0.5)',
+                          lineHeight: '1.6',
+                        }}
+                      >
+                        {i18n.language === 'tg' ? announcement.content.tg : announcement.content.en}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Announcement indicators */}
+              {announcements.length > 1 && (
+                <div className="flex justify-center gap-2 mt-6 xs:mt-7 sm:mt-8 md:mt-10">
+                  {announcements.map((announcement, index) => (
+                    <button
+                      key={announcement._id}
+                      onClick={() => {
+                        setCurrentAnnouncementIndex(index);
+                        setIsAnnouncementAutoPlaying(false);
+                        setTimeout(() => setIsAnnouncementAutoPlaying(true), 8000);
+                      }}
+                      className={`h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
+                        index === currentAnnouncementIndex 
+                          ? 'w-6 xs:w-8 bg-white' 
+                          : 'w-1.5 xs:w-2 bg-white/40 hover:bg-white/60'
+                      }`}
+                      aria-label={t('home.announcements.go_to_announcement', 'Go to announcement {{number}}', { number: index + 1 })}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
@@ -441,7 +495,7 @@ const HomePage = () => {
             {investingQuotes.map((quote, index) => (
               <div
                 key={index}
-                className={`text-center transition-opacity duration-1000 ease-in-out absolute inset-0 flex items-center justify-center ${
+                className={`text-center transition-opacity duration-1000 ease-in-out absolute inset-0 flex flex-col items-center justify-center gap-3 xs:gap-4 sm:gap-5 md:gap-6 ${
                   index === currentQuoteIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
                 style={{
@@ -449,7 +503,10 @@ const HomePage = () => {
                 }}
               >
                 <blockquote className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-white leading-relaxed px-3 xs:px-4 sm:px-6">
-                  "{quote}"
+                  "{quote.en}"
+                </blockquote>
+                <blockquote className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-white/80 leading-relaxed px-3 xs:px-4 sm:px-6 italic">
+                  "{quote.tg}"
                 </blockquote>
               </div>
             ))}
@@ -528,11 +585,37 @@ const HomePage = () => {
           </div>
           
           {/* Featured Bundles Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
-            {getFeaturedBundles().slice(0, 3).map((bundle) => (
-              <BundleCard key={bundle.id} bundle={bundle} />
-            ))}
-          </div>
+          {bundlesLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="animate-pulse bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 h-64 sm:h-72 border border-gray-700" />
+              ))}
+            </div>
+          ) : featuredBundles.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+              {featuredBundles.slice(0, 3).map((bundle) => (
+                <BundleCard 
+                  key={bundle._id} 
+                  bundle={{
+                    id: bundle._id,
+                    title: bundle.title,
+                    description: bundle.description,
+                    longDescription: bundle.longDescription,
+                    price: bundle.price,
+                    originalValue: bundle.originalValue,
+                    courseIds: bundle.courseIds.map(c => typeof c === 'object' ? c._id : c),
+                    thumbnailURL: bundle.thumbnailURL,
+                    category: bundle.category,
+                    featured: bundle.featured
+                  }} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              {t('home.no_bundles_available', 'No featured bundles available at this time.')}
+            </div>
+          )}
           
           {/* View All Bundles Button */}
           <div className="text-center mt-6 xs:mt-8 sm:mt-10 md:mt-12">
@@ -832,25 +915,29 @@ const HomePage = () => {
                 setNewsletterMessage('');
 
                 try {
-                  // TODO: Connect to newsletter API endpoint when available
-                  // const response = await fetch(buildApiUrl('/api/newsletter/subscribe'), {
-                  //   method: 'POST',
-                  //   headers: { 'Content-Type': 'application/json' },
-                  //   body: JSON.stringify({ email: newsletterEmail })
-                  // });
-                  
-                  // Simulate API call for now
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  
-                  setNewsletterStatus('success');
-                  setNewsletterMessage(t('home.newsletter_success', 'Thank you for subscribing! Check your email for confirmation.'));
-                  setNewsletterEmail('');
-                  
-                  setTimeout(() => {
-                    setNewsletterStatus('idle');
-                    setNewsletterMessage('');
-                  }, 5000);
+                  const response = await fetch(buildApiUrl('/api/newsletter/subscribe'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: newsletterEmail, source: 'homepage' })
+                  });
+
+                  const result = await response.json();
+
+                  if (response.ok && result.success) {
+                    setNewsletterStatus('success');
+                    setNewsletterMessage(t('home.newsletter_success', 'Thank you for subscribing! Check your email for confirmation.'));
+                    setNewsletterEmail('');
+                    
+                    setTimeout(() => {
+                      setNewsletterStatus('idle');
+                      setNewsletterMessage('');
+                    }, 5000);
+                  } else {
+                    setNewsletterStatus('error');
+                    setNewsletterMessage(result.message || t('home.newsletter_error', 'Something went wrong. Please try again later.'));
+                  }
                 } catch (error) {
+                  console.error('Newsletter subscription error:', error);
                   setNewsletterStatus('error');
                   setNewsletterMessage(t('home.newsletter_error', 'Something went wrong. Please try again later.'));
                 }

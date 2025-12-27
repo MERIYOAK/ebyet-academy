@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 
 import { useParams, Link } from 'react-router-dom';
 
-import { ChevronLeft, BookOpen, Clock, Edit, Trash2, Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
+import { BookOpen, Clock, Edit, Trash2, Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
 
 interface Video {
@@ -519,12 +519,6 @@ const AdminVideoPlayerPage = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Video not found</h2>
           <p className="text-gray-400 mb-6">{error || 'The video you are looking for does not exist.'}</p>
-          <Link
-            to="/admin/courses"
-            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-colors duration-200"
-          >
-            Back to Admin Courses
-          </Link>
         </div>
       </div>
     );
@@ -536,14 +530,6 @@ const AdminVideoPlayerPage = () => {
       <div className="bg-gray-800 border-b border-gray-700 px-3 sm:px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link
-              to={`/admin/courses/${courseId}`}
-              className="flex items-center space-x-1 sm:space-x-2 text-gray-300 hover:text-white transition-colors duration-200 text-sm sm:text-base"
-            >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="hidden sm:inline">Back to Course</span>
-              <span className="sm:hidden">Back</span>
-            </Link>
             <div className="hidden md:block h-6 w-px bg-gray-600" />
             <h1 className="hidden md:block text-white font-semibold truncate">
               {courseData.title} - Admin View

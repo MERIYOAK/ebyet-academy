@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { 
-  User, Mail, Calendar, Shield, Camera, Save, ArrowLeft, Edit3, X, 
+  User, Mail, Calendar, Shield, Camera, Save, Edit3, X, 
   CheckCircle, AlertCircle, Eye, EyeOff, Phone, MapPin, Globe, 
   UserCheck, Trash2
 } from 'lucide-react';
@@ -533,160 +533,169 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-gray-800 shadow-sm border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-3 xxs:py-4 sm:py-6">
-          <div className="flex items-center space-x-2 xxs:space-x-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-1 xxs:space-x-2 text-gray-300 hover:text-white transition-all duration-200 hover:bg-gray-700 px-2 xxs:px-3 py-2 rounded-lg text-sm xxs:text-base"
-            >
-              <ArrowLeft className="h-4 w-4 xxs:h-5 xxs:w-5" />
-              <span className="font-medium">{t('profile.back_to_dashboard')}</span>
-            </button>
-          </div>
-          <h1 className="text-xl xxs:text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mt-3 xxs:mt-4 sm:mt-6 mb-2 pb-1 sm:pb-2 md:pb-3">{t('profile.title')}</h1>
-          <p className="text-gray-300 text-sm xxs:text-base sm:text-lg">{t('profile.subtitle')}</p>
+      {/* Minimal Header */}
+      <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 border-b border-gray-700/50">
+        <div className="max-w-[1600px] mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 pt-20 xxs:pt-24 pb-6 xxs:pb-8">
+          <h1 className="text-2xl xxs:text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-2 xxs:pb-3 sm:pb-4">
+            {t('profile.title')}
+          </h1>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-6 xxs:py-8 sm:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 xxs:gap-6 lg:gap-8">
-          {/* Profile Card */}
-          <div className="lg:col-span-1">
+      {/* Radical New Layout - Split Screen with Sidebar */}
+      <div className="max-w-[1600px] mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-6 xxs:py-8 sm:py-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xxs:gap-8">
+          {/* Left Sidebar - Profile Card (Sticky) */}
+          <div className="xl:col-span-4 xl:sticky xl:top-24 xl:self-start">
             <div 
-              className={`bg-white rounded-2xl shadow-lg transition-all duration-500 overflow-hidden transform ${
-                isCardHovered ? 'scale-105 rotate-1 shadow-2xl' : 'hover:shadow-xl'
+              className={`bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 transition-all duration-500 overflow-hidden transform ${
+                isCardHovered ? 'scale-[1.02] shadow-cyan-500/20 border-cyan-500/30' : 'hover:shadow-xl hover:border-gray-600/50'
               }`}
               onMouseEnter={() => setIsCardHovered(true)}
               onMouseLeave={() => setIsCardHovered(false)}
             >
-              <div className="bg-gradient-to-r from-red-600 to-red-700 p-3 xxs:p-4 sm:p-6 lg:p-8 text-white text-center">
-                <div className="relative inline-block">
-                  <div className="h-24 w-24 xxs:h-28 xxs:w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden bg-white/20 mx-auto mb-4 xxs:mb-6 ring-4 ring-white/30 transition-all duration-300 hover:ring-white/50">
-                    {currentImageUrl ? (
-                      <img
-                        src={currentImageUrl}
-                        alt={userData.name}
-                        className="h-full w-full object-cover"
-                        onError={() => setProfileImageUrl(null)}
-                      />
-                    ) : (
-                      <User className="h-full w-full text-white/80 p-4 xxs:p-6 sm:p-8" />
+              {/* Profile Header with Gradient */}
+              <div className="bg-gradient-to-br from-cyan-600 via-blue-600 to-purple-600 p-6 xxs:p-8 text-white relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 via-transparent to-purple-500/20"></div>
+                <div className="relative z-10 text-center">
+                  {/* Profile Image */}
+                  <div className="relative inline-block mb-4 xxs:mb-6">
+                    <div className="h-28 w-28 xxs:h-32 xxs:w-32 sm:h-36 sm:w-36 rounded-full overflow-hidden bg-white/20 ring-4 ring-white/30 transition-all duration-300 hover:ring-white/50 mx-auto">
+                      {currentImageUrl ? (
+                        <img
+                          src={currentImageUrl}
+                          alt={userData.name}
+                          className="h-full w-full object-cover"
+                          onError={() => setProfileImageUrl(null)}
+                        />
+                      ) : (
+                        <User className="h-full w-full text-white/80 p-6 xxs:p-8" />
+                      )}
+                    </div>
+                    
+                    {/* Image upload button */}
+                    <button 
+                      onClick={() => !isSaving && fileInputRef.current?.click()}
+                      disabled={isSaving}
+                      className={`absolute bottom-0 right-0 p-2.5 xxs:p-3 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110 ${
+                        isSaving 
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                          : 'bg-white text-cyan-600 hover:bg-gray-100'
+                      }`}
+                      title={isSaving ? t('profile.saving') : t('profile.upload_new_photo')}
+                    >
+                      {isSaving ? (
+                        <div className="animate-spin rounded-full h-4 w-4 xxs:h-5 xxs:w-5 border-2 border-gray-500 border-t-transparent"></div>
+                      ) : (
+                        <Camera className="h-4 w-4 xxs:h-5 xxs:w-5" />
+                      )}
+                    </button>
+                    
+                    {/* Remove image button */}
+                    {currentImageUrl && (
+                      <button 
+                        onClick={async () => {
+                          if (isSaving) return;
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) return;
+                            const response = await fetch(buildApiUrl('/api/users/me/photo'), {
+                              method: 'DELETE',
+                              headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (response.ok) {
+                              setProfileImageFile(null);
+                              setImagePreview(null);
+                              setProfileImageUrl(null);
+                              showToastMessage(t('profile.photo_removed_successfully'), 'success');
+                            } else {
+                              const error = await response.json();
+                              showToastMessage(error.message || t('profile.failed_to_remove_photo'), 'error');
+                            }
+                          } catch (error) {
+                            console.error('Error removing profile photo:', error);
+                            showToastMessage(t('profile.failed_to_remove_photo'), 'error');
+                          }
+                        }}
+                        disabled={isSaving}
+                        className={`absolute bottom-0 left-0 p-2.5 xxs:p-3 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110 ${
+                          isSaving 
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                            : 'bg-red-500 text-white hover:bg-red-600'
+                        }`}
+                        title={isSaving ? t('profile.saving') : t('profile.remove_photo')}
+                      >
+                        <Trash2 className="h-4 w-4 xxs:h-5 xxs:w-5" />
+                      </button>
                     )}
                   </div>
                   
-                  {/* Image upload button */}
-                  <button 
-                    onClick={() => !isSaving && fileInputRef.current?.click()}
-                    disabled={isSaving}
-                    className={`absolute bottom-4 xxs:bottom-6 right-0 p-2 xxs:p-3 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110 ${
-                      isSaving 
-                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-                        : 'bg-white text-cyan-600 hover:bg-gray-100'
-                    }`}
-                    title={isSaving ? t('profile.saving') : t('profile.upload_new_photo')}
-                  >
-                    {isSaving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 xxs:h-5 xxs:w-5 border-2 border-gray-500 border-t-transparent"></div>
-                    ) : (
-                      <Camera className="h-4 w-4 xxs:h-5 xxs:w-5" />
-                    )}
-                  </button>
-                  
-                  {/* Remove image button */}
-                  {currentImageUrl && (
-                    <button 
-                      onClick={async () => {
-                        if (isSaving) return; // Prevent deletion during upload
-                        
-                        try {
-                          const token = localStorage.getItem('token');
-                          if (!token) return;
-
-                          const response = await fetch(buildApiUrl('/api/users/me/photo'), {
-                            method: 'DELETE',
-                            headers: {
-                              'Authorization': `Bearer ${token}`
-                            }
-                          });
-
-                          if (response.ok) {
-                            setProfileImageFile(null);
-                            setImagePreview(null);
-                            setProfileImageUrl(null);
-                            showToastMessage(t('profile.photo_removed_successfully'), 'success');
-                          } else {
-                            const error = await response.json();
-                            showToastMessage(error.message || t('profile.failed_to_remove_photo'), 'error');
-                          }
-                        } catch (error) {
-                          console.error('Error removing profile photo:', error);
-                          showToastMessage(t('profile.failed_to_remove_photo'), 'error');
-                        }
-                      }}
-                      disabled={isSaving}
-                      className={`absolute bottom-4 xxs:bottom-6 left-0 p-2 xxs:p-3 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-110 ${
-                        isSaving 
-                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                          : 'bg-red-500 text-white hover:bg-red-600'
-                      }`}
-                      title={isSaving ? t('profile.saving') : t('profile.remove_photo')}
-                    >
-                      <Trash2 className="h-4 w-4 xxs:h-5 xxs:w-5" />
-                    </button>
-                  )}
+                  {/* User Info */}
+                  <h2 className="text-xl xxs:text-2xl sm:text-3xl font-bold mb-2">{userData.name}</h2>
+                  <p className="text-cyan-100 mb-4 xxs:mb-6 text-sm xxs:text-base">{userData.email}</p>
+                </div>
+              </div>
+              
+              {/* Profile Stats */}
+              <div className="p-5 xxs:p-6 space-y-4">
+                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-900/50 rounded-2xl border border-gray-700/50">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-cyan-400" />
+                    <span className="text-gray-300 text-sm">{t('profile.member_since')}</span>
+                  </div>
+                  <span className="text-white font-semibold text-sm">
+                    {new Date(userData.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                  </span>
                 </div>
                 
-                <h2 className="text-lg xxs:text-xl sm:text-2xl font-bold mb-2">{userData.name}</h2>
-                <p className="text-red-100 mb-3 xxs:mb-4 sm:mb-6 text-xs xxs:text-sm sm:text-base">{userData.email}</p>
+                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-900/50 rounded-2xl border border-gray-700/50">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="h-5 w-5 text-purple-400" />
+                    <span className="text-gray-300 text-sm">{t('profile.verification_status', 'Status')}</span>
+                  </div>
+                  <span className="flex items-center space-x-1.5">
+                    {userData.isVerified ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span className="text-green-400 font-semibold text-sm">{t('profile.verified_account')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-yellow-400" />
+                        <span className="text-yellow-400 font-semibold text-sm">{t('profile.unverified_account')}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
                 
-                                  <div className="space-y-2 xxs:space-y-3 sm:space-y-4">
-                    <div className="flex items-center justify-center space-x-2 xxs:space-x-3 text-xs xxs:text-sm">
-                      <Calendar className="h-3 w-3 xxs:h-4 xxs:w-4" />
-                      <span>{t('profile.member_since')} {new Date(userData.createdAt).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long' 
-                      })}</span>
-                    </div>
-                  <div className="flex items-center justify-center space-x-2 xxs:space-x-3 text-xs xxs:text-sm">
-                    <Shield className="h-3 w-3 xxs:h-4 xxs:w-4" />
-                    <span className="flex items-center space-x-1 xxs:space-x-2">
-                      {userData.isVerified ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 xxs:h-4 xxs:w-4 text-green-300" />
-                          <span>{t('profile.verified_account')}</span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="h-3 w-3 xxs:h-4 xxs:w-4 text-yellow-300" />
-                          <span>{t('profile.unverified_account')}</span>
-                        </>
-                      )}
-                    </span>
+                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-900/50 rounded-2xl border border-gray-700/50">
+                  <div className="flex items-center space-x-3">
+                    <User className="h-5 w-5 text-blue-400" />
+                    <span className="text-gray-300 text-sm">{t('profile.account_type_label', 'Account Type')}</span>
                   </div>
-                  <div className="flex items-center justify-center space-x-2 xxs:space-x-3 text-xs xxs:text-sm">
-                    <User className="h-3 w-3 xxs:h-4 xxs:w-4" />
-                    <span>{userData.authProvider === 'google' ? t('profile.google_account') : t('profile.email_account')}</span>
-                  </div>
+                  <span className="text-white font-semibold text-sm">
+                    {userData.authProvider === 'google' ? t('profile.google_account') : t('profile.email_account')}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Settings Forms */}
-          <div className="lg:col-span-2 space-y-4 xxs:space-y-6 sm:space-y-8">
+          {/* Right Content Area - Forms */}
+          <div className="xl:col-span-8 space-y-6 xxs:space-y-8">
             {/* Personal Information */}
-            <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 xxs:px-4 sm:px-6 lg:px-8 py-3 xxs:py-4 sm:py-6 border-b border-gray-200">
-                <h3 className="text-base xxs:text-lg sm:text-xl font-bold text-gray-800 flex items-center space-x-2 xxs:space-x-3">
-                  <User className="h-4 w-4 xxs:h-5 xxs:w-5 sm:h-6 sm:w-6 text-red-600" />
+            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden">
+              <div className="bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-gray-700/50">
+                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
+                  <div className="p-2.5 xxs:p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl shadow-lg">
+                    <User className="h-5 w-5 xxs:h-6 xxs:w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
                   <span>{t('profile.personal_information')}</span>
                 </h3>
-                <p className="text-gray-600 mt-1 xxs:mt-2 text-xs xxs:text-sm sm:text-base">{t('profile.update_personal_details')}</p>
+                <p className="text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.update_personal_details')}</p>
               </div>
               
-              <div className="p-3 xxs:p-4 sm:p-6 lg:p-8">
+              <div className="p-4 xxs:p-6 sm:p-8 lg:p-10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 xxs:gap-4 sm:gap-6">
                   {/* First Name */}
                   <div>
@@ -701,22 +710,22 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('firstName', e.target.value)}
                           onFocus={() => setActiveField('firstName')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-3 xxs:px-4 py-2 xxs:py-3 text-sm xxs:text-base border rounded-xl transition-all duration-200 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 text-sm xxs:text-base bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
                             activeField === 'firstName' 
-                              ? 'border-red-500 ring-2 ring-red-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.firstName 
                                 ? 'border-red-500' 
-                                : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_first_name')}
                         />
                         {validationErrors.firstName && (
-                          <p className="text-red-500 text-xs xxs:text-sm mt-1">{validationErrors.firstName}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.firstName}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-2 xxs:space-x-3 px-3 xxs:px-4 py-2 xxs:py-3 bg-gray-900 rounded-xl border border-gray-700">
-                        <User className="h-4 w-4 xxs:h-5 xxs:w-5 text-gray-400" />
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                        <User className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
                         <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.firstName || t('profile.not_set')}</span>
                       </div>
                     )}
@@ -724,7 +733,7 @@ const ProfilePage = () => {
 
                   {/* Last Name */}
                 <div>
-                  <label className="block text-xs xxs:text-sm font-semibold text-gray-700 mb-2 xxs:mb-3">
+                  <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.last_name')} *
                   </label>
                   {isEditing ? (
@@ -735,30 +744,30 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('lastName', e.target.value)}
                           onFocus={() => setActiveField('lastName')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-3 xxs:px-4 py-2 xxs:py-3 text-sm xxs:text-base border rounded-xl transition-all duration-200 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 text-sm xxs:text-base bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
                             activeField === 'lastName' 
-                              ? 'border-red-500 ring-2 ring-red-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.lastName 
                                 ? 'border-red-500' 
-                                : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_last_name')}
                         />
                         {validationErrors.lastName && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.lastName}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.lastName}</p>
                         )}
                       </div>
                   ) : (
-                    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                      <User className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-700 font-medium">{formData.lastName || t('profile.not_set')}</span>
+                    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-900/50 rounded-xl border border-gray-700/50">
+                      <User className="h-5 w-5 text-cyan-400" />
+                        <span className="text-gray-300 font-medium">{formData.lastName || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Age */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.age')}
                     </label>
                     {isEditing ? (
@@ -771,30 +780,30 @@ const ProfilePage = () => {
                           onBlur={() => setActiveField(null)}
                           min="1"
                           max="120"
-                          className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
                             activeField === 'age' 
-                              ? 'border-red-500 ring-2 ring-red-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.age 
                                 ? 'border-red-500' 
-                                : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_age')}
                         />
                         {validationErrors.age && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.age}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.age}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <Calendar className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-700 font-medium">{formData.age || t('profile.not_set')}</span>
-                    </div>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                        <Calendar className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
+                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.age || t('profile.not_set')}</span>
+                      </div>
                   )}
                 </div>
 
                   {/* Sex */}
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.sex')}
                     </label>
                     {isEditing ? (
@@ -803,10 +812,10 @@ const ProfilePage = () => {
                         onChange={(e) => handleFieldChange('sex', e.target.value)}
                         onFocus={() => setActiveField('sex')}
                         onBlur={() => setActiveField(null)}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 ${
+                        className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 ${
                           activeField === 'sex' 
-                            ? 'border-red-500 ring-2 ring-red-500/20' 
-                            : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                            ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
+                            : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                         }`}
                       >
                         <option value="">{t('profile.select_sex')}</option>
@@ -816,46 +825,48 @@ const ProfilePage = () => {
                         <option value="prefer-not-to-say">{t('profile.prefer_not_to_say')}</option>
                       </select>
                     ) : (
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <UserCheck className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-700 font-medium capitalize">{formData.sex || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                        <UserCheck className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
+                        <span className="text-gray-300 font-medium capitalize text-sm xxs:text-base">{formData.sex || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Email (Read-only) */}
-                  <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <div className="sm:col-span-2">
+                  <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                     {t('profile.email_address')}
                   </label>
-                  <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                      <span className="text-gray-700 font-medium">{userData.email}</span>
-                    <span className="ml-auto text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">
+                  <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                    <Mail className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
+                    <span className="text-gray-300 font-medium text-sm xxs:text-base flex-1">{userData.email}</span>
+                    <span className="text-xs xxs:text-sm bg-cyan-500/20 text-cyan-300 px-2 xxs:px-3 py-1 rounded-lg border border-cyan-500/30">
                       {t('profile.not_editable')}
                     </span>
-                    </div>
+                  </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 xxs:px-4 sm:px-6 lg:px-8 py-3 xxs:py-4 sm:py-6 border-b border-gray-200">
-                <h3 className="text-base xxs:text-lg sm:text-xl font-bold text-gray-800 flex items-center space-x-2 xxs:space-x-3">
-                  <Phone className="h-4 w-4 xxs:h-5 xxs:w-5 sm:h-6 sm:w-6 text-red-600" />
+            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-gray-700/50">
+                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
+                  <div className="p-2.5 xxs:p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl shadow-lg">
+                    <Phone className="h-5 w-5 xxs:h-6 xxs:w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
                   <span>{t('profile.contact_information')}</span>
                 </h3>
-                <p className="text-gray-600 mt-1 xxs:mt-2 text-xs xxs:text-sm sm:text-base">{t('profile.update_contact_details')}</p>
+                <p className="text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.update_contact_details')}</p>
               </div>
               
-              <div className="p-3 xxs:p-4 sm:p-6 lg:p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 xxs:gap-4 sm:gap-6">
+              <div className="p-4 xxs:p-6 sm:p-8 lg:p-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 xxs:gap-5 sm:gap-6">
                   {/* Phone Number */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      {t('profile.phone_number')}{userData && userData.authProvider === 'local' && <span className="text-red-500 ml-1">*</span>}
+                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                      {t('profile.phone_number')}{userData && userData.authProvider === 'local' && <span className="text-red-400 ml-1">*</span>}
                     </label>
                     {isEditing ? (
                       <div className="relative">
@@ -865,20 +876,20 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('phoneNumber', e.target.value)}
                           onFocus={() => setActiveField('phoneNumber')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 py-3 border bg-gray-900 text-white rounded-xl transition-all duration-200 placeholder-gray-400 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
                             activeField === 'phoneNumber' 
-                              ? 'border-cyan-500 ring-2 ring-cyan-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.phoneNumber 
                                 ? 'border-red-500' 
-                                : 'border-gray-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_phone_number')}
                         />
                         {validationErrors.phoneNumber && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.phoneNumber}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.phoneNumber}</p>
                         )}
                         {!validationErrors.phoneNumber && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-400 mt-1">
                             {userData && userData.authProvider === 'local' 
                               ? t('profile.phone_required_help', { phone: config.SUPPORT_PHONE })
                               : t('profile.phone_format_help', { phone: config.SUPPORT_PHONE })}
@@ -886,16 +897,16 @@ const ProfilePage = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <Phone className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-700 font-medium">{formData.phoneNumber || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                        <Phone className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
+                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.phoneNumber || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Address */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.address')}
                     </label>
                     {isEditing ? (
@@ -906,30 +917,30 @@ const ProfilePage = () => {
                           onFocus={() => setActiveField('address')}
                           onBlur={() => setActiveField(null)}
                           rows={3}
-                          className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 resize-none ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 resize-none placeholder-gray-500 ${
                             activeField === 'address' 
-                              ? 'border-red-500 ring-2 ring-red-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.address 
                                 ? 'border-red-500' 
-                                : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_address')}
                         />
                         {validationErrors.address && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.address}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.address}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-start space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <MapPin className="h-5 w-5 text-gray-400 mt-1" />
-                        <span className="text-gray-700 font-medium">{formData.address || t('profile.not_set')}</span>
+                      <div className="flex items-start space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                        <MapPin className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400 mt-1" />
+                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.address || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Country */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.country')}
                     </label>
                     {isEditing ? (
@@ -940,30 +951,30 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('country', e.target.value)}
                           onFocus={() => setActiveField('country')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
                             activeField === 'country' 
-                              ? 'border-red-500 ring-2 ring-red-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.country 
                                 ? 'border-red-500' 
-                                : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_country')}
                         />
                         {validationErrors.country && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.country}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.country}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <Globe className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-700 font-medium">{formData.country || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
+                        <Globe className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
+                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.country || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* City */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.city')}
                     </label>
                     {isEditing ? (
@@ -974,36 +985,36 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('city', e.target.value)}
                           onFocus={() => setActiveField('city')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
                             activeField === 'city' 
-                              ? 'border-red-500 ring-2 ring-red-500/20' 
+                              ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.city 
                                 ? 'border-red-500' 
-                                : 'border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_city')}
                         />
                         {validationErrors.city && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.city}</p>
+                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.city}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <MapPin className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-700 font-medium">{formData.city || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-900/50 rounded-xl border border-gray-700/50">
+                        <MapPin className="h-5 w-5 text-cyan-400" />
+                        <span className="text-gray-300 font-medium">{formData.city || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col xxs:flex-row space-y-3 xxs:space-y-0 xxs:space-x-3 sm:space-x-4 pt-4 xxs:pt-6">
+                <div className="flex flex-col xxs:flex-row space-y-3 xxs:space-y-0 xxs:space-x-3 sm:space-x-4 pt-6 xxs:pt-8">
                   {isEditing ? (
                     <>
                       <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 xxs:px-4 sm:px-6 py-2 xxs:py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg disabled:transform-none text-sm xxs:text-base"
+                        className="flex items-center justify-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-600 text-white px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 disabled:transform-none text-sm xxs:text-base"
                       >
                         {isSaving ? (
                           <div className="animate-spin rounded-full h-4 w-4 xxs:h-5 xxs:w-5 border-2 border-white border-t-transparent"></div>
@@ -1015,7 +1026,7 @@ const ProfilePage = () => {
                       <button
                         onClick={handleCancel}
                         disabled={isSaving}
-                        className="flex items-center justify-center space-x-2 border border-gray-600 text-gray-300 hover:bg-gray-700 disabled:opacity-50 px-3 xxs:px-4 sm:px-6 py-2 xxs:py-3 rounded-xl font-semibold transition-all duration-200 text-sm xxs:text-base"
+                        className="flex items-center justify-center space-x-2 border-2 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 disabled:opacity-50 px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 text-sm xxs:text-base"
                       >
                         <X className="h-4 w-4 xxs:h-5 xxs:w-5" />
                         <span>{t('profile.cancel')}</span>
@@ -1024,7 +1035,7 @@ const ProfilePage = () => {
                   ) : (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center justify-center space-x-2 bg-gray-800 hover:bg-gray-900 text-white px-3 xxs:px-4 sm:px-6 py-2 xxs:py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm xxs:text-base"
+                      className="flex items-center justify-center space-x-2 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm xxs:text-base border border-gray-600/50"
                     >
                       <Edit3 className="h-4 w-4 xxs:h-5 xxs:w-5" />
                       <span>{t('profile.edit_profile')}</span>
@@ -1033,27 +1044,29 @@ const ProfilePage = () => {
                 </div>
               </div>
             </div>
-
-            {/* Password Change */}
-            <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 xxs:px-4 sm:px-6 lg:px-8 py-3 xxs:py-4 sm:py-6 border-b border-gray-200">
-                <h3 className="text-base xxs:text-lg sm:text-xl font-bold text-gray-800 flex items-center space-x-2 xxs:space-x-3">
-                  <Shield className="h-4 w-4 xxs:h-5 xxs:w-5 sm:h-6 sm:w-6 text-red-600" />
+          
+          {/* Password Change Section */}
+          <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-cyan-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-gray-700/50">
+                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
+                  <div className="p-2.5 xxs:p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                    <Shield className="h-5 w-5 xxs:h-6 xxs:w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
                   <span>{t('profile.security_settings')}</span>
                 </h3>
-                <p className="text-gray-600 mt-1 xxs:mt-2 text-xs xxs:text-sm sm:text-base">{t('profile.change_password_description')}</p>
+                <p className="text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.change_password_description')}</p>
               </div>
               
-              <div className="p-3 xxs:p-4 sm:p-6 lg:p-8">
+              <div className="p-4 xxs:p-6 sm:p-8 lg:p-10">
                 {!showPasswordChange ? (
                   <button
                     onClick={() => setShowPasswordChange(true)}
-                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 xxs:px-4 sm:px-6 py-2 xxs:py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 text-sm xxs:text-base"
+                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 text-sm xxs:text-base"
                   >
                     {t('profile.change_password')}
                   </button>
                 ) : (
-                  <div className="space-y-3 xxs:space-y-4 sm:space-y-6">
+                  <div className="space-y-4 xxs:space-y-5 sm:space-y-6">
                                           <div>
                         <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                           {t('profile.current_password')}
@@ -1063,7 +1076,7 @@ const ProfilePage = () => {
                           type={showPasswords.current ? "text" : "password"}
                           value={passwordData.currentPassword}
                           onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                          className="w-full px-3 xxs:px-4 py-2 xxs:py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-sm xxs:text-base"
+                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-gray-900/60 text-white border-2 border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
                           placeholder={t('profile.enter_current_password')}
                         />
                         <button
@@ -1077,7 +1090,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2 xxs:mb-3">
+                      <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                         {t('profile.new_password')}
                       </label>
                       <div className="relative">
@@ -1085,7 +1098,7 @@ const ProfilePage = () => {
                           type={showPasswords.new ? "text" : "password"}
                           value={passwordData.newPassword}
                           onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                          className="w-full px-3 xxs:px-4 py-2 xxs:py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-sm xxs:text-base"
+                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-gray-900/60 text-white border-2 border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
                           placeholder={t('profile.enter_new_password')}
                         />
                         <button
@@ -1099,7 +1112,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2 xxs:mb-3">
+                      <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
                         {t('profile.confirm_new_password')}
                       </label>
                       <div className="relative">
@@ -1107,7 +1120,7 @@ const ProfilePage = () => {
                           type={showPasswords.confirm ? "text" : "password"}
                           value={passwordData.confirmPassword}
                           onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                          className="w-full px-3 xxs:px-4 py-2 xxs:py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-sm xxs:text-base"
+                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-gray-900/60 text-white border-2 border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
                           placeholder={t('profile.confirm_new_password_placeholder')}
                         />
                         <button
@@ -1120,10 +1133,10 @@ const ProfilePage = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-col xxs:flex-row space-y-3 xxs:space-y-0 xxs:space-x-3 sm:space-x-4 pt-4 xxs:pt-6">
+                    <div className="flex flex-col xxs:flex-row space-y-3 xxs:space-y-0 xxs:space-x-3 sm:space-x-4 pt-6 xxs:pt-8">
                       <button
                         onClick={handlePasswordChange}
-                        className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-3 xxs:px-4 sm:px-6 py-2 xxs:py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm xxs:text-base"
+                        className="flex items-center justify-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 text-sm xxs:text-base"
                       >
                         <Save className="h-4 w-4 xxs:h-5 xxs:w-5" />
                         <span>{t('profile.update_password')}</span>
@@ -1133,7 +1146,7 @@ const ProfilePage = () => {
                           setShowPasswordChange(false);
                           setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                         }}
-                        className="flex items-center justify-center space-x-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 xxs:px-4 sm:px-6 py-2 xxs:py-3 rounded-xl font-semibold transition-all duration-200 text-sm xxs:text-base"
+                        className="flex items-center justify-center space-x-2 border-2 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 text-sm xxs:text-base"
                       >
                         <X className="h-4 w-4 xxs:h-5 xxs:w-5" />
                         <span>{t('profile.cancel')}</span>
