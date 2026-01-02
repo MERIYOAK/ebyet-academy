@@ -96,6 +96,7 @@
     },
     "success_stories_title": "Success Stories",
     "success_stories_subtitle": "Hear from professionals who transformed their careers with our courses",
+    "student": "Student",
     "testimonial_1_name": "Michael Ande",
     "testimonial_1_role": "Professional Trader",
     "testimonial_1_content": "The advanced trading strategies course completely changed my approach to the markets. I've increased my profitability by 300% in just 6 months!",
@@ -125,17 +126,7 @@
     },
     "cta_title": "Ready to Transform Your Skills?",
     "cta_subtitle": "Start your journey to professional success",
-    "cta_button": "Get Started Free",
-    "newsletter_title": "Stay Updated with Investment Insights",
-    "newsletter_subtitle": "Subscribe to our newsletter and get the latest investment tips, market analysis, and exclusive course updates delivered to your inbox.",
-    "newsletter_placeholder": "Enter your email address",
-    "newsletter_subscribe": "Subscribe",
-    "newsletter_subscribing": "Subscribing...",
-    "newsletter_subscribed": "Subscribed!",
-    "newsletter_success": "Thank you for subscribing! Check your email for confirmation.",
-    "newsletter_error": "Something went wrong. Please try again later.",
-    "newsletter_invalid_email": "Please enter a valid email address",
-    "newsletter_privacy": "We respect your privacy. Unsubscribe at any time."
+    "cta_button": "Get Started Free"
   },
   "courses": {
     "page_title": "Courses",
@@ -344,7 +335,11 @@
     "by_instructor": "by IBYET Investing",
     "thumbnail_placeholder": "Course Thumbnail",
     "error": "Error",
-    "bestseller": "Bestseller"
+    "bestseller": "Bestseller",
+    "purchased": "Purchased",
+    "continue_learning": "Continue Learning",
+    "progress": "Progress",
+    "not_started": "Not started"
   },
   "dashboard_card": {
     "course_completed": "🎉 Course completed! You've earned your certificate.",
@@ -603,7 +598,26 @@
     "loading_video": "Loading video...",
     "refreshing_video_link": "Refreshing video link...",
     "this_may_take_moments": "This may take a few moments",
-    "select_a_video": "Select a video"
+    "select_a_video": "Select a video",
+    "course_materials": "Course Materials",
+    "materials_locked": "Materials Locked",
+    "sign_in_to_access_materials": "Sign in and purchase the course to access materials",
+    "purchase_to_access_materials": "Purchase this course to access all materials",
+    "loading_materials": "Loading materials...",
+    "no_materials_available": "No materials available for this course yet",
+    "open": "Open",
+    "material": "material",
+    "materials": "materials",
+    "available": "available",
+    "certificate_ready": "Certificate Ready!",
+    "certificate_description": "Congratulations! You have completed this course. Generate your certificate of completion.",
+    "certificate_generated": "Certificate Generated Successfully!",
+    "view_certificate": "View Certificate",
+    "generating": "Generating...",
+    "generate_certificate": "Generate Certificate",
+    "course_content": "Course Content",
+    "done": "done",
+    "free": "Free"
   },
   "checkout_success": {
     "loading_purchase_details": "Loading your purchase details...",
@@ -615,7 +629,10 @@
     "order_confirmation": "Order Confirmation",
     "order_id": "Order ID:",
     "course": "Course:",
+    "bundle": "Bundle:",
     "course_purchase": "Course Purchase",
+    "bundle_purchase": "Bundle Purchase",
+    "view_bundle": "View Bundle",
     "amount_paid": "Amount Paid:",
     "processing": "Processing...",
     "payment_method": "Payment Method:",
@@ -877,7 +894,10 @@
     "certificate_not_found": "Certificate not found. Please check the certificate ID and try again.",
     "server_error": "Server error occurred. Please try again later.",
     "connection_error": "Unable to connect to server. Please check if the backend is running.",
-    "verification_failed_generic": "Failed to verify certificate. Please try again."
+    "verification_failed_generic": "Failed to verify certificate. Please try again.",
+    "view_certificate": "View Certificate PDF",
+    "my_certificates": "My Certificates",
+    "course_statistics": "Course Statistics"
   },
   "checkout": {
     "success": {
@@ -995,11 +1015,16 @@
   },
   "bundle_card": {
     "save_percentage": "Save {{percentage}}%",
+    "save_amount": "Save ${{amount}}",
     "featured": "Featured",
     "course": "Course",
     "courses": "Courses",
     "view_bundle": "View Bundle",
-    "buy_bundle": "Buy Bundle"
+    "view_details": "View Details",
+    "buy_bundle": "Buy Bundle",
+    "purchased": "Purchased",
+    "continue_learning": "Continue Learning",
+    "sold_out": "Sold Out"
   },
   "bundles_page": {
     "title": "Course Bundles",
@@ -1030,7 +1055,13 @@
     "save_amount": "Save ${{amount}} ({{percentage}}%)",
     "original_value": "Original Value: ${{value}}",
     "buy_bundle": "Buy Bundle",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "max_enrollments": "Limited to {{max}} students",
+    "student": "Student",
+    "students": "Students",
+    "sold_out": "Sold Out",
+    "featured": "Featured",
+    "already_purchased": "You already own this bundle"
   },
   "google_registration": {
     "complete_registration": "Complete Registration",

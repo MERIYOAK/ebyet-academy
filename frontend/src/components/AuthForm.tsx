@@ -92,20 +92,20 @@ const AuthForm: React.FC<AuthFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">{title}</h2>
             {subtitle && (
-              <p className="mt-2 text-gray-300">{subtitle}</p>
+              <p className="mt-2 text-gray-600 dark:text-gray-300">{subtitle}</p>
             )}
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {fields.map((field) => (
               <div key={field.name} className="space-y-1">
-                <label htmlFor={field.name} className="text-sm font-medium text-gray-700">
+                <label htmlFor={field.name} className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {field.label}
                 </label>
                 
@@ -124,17 +124,17 @@ const AuthForm: React.FC<AuthFormProps> = ({
                       />
                       <label
                         htmlFor={field.name}
-                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-red-400 hover:bg-red-50 transition-all duration-200"
+                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
                       >
                         <div className="flex flex-col items-center space-y-2">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium text-red-600 hover:text-red-500">
+                          <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300">
                               {t('auth.upload.click_to_upload')}
                             </span>{' '}
                             {t('auth.upload.or_drag_drop')}
                           </div>
-                          <p className="text-xs text-gray-500">{t('auth.upload.file_types')}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{t('auth.upload.file_types')}</p>
                         </div>
                       </label>
                     </div>
@@ -142,7 +142,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                     {/* Image Preview */}
                     {imagePreview && (
                       <div className="relative">
-                        <div className="flex items-center justify-center w-32 h-32 mx-auto border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <div className="flex items-center justify-center w-32 h-32 mx-auto border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                           <img
                             src={imagePreview}
                             alt={t('auth.upload.profile_preview')}
@@ -168,14 +168,14 @@ const AuthForm: React.FC<AuthFormProps> = ({
                       required={field.required}
                       className={`appearance-none relative block w-full ${
                         field.type === 'tel' ? 'pl-12' : 'px-4'
-                      } py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:z-10 transition-all duration-200`}
+                      } py-3 bg-gray-100 dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-500 focus:border-cyan-500 dark:focus:border-cyan-500 focus:z-10 transition-all duration-200`}
                       placeholder={field.placeholder}
                       value={formData[field.name] as string || ''}
                       onChange={(e) => handleChange(field.name, e.target.value)}
                     />
                     {field.type === 'tel' && (
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Phone className="h-5 w-5 text-gray-400" />
+                        <Phone className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                       </div>
                     )}
                     {field.type === 'password' && (
@@ -185,9 +185,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                          <EyeOff className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
                         ) : (
-                          <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                          <Eye className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
                         )}
                       </button>
                     )}
@@ -213,7 +213,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
               <button
                 type="submit"
                 disabled={isLoadingState}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-white dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
               >
                 {isLoadingState ? (
                   <div className="flex items-center">
@@ -231,17 +231,17 @@ const AuthForm: React.FC<AuthFormProps> = ({
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-600" />
+                  <div className="w-full border-t border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-gray-800 text-gray-400">{t('auth.social.or_continue_with')}</span>
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">{t('auth.social.or_continue_with')}</span>
                 </div>
               </div>
 
               <div className="mt-6">
                 <button 
                   onClick={handleGoogleLogin}
-                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-600 rounded-lg shadow-sm bg-gray-900 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-800"
+                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-900 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-white dark:focus:ring-offset-gray-800"
                 >
                   {/* Google Logo with proper colors */}
                   <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24">
@@ -259,9 +259,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
           {links.length > 0 && (
             <div className="mt-6 space-y-2">
               {links.map((link, index) => (
-                <p key={index} className="text-center text-sm text-gray-400">
+                <p key={index} className="text-center text-sm text-gray-600 dark:text-gray-400">
                   {link.text}{' '}
-                  <Link to={link.href} className="font-medium text-cyan-400 hover:text-cyan-300 transition-colors duration-200">
+                  <Link to={link.href} className="font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 transition-colors duration-200">
                     {link.linkText}
                   </Link>
                 </p>

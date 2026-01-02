@@ -1,27 +1,36 @@
 import React, { useState } from 'react';
 import { buildApiUrl } from '../config/environment';
 
-import { Plus, Upload, X } from 'lucide-react';
+import { Plus, Upload, X, FileText } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 
 interface Video {
   id: string;
-  title: string;
-  description: string;
+  title: { en: string; tg: string };
+  description: { en: string; tg: string };
   file?: File;
   isFreePreview?: boolean;
   duration?: string; // Duration in MM:SS format
 }
 
+interface Material {
+  id: string;
+  title: { en: string; tg: string };
+  description: { en: string; tg: string };
+  file?: File;
+  order: number;
+}
+
 interface Course {
-  title: string;
-  description: string;
+  title: { en: string; tg: string };
+  description: { en: string; tg: string };
   price: number;
   category: string;
   level: string;
   tags: string[];
   thumbnail?: File;
   videos: Video[];
+  materials: Material[];
   hasWhatsappGroup: boolean;
   whatsappGroupLink: string;
 }
@@ -76,13 +85,14 @@ const xhrUpload = (options: {
 
 const AdminUploadPage = () => {
   const [course, setCourse] = useState<Course>({
-    title: '',
-    description: '',
+    title: { en: '', tg: '' },
+    description: { en: '', tg: '' },
     price: 0,
     category: '',
     level: '',
     tags: [],
     videos: [],
+    materials: [],
     hasWhatsappGroup: false,
     whatsappGroupLink: ''
   });
@@ -106,8 +116,8 @@ const AdminUploadPage = () => {
   const addVideo = () => {
     const newVideo: Video = {
       id: Date.now().toString(),
-      title: '',
-      description: '',
+      title: { en: '', tg: '' },
+      description: { en: '', tg: '' },
       isFreePreview: false // Default to false
     };
     setCourse(prev => ({
@@ -140,6 +150,43 @@ const AdminUploadPage = () => {
         v.id === videoId ? { ...v, ...updates } : v
       )
     }));
+  };
+
+  const addMaterial = () => {
+    const newMaterial: Material = {
+      id: Date.now().toString(),
+      title: { en: '', tg: '' },
+      description: { en: '', tg: '' },
+      order: course.materials.length + 1
+    };
+    setCourse(prev => ({
+      ...prev,
+      materials: [...prev.materials, newMaterial]
+    }));
+  };
+
+  const removeMaterial = (materialId: string) => {
+    setCourse(prev => ({
+      ...prev,
+      materials: prev.materials.filter(m => m.id !== materialId)
+    }));
+  };
+
+  const updateMaterial = (materialId: string, updates: Partial<Material>) => {
+    setCourse(prev => ({
+      ...prev,
+      materials: prev.materials.map(m => 
+        m.id === materialId ? { ...m, ...updates } : m
+      )
+    }));
+  };
+
+  const handleMaterialUpload = (materialId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      updateMaterial(materialId, { file });
+      // Note: Title and description are now required, so we don't auto-fill
+    }
   };
 
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,11 +238,11 @@ const AdminUploadPage = () => {
       // Validate required fields with user-friendly messages
       const validationErrors = [];
       
-      if (!course.title.trim()) {
-        validationErrors.push('Course title is required');
+      if (!course.title.en?.trim() || !course.title.tg?.trim()) {
+        validationErrors.push('Course title in both English and Tigrinya is required');
       }
-      if (!course.description.trim()) {
-        validationErrors.push('Course description is required');
+      if (!course.description.en?.trim() || !course.description.tg?.trim()) {
+        validationErrors.push('Course description in both English and Tigrinya is required');
       }
       if (course.price < 0) {
         validationErrors.push('Price must be a positive number');
@@ -215,11 +262,24 @@ const AdminUploadPage = () => {
       
       // Check each video for required fields
       course.videos.forEach((video, index) => {
-        if (!video.title.trim()) {
-          validationErrors.push(`Video ${index + 1}: Title is required`);
+        if (!video.title.en?.trim() || !video.title.tg?.trim()) {
+          validationErrors.push(`Video ${index + 1}: Title in both English and Tigrinya is required`);
         }
         if (!video.file) {
           validationErrors.push(`Video ${index + 1}: Video file is required`);
+        }
+      });
+      
+      // Check each material for required fields
+      course.materials.forEach((material, index) => {
+        if (!material.file) {
+          validationErrors.push(`Material ${index + 1}: File is required`);
+        }
+        if (!material.title.en?.trim() || !material.title.tg?.trim()) {
+          validationErrors.push(`Material ${index + 1}: Title in both English and Tigrinya is required`);
+        }
+        if (!material.description.en?.trim() || !material.description.tg?.trim()) {
+          validationErrors.push(`Material ${index + 1}: Description in both English and Tigrinya is required`);
         }
       });
 
@@ -246,7 +306,8 @@ const AdminUploadPage = () => {
       // Compute total bytes for progress accounting
       const thumbnailBytes = course.thumbnail?.size || 0;
       const videosBytes = course.videos.reduce((sum, v) => sum + (v.file?.size || 0), 0);
-      const totalBytesToUpload = thumbnailBytes + videosBytes;
+      const materialsBytes = course.materials.reduce((sum, m) => sum + (m.file?.size || 0), 0);
+      const totalBytesToUpload = thumbnailBytes + videosBytes + materialsBytes;
       let uploadedBytesCompleted = 0;
       console.debug('[UI] bytes:', { thumbnailBytes, videosBytes, totalBytesToUpload });
 
@@ -346,8 +407,8 @@ const AdminUploadPage = () => {
           
           console.debug('[UI] upload video start:', video.file.name);
           const videoFormData = new FormData();
-          videoFormData.append('title', video.title);
-          videoFormData.append('description', video.description);
+          videoFormData.append('title', JSON.stringify(video.title));
+          videoFormData.append('description', JSON.stringify(video.description));
           videoFormData.append('courseId', courseId);
           videoFormData.append('order', (i + 1).toString());
           videoFormData.append('isFreePreview', video.isFreePreview ? 'true' : 'false');
@@ -416,6 +477,75 @@ const AdminUploadPage = () => {
         }
       }
 
+      // Step 4: Upload materials (optional)
+      if (course.materials.length > 0) {
+        for (let i = 0; i < course.materials.length; i++) {
+          const material = course.materials[i];
+          // Check all required fields are present
+          if (material.file && 
+              material.title.en?.trim() && material.title.tg?.trim() &&
+              material.description.en?.trim() && material.description.tg?.trim()) {
+            setProgressOverlay(prev => ({
+              ...prev,
+              progress: Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100),
+              message: `Uploading material ${i + 1}/${course.materials.length}: ${material.file.name}...`
+            }));
+            
+            console.debug('[UI] upload material start:', material.file.name);
+            const materialFormData = new FormData();
+            materialFormData.append('file', material.file);
+            materialFormData.append('courseId', courseId);
+            materialFormData.append('version', '1');
+            materialFormData.append('title', JSON.stringify({ 
+              en: material.title.en.trim(), 
+              tg: material.title.tg.trim() 
+            }));
+            materialFormData.append('description', JSON.stringify({ 
+              en: material.description.en.trim(), 
+              tg: material.description.tg.trim() 
+            }));
+            materialFormData.append('order', material.order.toString());
+
+            await xhrUpload({
+              url: buildApiUrl('/api/materials/upload'),
+              method: 'POST',
+              formData: materialFormData,
+              headers: { 'Authorization': `Bearer ${adminToken}` },
+              timeoutMs: 5 * 60 * 1000, // 5 minutes for materials
+              onProgress: (loaded, total) => {
+                if (totalBytesToUpload > 0) {
+                  const httpUploadPercent = Math.round((loaded / total) * 100);
+                  const currentMaterialProgress = Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100);
+                  const httpUploadWeight = 0.3;
+                  const httpProgress = Math.round((httpUploadPercent / 100) * httpUploadWeight * 100);
+                  const totalProgress = Math.min(
+                    currentMaterialProgress + httpProgress,
+                    currentMaterialProgress + Math.round(httpUploadWeight * 100)
+                  );
+                  
+                  setProgressOverlay(prev => ({
+                    ...prev,
+                    progress: Math.max(prev.progress, totalProgress),
+                    message: `Uploading material ${i + 1}/${course.materials.length}: ${httpUploadPercent}% (Sending to server...)`
+                  }));
+                }
+              }
+            });
+            console.debug('[UI] upload material done:', material.file.name);
+            
+            uploadedBytesCompleted += (material.file.size || 0);
+            
+            setProgressOverlay(prev => ({
+              ...prev,
+              progress: Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100),
+              message: `Material ${i + 1}/${course.materials.length} uploaded successfully!`
+            }));
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      }
+
       // Update progress - finalizing
       setProgressOverlay(prev => ({
         ...prev,
@@ -440,13 +570,16 @@ const AdminUploadPage = () => {
       
       // Reset form
       setCourse({
-        title: '',
-        description: '',
+        title: { en: '', tg: '' },
+        description: { en: '', tg: '' },
         price: 0,
         category: '',
         level: '',
         tags: [],
-        videos: []
+        videos: [],
+        materials: [],
+        hasWhatsappGroup: false,
+        whatsappGroupLink: ''
       });
       setTagsInput(''); // Clear tags input
 
@@ -519,29 +652,57 @@ const AdminUploadPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Course Title *
+                    Course Title (English) *
                   </label>
                   <input
                     type="text"
                     required
-                    value={course.title}
-                    onChange={(e) => setCourse(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
-                    placeholder="Enter course title"
+                    value={course.title.en}
+                    onChange={(e) => setCourse(prev => ({ ...prev, title: { ...prev.title, en: e.target.value } }))}
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                    placeholder="Enter course title in English"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Course Description *
+                    Course Title (Tigrinya) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={course.title.tg}
+                    onChange={(e) => setCourse(prev => ({ ...prev, title: { ...prev.title, tg: e.target.value } }))}
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                    placeholder="Enter course title in Tigrinya"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Course Description (English) *
                   </label>
                   <textarea
                     required
                     rows={4}
-                    value={course.description}
-                    onChange={(e) => setCourse(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
-                    placeholder="Describe what students will learn in this course"
+                    value={course.description.en}
+                    onChange={(e) => setCourse(prev => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                    placeholder="Describe what students will learn in this course (English)"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Course Description (Tigrinya) *
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={course.description.tg}
+                    onChange={(e) => setCourse(prev => ({ ...prev, description: { ...prev.description, tg: e.target.value } }))}
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                    placeholder="Describe what students will learn in this course (Tigrinya)"
                   />
                 </div>
 
@@ -556,7 +717,7 @@ const AdminUploadPage = () => {
                     step="0.01"
                     value={course.price}
                     onChange={(e) => setCourse(prev => ({ ...prev, price: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                     placeholder="99.00"
                   />
                 </div>
@@ -568,16 +729,16 @@ const AdminUploadPage = () => {
                   <select
                     value={course.category}
                     onChange={(e) => setCourse(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     required
                   >
                     <option value="">Select a category</option>
-                    <option value="youtube">YouTube Mastery</option>
-                    <option value="camera">Camera</option>
-                    <option value="photo">Photo Editing</option>
-                    <option value="video">Video Editing</option>
-                    <option value="computer">Basic Computer Learning</option>
-                    <option value="english">English</option>
+                    <option value="crypto">Crypto</option>
+                    <option value="investing">Investing</option>
+                    <option value="trading">Trading</option>
+                    <option value="stock-market">Stock Market</option>
+                    <option value="etf">ETF</option>
+                    <option value="option-trading">Option Trading</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -589,7 +750,7 @@ const AdminUploadPage = () => {
                   <select
                     value={course.level}
                     onChange={(e) => setCourse(prev => ({ ...prev, level: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                     required
                   >
                     <option value="">Select a level</option>
@@ -621,7 +782,7 @@ const AdminUploadPage = () => {
                         setTagsInput(course.tags.join(', '));
                       }
                     }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
+                    className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                     placeholder="e.g., beginner, advanced, javascript, react"
                   />
                   <p className="mt-1 text-sm text-gray-500">
@@ -658,7 +819,7 @@ const AdminUploadPage = () => {
                         id="hasWhatsappGroup"
                         checked={course.hasWhatsappGroup || false}
                         onChange={(e) => setCourse(prev => ({ ...prev, hasWhatsappGroup: e.target.checked }))}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
                       />
                       <label htmlFor="hasWhatsappGroup" className="ml-2 block text-sm text-white">
                         Enable WhatsApp Group for this course
@@ -677,7 +838,7 @@ const AdminUploadPage = () => {
                           value={course.whatsappGroupLink || ''}
                           onChange={(e) => setCourse(prev => ({ ...prev, whatsappGroupLink: e.target.value }))}
                           required={course.hasWhatsappGroup}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
+                          className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                           placeholder="https://chat.whatsapp.com/your-group-link"
                         />
                         <p className="mt-1 text-sm text-gray-500">
@@ -724,7 +885,7 @@ const AdminUploadPage = () => {
                     />
                     <label
                       htmlFor="thumbnail-upload"
-                      className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer"
+                      className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-600 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer bg-gray-700 text-gray-300"
                     >
                       <Upload className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-gray-600">
@@ -740,7 +901,7 @@ const AdminUploadPage = () => {
             <div className="space-y-6">
 
               {/* Free Preview Info Alert */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -748,8 +909,8 @@ const AdminUploadPage = () => {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">Free Preview Lessons</h3>
-                    <p className="text-sm text-green-700 mt-1">
+                    <h3 className="text-sm font-medium text-green-300">Free Preview Lessons</h3>
+                    <p className="text-sm text-green-200 mt-1">
                       Mark lessons as "Free Preview" to allow users to watch them without purchasing the course. This helps attract potential students by giving them a taste of your content.
                     </p>
                   </div>
@@ -794,28 +955,55 @@ const AdminUploadPage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Video Title *
+                      Video Title (English) *
                     </label>
                     <input
                       type="text"
                       required
-                      value={video.title}
-                      onChange={(e) => updateVideo(video.id, { title: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
-                      placeholder="Enter video title"
+                      value={video.title.en}
+                      onChange={(e) => updateVideo(video.id, { title: { ...video.title, en: e.target.value } })}
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Enter video title in English"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Lesson Description
+                      Video Title (Tigrinya) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={video.title.tg}
+                      onChange={(e) => updateVideo(video.id, { title: { ...video.title, tg: e.target.value } })}
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Enter video title in Tigrinya"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Lesson Description (English)
                     </label>
                     <textarea
-                      value={video.description}
-                      onChange={(e) => updateVideo(video.id, { description: e.target.value })}
+                      value={video.description.en}
+                      onChange={(e) => updateVideo(video.id, { description: { ...video.description, en: e.target.value } })}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
-                      placeholder="Describe what this lesson covers..."
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Describe what this lesson covers (English)..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Lesson Description (Tigrinya)
+                    </label>
+                    <textarea
+                      value={video.description.tg}
+                      onChange={(e) => updateVideo(video.id, { description: { ...video.description, tg: e.target.value } })}
+                      rows={3}
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Describe what this lesson covers (Tigrinya)..."
                     />
                   </div>
 
@@ -827,7 +1015,7 @@ const AdminUploadPage = () => {
                       type="text"
                       value={video.duration || ''}
                       onChange={(e) => updateVideo(video.id, { duration: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                       placeholder="e.g., 5:30 or 1:25:45"
                       pattern="^(\d{1,2}:)?[0-5]?\d:[0-5]\d$"
                       title="Format: MM:SS or HH:MM:SS (e.g., 5:30 or 1:25:45)"
@@ -851,7 +1039,7 @@ const AdminUploadPage = () => {
                       />
                       <label
                         htmlFor={`video-upload-${video.id}`}
-                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer"
+                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-600 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer bg-gray-700 text-gray-300"
                       >
                         <Upload className="h-5 w-5 text-gray-400 mr-2" />
                         <span className="text-gray-600">
@@ -862,29 +1050,185 @@ const AdminUploadPage = () => {
                   </div>
 
                   {/* Free Preview Toggle */}
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between p-4 bg-green-500/10 rounded-lg border border-green-500/30">
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
                         id={`free-preview-${video.id}`}
                         checked={video.isFreePreview || false}
                         onChange={(e) => updateVideo(video.id, { isFreePreview: e.target.checked })}
-                        className="h-5 w-5 text-cyan-400 focus:ring-cyan-500 border-gray-700 rounded"
+                        className="h-5 w-5 text-green-400 focus:ring-green-500 border-gray-600 rounded bg-gray-700"
                       />
                       <div>
                         <label htmlFor={`free-preview-${video.id}`} className="text-sm font-medium text-gray-300 cursor-pointer">
                           Free Preview Lesson
                         </label>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           Allow users to watch this lesson without purchasing the course
                         </p>
                       </div>
                     </div>
                     {video.isFreePreview && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-300 border border-green-500/30">
                         🔓 Free Preview
                       </span>
                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Course Materials Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-800 border-b border-gray-200 pb-2">
+                  Course Materials
+                </h2>
+                <button
+                  type="button"
+                  onClick={addMaterial}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500 transition-colors duration-200"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Material</span>
+                </button>
+              </div>
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <div className="flex items-start">
+                  <FileText className="h-5 w-5 text-blue-400 mr-3 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-300">Course Materials</h3>
+                    <p className="text-sm text-blue-200 mt-1">
+                      Upload supplementary materials like PDFs, spreadsheets, worksheets, or documents. These will be available to students who purchase the course.
+                    </p>
+                    <p className="text-xs text-blue-300 mt-2">
+                      Supported formats: PDF, Excel, Word, PowerPoint, CSV, ZIP, images, audio, Python files (Max: 100MB per file)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {course.materials.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No materials added yet. Materials are optional.</p>
+                </div>
+              )}
+
+              {course.materials.map((material, index) => (
+                <div key={material.id} className="bg-gray-900 rounded-lg p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      Material {index + 1}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => removeMaterial(material.id)}
+                      className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Material Title (English) <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={material.title.en}
+                      onChange={(e) => updateMaterial(material.id, { title: { ...material.title, en: e.target.value } })}
+                      required
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Enter material title in English"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Material Title (Tigrinya) <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={material.title.tg}
+                      onChange={(e) => updateMaterial(material.id, { title: { ...material.title, tg: e.target.value } })}
+                      required
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Enter material title in Tigrinya"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Description (English) <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      value={material.description.en}
+                      onChange={(e) => updateMaterial(material.id, { description: { ...material.description, en: e.target.value } })}
+                      rows={2}
+                      required
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Enter material description in English"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Description (Tigrinya) <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      value={material.description.tg}
+                      onChange={(e) => updateMaterial(material.id, { description: { ...material.description, tg: e.target.value } })}
+                      rows={2}
+                      required
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      placeholder="Enter material description in Tigrinya"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Material File <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.csv,.txt,.zip,.rar,.json,.png,.jpg,.jpeg,.mp3,.py"
+                        onChange={(e) => handleMaterialUpload(material.id, e)}
+                        required
+                        className="hidden"
+                        id={`material-upload-${material.id}`}
+                      />
+                      <label
+                        htmlFor={`material-upload-${material.id}`}
+                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-600 rounded-lg hover:border-cyan-400 transition-colors duration-200 cursor-pointer bg-gray-700 text-gray-300"
+                      >
+                        <Upload className="h-5 w-5 text-gray-400 mr-2" />
+                        <span className="text-gray-600">
+                          {material.file ? material.file.name : 'Upload material file'}
+                        </span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Max file size: 100MB
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Display Order
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={material.order}
+                      onChange={(e) => updateMaterial(material.id, { order: parseInt(e.target.value) || 1 })}
+                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Lower numbers appear first in the materials list
+                    </p>
                   </div>
                 </div>
               ))}

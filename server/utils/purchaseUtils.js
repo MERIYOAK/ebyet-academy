@@ -175,6 +175,16 @@ async function checkVideoAccess(videoId, userId, isAdmin = false) {
       };
     }
     
+    // If no userId provided (unauthenticated user), only allow free previews
+    if (!userId) {
+      const isFreePreview = video.isFreePreview === true;
+      return {
+        hasAccess: isFreePreview,
+        isLocked: !isFreePreview,
+        lockReason: isFreePreview ? null : 'purchase_required'
+      };
+    }
+    
     const hasPurchased = await userHasPurchased(userId, video.courseId);
     
     if (hasPurchased) {

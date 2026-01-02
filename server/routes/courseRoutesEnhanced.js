@@ -19,8 +19,12 @@ const {
   updateCourse,
   archiveCourse,
   unarchiveCourse,
+  deactivateCourse,
+  reactivateCourse,
+  getDeletionSummary,
   deleteCourse,
   getAllCourses,
+  getFeaturedCourses,
   getUserPurchasedCourses,
   getCourseById,
   enrollStudent,
@@ -131,6 +135,25 @@ router.post('/:courseId/archive', adminAuthMiddleware, archiveCourse);
 router.post('/:courseId/unarchive', adminAuthMiddleware, unarchiveCourse);
 
 /**
+ * Deactivate a course (removes from public listings, enrolled students keep access)
+ * POST /api/courses/:courseId/deactivate
+ * Body: { reason }
+ */
+router.post('/:courseId/deactivate', adminAuthMiddleware, deactivateCourse);
+
+/**
+ * Reactivate a course (makes it visible in public listings again)
+ * POST /api/courses/:courseId/reactivate
+ */
+router.post('/:courseId/reactivate', adminAuthMiddleware, reactivateCourse);
+
+/**
+ * Get deletion summary for a course (before deletion)
+ * GET /api/courses/:id/deletion-summary
+ */
+router.get('/:id/deletion-summary', adminAuthMiddleware, getDeletionSummary);
+
+/**
  * Delete a course
  * DELETE /api/courses/:id
  */
@@ -145,6 +168,12 @@ router.delete('/:id', adminAuthMiddleware, deleteCourse);
  * GET /api/courses?status=active&category=programming&limit=20&page=1
  */
 router.get('/', getAllCourses);
+
+/**
+ * Get featured courses (max 3 for homepage)
+ * GET /api/courses/featured
+ */
+router.get('/featured', getFeaturedCourses);
 
 /**
  * Get course by ID with version information

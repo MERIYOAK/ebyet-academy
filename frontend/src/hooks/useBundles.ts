@@ -4,9 +4,9 @@ import { queryKeys, cachePersister } from '../lib/queryClient';
 
 export interface ApiBundle {
   _id: string;
-  title: string;
-  description: string;
-  longDescription?: string;
+  title: string | { en: string; tg: string };
+  description: string | { en: string; tg: string };
+  longDescription?: string | { en: string; tg: string };
   price: number;
   originalValue?: number;
   courseIds: Array<{
@@ -26,7 +26,10 @@ export interface ApiBundle {
   featured?: boolean;
   tags?: string[];
   totalEnrollments?: number;
+  maxEnrollments?: number;
+  hasReachedMaxEnrollments?: boolean;
   slug?: string;
+  isPurchased?: boolean;
 }
 
 export interface BundlesResponse {
@@ -188,14 +191,19 @@ export const useBundle = (bundleId: string): UseQueryResult<ApiBundle & { userHa
       const data = await response.json();
       
       // Handle different response formats
-      let bundle: ApiBundle & { userHasPurchased?: boolean };
+      let bundle: ApiBundle & { userHasPurchased?: boolean; isPurchased?: boolean };
       if (data.success && data.data && data.data.bundle) {
         bundle = {
           ...data.data.bundle,
-          userHasPurchased: data.data.userHasPurchased || false
+          userHasPurchased: data.data.userHasPurchased || data.data.bundle.isPurchased || false,
+          isPurchased: data.data.isPurchased || data.data.bundle.isPurchased || false
         };
       } else if (data._id) {
-        bundle = data;
+        bundle = {
+          ...data,
+          userHasPurchased: data.userHasPurchased || data.isPurchased || false,
+          isPurchased: data.isPurchased || false
+        };
       } else {
         throw new Error('Invalid bundle data format');
       }

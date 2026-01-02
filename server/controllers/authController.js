@@ -559,30 +559,21 @@ const googleCallback = async (req, res) => {
 };
 
 /**
- * Complete Google OAuth registration with phone number
+ * Complete Google OAuth registration
  * POST /api/auth/complete-google-registration
  */
 const completeGoogleRegistration = async (req, res) => {
   try {
-    const { userId, phoneNumber } = req.body;
+    const { userId } = req.body;
 
-    if (!userId || !phoneNumber) {
+    if (!userId) {
       return res.status(400).json({
         success: false,
-        message: 'User ID and phone number are required'
+        message: 'User ID is required'
       });
     }
 
-    // Validate phone number format (international format)
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid international phone number (e.g., +1234567890)'
-      });
-    }
-
-    const result = await authService.completeGoogleRegistration(userId, phoneNumber);
+    const result = await authService.completeGoogleRegistration(userId);
 
     res.json({
       success: true,

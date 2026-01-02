@@ -36,21 +36,21 @@ const AboutPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
       {/* Hero Section */}
       <section className="relative pt-24 sm:pt-28 md:pt-32 pb-16 sm:pb-20 md:pb-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-blue-900/20 to-purple-900/20"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(6,182,212,0.1),transparent_50%)]"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className={`text-center transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full mb-6">
-              <Globe className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm text-cyan-300 font-medium">{t('about.badge', 'Empowering Traders Worldwide')}</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 dark:bg-cyan-500/10 border border-cyan-500/30 dark:border-cyan-500/30 rounded-full mb-6">
+              <Globe className="h-4 w-4 text-cyan-700 dark:text-cyan-400" />
+              <span className="text-sm text-cyan-700 dark:text-cyan-300 font-medium">{t('about.badge', 'Empowering Traders Worldwide')}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 pb-2 sm:pb-3 md:pb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent leading-tight">
               {t('about.page_title')}
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed mb-8">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed mb-8">
               {t('about.mission_text')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -62,7 +62,7 @@ const AboutPage = () => {
               </button>
               <button
                 onClick={() => navigate('/contact')}
-                className="px-6 py-3 bg-gray-800/50 border border-gray-700 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 transform"
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-800 text-gray-900 dark:text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 transform"
               >
                 {t('about.contact_us', 'Contact Us')}
               </button>
@@ -81,14 +81,14 @@ const AboutPage = () => {
                 className={`group transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 h-full">
+                <div className="relative bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 h-full">
                   <div className={`bg-gradient-to-br ${stat.gradient} p-4 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                     <stat.icon className="h-8 w-8 text-white" />
                   </div>
-                  <div className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <div className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2 text-center bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                     {stat.value}
                   </div>
-                  <div className="text-sm sm:text-base text-gray-400 font-medium text-center leading-tight">{stat.label}</div>
+                  <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium text-center leading-tight">{stat.label}</div>
                 </div>
               </div>
             ))}
@@ -97,13 +97,13 @@ const AboutPage = () => {
       </section>
 
       {/* What We Do Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-900 to-gray-800/50">
+      <section className="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gradient-to-b dark:from-gray-900 dark:to-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 sm:mb-16 transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
               {t('about.what_we_do', 'What We Offer')}
             </h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               {t('about.what_we_do_desc', 'Comprehensive trading and investing education designed for success')}
             </p>
           </div>
@@ -111,14 +111,14 @@ const AboutPage = () => {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className={`group bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
+                className={`group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 p-3 rounded-xl w-14 h-14 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 border border-cyan-500/30">
                   <feature.icon className="h-7 w-7 text-cyan-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -131,14 +131,14 @@ const AboutPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             {/* Mission */}
             <div className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform -translate-x-8'}`}>
-              <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-700/50 shadow-2xl">
+              <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700/50 shadow-2xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-12 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-full"></div>
                   <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                     {t('about.mission_title')}
                   </h2>
                 </div>
-                <p className="text-lg text-gray-300 leading-relaxed">
+                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
                   {t('about.mission_text')}
                 </p>
               </div>
@@ -146,7 +146,7 @@ const AboutPage = () => {
 
             {/* Why Choose Us */}
             <div className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform translate-x-8'}`}>
-              <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-700/50 shadow-2xl">
+              <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700/50 shadow-2xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-12 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full"></div>
                   <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent pb-2 sm:pb-3">
@@ -159,7 +159,7 @@ const AboutPage = () => {
                       <div className="mt-1 mr-4 flex-shrink-0">
                         <CheckCircle2 className="h-6 w-6 text-cyan-400 group-hover:scale-110 transition-transform duration-300" />
                       </div>
-                      <span className="text-base sm:text-lg text-gray-300 group-hover:text-white transition-colors duration-300 leading-relaxed">{benefit}</span>
+                      <span className="text-base sm:text-lg text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300 leading-relaxed">{benefit}</span>
                     </li>
                   ))}
                 </ul>
@@ -172,11 +172,11 @@ const AboutPage = () => {
       {/* CTA Section */}
       <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-gray-800/50 via-gray-900/50 to-gray-800/50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`text-center bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-12 border border-gray-700/50 shadow-2xl transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}>
+          <div className={`text-center bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-12 border border-gray-200 dark:border-gray-700/50 shadow-2xl transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
               {t('about.cta_title', 'Ready to Start Your Trading Journey?')}
             </h2>
-            <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
               {t('about.cta_desc', 'Join thousands of successful traders and investors. Start learning today and transform your financial future.')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -188,7 +188,7 @@ const AboutPage = () => {
               </button>
               <button
                 onClick={() => navigate('/register')}
-                className="px-8 py-4 bg-gray-800/50 border-2 border-gray-700 hover:border-cyan-500/50 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 transform text-lg"
+                className="px-8 py-4 bg-gray-200 dark:bg-gray-800/50 border-2 border-gray-300 dark:border-gray-700 hover:border-cyan-500/50 text-gray-900 dark:text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 transform text-lg"
               >
                 {t('about.get_started', 'Get Started Free')}
               </button>

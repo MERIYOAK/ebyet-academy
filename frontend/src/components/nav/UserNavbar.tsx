@@ -2,13 +2,15 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { buildApiUrl } from '../../config/environment';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Shield, Globe, ChevronDown } from 'lucide-react';
+import { Menu, X, Shield, Globe, ChevronDown, Sun, Moon } from 'lucide-react';
 import AvatarMenu from './AvatarMenu';
 import { getCurrentLanguage, changeLanguage } from '../../i18n';
+import { useTheme } from '../../contexts/ThemeContext';
 
 
 const UserNavbar: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -129,12 +131,7 @@ const UserNavbar: React.FC = () => {
     <>
       {/* Navbar - Transparent with Hero Image Background */}
       <nav 
-        className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300"
-        style={{
-          backgroundColor: 'rgba(40, 40, 61, 0.3)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-        }}
+        className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300 bg-white/30 dark:bg-[rgba(40,40,61,0.3)] backdrop-blur-md"
       >
         <div className="max-w-7xl mx-auto px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 xs:h-16 sm:h-16 md:h-20 min-h-[56px]">
@@ -142,7 +139,7 @@ const UserNavbar: React.FC = () => {
             <Link
               to="/"
               onClick={handleLogoClick}
-              className="text-white font-bold text-base xs:text-lg sm:text-xl md:text-2xl hover:opacity-80 transition-opacity truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] md:max-w-none"
+              className="text-gray-900 dark:text-white font-bold text-base xs:text-lg sm:text-xl md:text-2xl hover:opacity-80 transition-opacity truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] md:max-w-none"
               title={t('brand.name')}
             >
               <span className="hidden xs:inline">{t('brand.name')}</span>
@@ -155,7 +152,7 @@ const UserNavbar: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="text-white/90 hover:text-white text-xs sm:text-sm md:text-base font-medium transition-colors whitespace-nowrap"
+                  className="text-gray-900/90 dark:text-white/90 hover:text-gray-900 dark:hover:text-white text-xs sm:text-sm md:text-base font-medium transition-colors whitespace-nowrap"
                 >
                   {item.name}
                 </Link>
@@ -164,6 +161,19 @@ const UserNavbar: React.FC = () => {
 
             {/* Right Side - Buttons and Menu */}
             <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 dark:bg-white/10 hover:bg-white/20 dark:hover:bg-white/20 backdrop-blur-sm border border-white/20 dark:border-white/20 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 transition-all duration-300 hover:scale-110"
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                  {theme === 'dark' ? (
+                  <Moon className="w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
+                ) : (
+                  <Sun className="w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
+                )}
+              </button>
+
               {/* Language Toggler */}
               <div className="relative">
                 <button
@@ -171,14 +181,14 @@ const UserNavbar: React.FC = () => {
                     e.stopPropagation();
                     setIsLangMenuOpen(!isLangMenuOpen);
                   }}
-                  className="flex items-center space-x-0.5 xs:space-x-1 px-1.5 xs:px-2 sm:px-2.5 md:px-3 py-1 xs:py-1.5 sm:py-2 text-[10px] xs:text-xs sm:text-sm font-semibold text-white hover:text-cyan-300 hover:bg-white/10 backdrop-blur-sm rounded-full transition-all border border-white/20 min-w-[28px] xs:min-w-[32px] sm:min-w-[auto] justify-center"
+                  className="flex items-center space-x-0.5 xs:space-x-1 px-1.5 xs:px-2 sm:px-2.5 md:px-3 py-1 xs:py-1.5 sm:py-2 text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-900 dark:text-white hover:text-cyan-500 dark:hover:text-cyan-300 hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-sm rounded-full transition-all border border-gray-300/50 dark:border-white/20 min-w-[28px] xs:min-w-[32px] sm:min-w-[auto] justify-center"
                   aria-label="Toggle language"
                 >
                   <Globe className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="hidden xs:inline">{(i18n.language || getCurrentLanguage()) === 'en' ? 'EN' : 'TG'}</span>
+                  <span className="hidden xs:inline">{(i18n.language || getCurrentLanguage()) === 'en' ? 'EN' : 'ትግ'}</span>
                   <ChevronDown className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 transition-transform duration-200 flex-shrink-0 ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-                
+               
                 {/* Language Dropdown */}
                 {isLangMenuOpen && (
                   <>

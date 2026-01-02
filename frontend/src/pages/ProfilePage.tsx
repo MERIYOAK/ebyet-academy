@@ -516,7 +516,7 @@ const ProfilePage = () => {
   const currentImageUrl = imagePreview || profileImageUrl;
 
   return (
-    <div className="min-h-screen bg-gray-900 pt-16">
+    <div className="min-h-screen bg-white dark:bg-gray-900 pt-16">
       {/* Toast Notification */}
       {showToast && (
         <div className={`fixed top-16 xxs:top-20 right-2 xxs:right-3 sm:right-4 z-50 p-2 xxs:p-3 sm:p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
@@ -534,7 +534,7 @@ const ProfilePage = () => {
       )}
 
       {/* Minimal Header */}
-      <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 border-b border-gray-700/50">
+      <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border-b border-blue-200 dark:border-gray-700/50">
         <div className="max-w-[1600px] mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 pt-20 xxs:pt-24 pb-6 xxs:pb-8">
           <h1 className="text-2xl xxs:text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent pb-2 xxs:pb-3 sm:pb-4">
             {t('profile.title')}
@@ -548,8 +548,8 @@ const ProfilePage = () => {
           {/* Left Sidebar - Profile Card (Sticky) */}
           <div className="xl:col-span-4 xl:sticky xl:top-24 xl:self-start">
             <div 
-              className={`bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 transition-all duration-500 overflow-hidden transform ${
-                isCardHovered ? 'scale-[1.02] shadow-cyan-500/20 border-cyan-500/30' : 'hover:shadow-xl hover:border-gray-600/50'
+              className={`bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700/50 transition-all duration-500 overflow-hidden transform ${
+                isCardHovered ? 'scale-[1.02] shadow-cyan-500/20 border-cyan-500/30 dark:border-cyan-500/30' : 'hover:shadow-xl hover:border-gray-300 dark:hover:border-gray-600/50'
               }`}
               onMouseEnter={() => setIsCardHovered(true)}
               onMouseLeave={() => setIsCardHovered(false)}
@@ -638,42 +638,42 @@ const ProfilePage = () => {
               
               {/* Profile Stats */}
               <div className="p-5 xxs:p-6 space-y-4">
-                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-900/50 rounded-2xl border border-gray-700/50">
+                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-100 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700/50">
                   <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-cyan-400" />
-                    <span className="text-gray-300 text-sm">{t('profile.member_since')}</span>
+                    <Calendar className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{t('profile.member_since')}</span>
                   </div>
-                  <span className="text-white font-semibold text-sm">
+                  <span className="text-gray-900 dark:text-white font-semibold text-sm">
                     {new Date(userData.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-900/50 rounded-2xl border border-gray-700/50">
+                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-100 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700/50">
                   <div className="flex items-center space-x-3">
-                    <Shield className="h-5 w-5 text-purple-400" />
-                    <span className="text-gray-300 text-sm">{t('profile.verification_status', 'Status')}</span>
+                    <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{t('profile.verification_status', 'Status')}</span>
                   </div>
                   <span className="flex items-center space-x-1.5">
                     {userData.isVerified ? (
                       <>
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-green-400 font-semibold text-sm">{t('profile.verified_account')}</span>
+                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span className="text-green-600 dark:text-green-400 font-semibold text-sm">{t('profile.verified_account')}</span>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 text-yellow-400" />
-                        <span className="text-yellow-400 font-semibold text-sm">{t('profile.unverified_account')}</span>
+                        <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                        <span className="text-yellow-600 dark:text-yellow-400 font-semibold text-sm">{t('profile.unverified_account')}</span>
                       </>
                     )}
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-900/50 rounded-2xl border border-gray-700/50">
+                <div className="flex items-center justify-between p-3 xxs:p-4 bg-gray-100 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700/50">
                   <div className="flex items-center space-x-3">
-                    <User className="h-5 w-5 text-blue-400" />
-                    <span className="text-gray-300 text-sm">{t('profile.account_type_label', 'Account Type')}</span>
+                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{t('profile.account_type_label', 'Account Type')}</span>
                   </div>
-                  <span className="text-white font-semibold text-sm">
+                  <span className="text-gray-900 dark:text-white font-semibold text-sm">
                     {userData.authProvider === 'google' ? t('profile.google_account') : t('profile.email_account')}
                   </span>
                 </div>
@@ -684,22 +684,22 @@ const ProfilePage = () => {
           {/* Right Content Area - Forms */}
           <div className="xl:col-span-8 space-y-6 xxs:space-y-8">
             {/* Personal Information */}
-            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-gray-700/50">
-                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
+            <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl shadow-2xl border border-blue-200 dark:border-gray-700/50 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden">
+              <div className="bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-blue-200 dark:border-gray-700/50">
+                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-blue-900 dark:text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
                   <div className="p-2.5 xxs:p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl shadow-lg">
                     <User className="h-5 w-5 xxs:h-6 xxs:w-6 sm:h-7 sm:w-7 text-white" />
                   </div>
                   <span>{t('profile.personal_information')}</span>
                 </h3>
-                <p className="text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.update_personal_details')}</p>
+                <p className="text-blue-700 dark:text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.update_personal_details')}</p>
               </div>
               
               <div className="p-4 xxs:p-6 sm:p-8 lg:p-10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 xxs:gap-4 sm:gap-6">
                   {/* First Name */}
                   <div>
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.first_name')} *
                     </label>
                     {isEditing ? (
@@ -710,30 +710,30 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('firstName', e.target.value)}
                           onFocus={() => setActiveField('firstName')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 text-sm xxs:text-base bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 text-sm xxs:text-base bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 placeholder-blue-400 dark:placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'firstName' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.firstName 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_first_name')}
                         />
                         {validationErrors.firstName && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.firstName}</p>
+                          <p className="text-red-500 dark:text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.firstName}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                        <User className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
-                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.firstName || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-blue-300 dark:border-gray-700/40">
+                        <User className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium text-sm xxs:text-base">{formData.firstName || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Last Name */}
                 <div>
-                  <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                  <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.last_name')} *
                   </label>
                   {isEditing ? (
@@ -744,30 +744,30 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('lastName', e.target.value)}
                           onFocus={() => setActiveField('lastName')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 text-sm xxs:text-base bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 text-sm xxs:text-base bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'lastName' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.lastName 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_last_name')}
                         />
                         {validationErrors.lastName && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.lastName}</p>
+                          <p className="text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.lastName}</p>
                         )}
                       </div>
                   ) : (
-                    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-900/50 rounded-xl border border-gray-700/50">
-                      <User className="h-5 w-5 text-cyan-400" />
-                        <span className="text-gray-300 font-medium">{formData.lastName || t('profile.not_set')}</span>
+                    <div className="flex items-center space-x-3 px-4 py-3 bg-white dark:bg-gray-900/50 rounded-xl border border-blue-200 dark:border-gray-700/50">
+                      <User className="h-5 w-5 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium">{formData.lastName || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Age */}
                   <div>
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.age')}
                     </label>
                     {isEditing ? (
@@ -780,30 +780,30 @@ const ProfilePage = () => {
                           onBlur={() => setActiveField(null)}
                           min="1"
                           max="120"
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'age' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.age 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_age')}
                         />
                         {validationErrors.age && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.age}</p>
+                          <p className="text-red-500 dark:text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.age}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                        <Calendar className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
-                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.age || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-gray-700/40">
+                        <Calendar className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium text-sm xxs:text-base">{formData.age || t('profile.not_set')}</span>
                       </div>
                   )}
                 </div>
 
                   {/* Sex */}
                 <div>
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.sex')}
                     </label>
                     {isEditing ? (
@@ -812,10 +812,10 @@ const ProfilePage = () => {
                         onChange={(e) => handleFieldChange('sex', e.target.value)}
                         onFocus={() => setActiveField('sex')}
                         onBlur={() => setActiveField(null)}
-                        className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 ${
+                        className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 ${
                           activeField === 'sex' 
                             ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
-                            : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                            : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                         }`}
                       >
                         <option value="">{t('profile.select_sex')}</option>
@@ -825,22 +825,22 @@ const ProfilePage = () => {
                         <option value="prefer-not-to-say">{t('profile.prefer_not_to_say')}</option>
                       </select>
                     ) : (
-                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                        <UserCheck className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
-                        <span className="text-gray-300 font-medium capitalize text-sm xxs:text-base">{formData.sex || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-gray-700/40">
+                        <UserCheck className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium capitalize text-sm xxs:text-base">{formData.sex || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Email (Read-only) */}
                   <div className="sm:col-span-2">
-                  <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                        <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                     {t('profile.email_address')}
                   </label>
-                  <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                    <Mail className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
-                    <span className="text-gray-300 font-medium text-sm xxs:text-base flex-1">{userData.email}</span>
-                    <span className="text-xs xxs:text-sm bg-cyan-500/20 text-cyan-300 px-2 xxs:px-3 py-1 rounded-lg border border-cyan-500/30">
+                  <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-gray-700/40">
+                    <Mail className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400" />
+                    <span className="text-blue-800 dark:text-gray-300 font-medium text-sm xxs:text-base flex-1">{userData.email}</span>
+                    <span className="text-xs xxs:text-sm bg-cyan-500/20 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 px-2 xxs:px-3 py-1 rounded-lg border border-cyan-500/30">
                       {t('profile.not_editable')}
                     </span>
                   </div>
@@ -850,22 +850,22 @@ const ProfilePage = () => {
             </div>
 
             {/* Contact Information */}
-            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-gray-700/50">
-                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
+            <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl shadow-2xl border border-blue-200 dark:border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-blue-200 dark:border-gray-700/50">
+                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-blue-900 dark:text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
                   <div className="p-2.5 xxs:p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl shadow-lg">
                     <Phone className="h-5 w-5 xxs:h-6 xxs:w-6 sm:h-7 sm:w-7 text-white" />
                   </div>
                   <span>{t('profile.contact_information')}</span>
                 </h3>
-                <p className="text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.update_contact_details')}</p>
+                <p className="text-blue-700 dark:text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.update_contact_details')}</p>
               </div>
               
               <div className="p-4 xxs:p-6 sm:p-8 lg:p-10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 xxs:gap-5 sm:gap-6">
                   {/* Phone Number */}
                   <div>
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.phone_number')}{userData && userData.authProvider === 'local' && <span className="text-red-400 ml-1">*</span>}
                     </label>
                     {isEditing ? (
@@ -876,20 +876,20 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('phoneNumber', e.target.value)}
                           onFocus={() => setActiveField('phoneNumber')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'phoneNumber' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.phoneNumber 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_phone_number')}
                         />
                         {validationErrors.phoneNumber && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.phoneNumber}</p>
+                          <p className="text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.phoneNumber}</p>
                         )}
                         {!validationErrors.phoneNumber && (
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-blue-600 dark:text-gray-400 mt-1">
                             {userData && userData.authProvider === 'local' 
                               ? t('profile.phone_required_help', { phone: config.SUPPORT_PHONE })
                               : t('profile.phone_format_help', { phone: config.SUPPORT_PHONE })}
@@ -897,16 +897,16 @@ const ProfilePage = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                        <Phone className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
-                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.phoneNumber || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-gray-700/40">
+                        <Phone className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium text-sm xxs:text-base">{formData.phoneNumber || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Address */}
                   <div className="sm:col-span-2">
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.address')}
                     </label>
                     {isEditing ? (
@@ -917,30 +917,30 @@ const ProfilePage = () => {
                           onFocus={() => setActiveField('address')}
                           onBlur={() => setActiveField(null)}
                           rows={3}
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 resize-none placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 resize-none placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'address' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.address 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_address')}
                         />
                         {validationErrors.address && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.address}</p>
+                          <p className="text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.address}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-start space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                        <MapPin className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400 mt-1" />
-                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.address || t('profile.not_set')}</span>
+                      <div className="flex items-start space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-gray-700/40">
+                        <MapPin className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400 mt-1" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium text-sm xxs:text-base">{formData.address || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Country */}
                   <div>
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.country')}
                     </label>
                     {isEditing ? (
@@ -951,30 +951,30 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('country', e.target.value)}
                           onFocus={() => setActiveField('country')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'country' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.country 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_country')}
                         />
                         {validationErrors.country && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.country}</p>
+                          <p className="text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.country}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 rounded-2xl border-2 border-gray-700/40">
-                        <Globe className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-400" />
-                        <span className="text-gray-300 font-medium text-sm xxs:text-base">{formData.country || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 xxs:space-x-4 px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 rounded-2xl border-2 border-blue-200 dark:border-gray-700/40">
+                        <Globe className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium text-sm xxs:text-base">{formData.country || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
 
                   {/* City */}
                   <div>
-                    <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                    <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                       {t('profile.city')}
                     </label>
                     {isEditing ? (
@@ -985,23 +985,23 @@ const ProfilePage = () => {
                           onChange={(e) => handleFieldChange('city', e.target.value)}
                           onFocus={() => setActiveField('city')}
                           onBlur={() => setActiveField(null)}
-                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-gray-900/60 text-white border-2 rounded-2xl transition-all duration-200 placeholder-gray-500 ${
+                          className={`w-full px-4 xxs:px-5 py-3 xxs:py-3.5 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-2xl transition-all duration-200 placeholder-blue-400 dark:placeholder-gray-500 ${
                             activeField === 'city' 
                               ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
                               : validationErrors.city 
                                 ? 'border-red-500' 
-                                : 'border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
+                                : 'border-blue-300 dark:border-gray-700/40 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30'
                           }`}
                           placeholder={t('profile.enter_city')}
                         />
                         {validationErrors.city && (
-                          <p className="text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.city}</p>
+                          <p className="text-red-500 dark:text-red-400 text-xs xxs:text-sm mt-1">{validationErrors.city}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-900/50 rounded-xl border border-gray-700/50">
-                        <MapPin className="h-5 w-5 text-cyan-400" />
-                        <span className="text-gray-300 font-medium">{formData.city || t('profile.not_set')}</span>
+                      <div className="flex items-center space-x-3 px-4 py-3 bg-white dark:bg-gray-900/50 rounded-xl border border-blue-200 dark:border-gray-700/50">
+                        <MapPin className="h-5 w-5 text-cyan-500 dark:text-cyan-400" />
+                        <span className="text-blue-800 dark:text-gray-300 font-medium">{formData.city || t('profile.not_set')}</span>
                       </div>
                     )}
                   </div>
@@ -1026,7 +1026,7 @@ const ProfilePage = () => {
                       <button
                         onClick={handleCancel}
                         disabled={isSaving}
-                        className="flex items-center justify-center space-x-2 border-2 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 disabled:opacity-50 px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 text-sm xxs:text-base"
+                        className="flex items-center justify-center space-x-2 border-2 border-blue-300 dark:border-gray-600/50 text-blue-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700/50 hover:border-blue-400 dark:hover:border-gray-500 disabled:opacity-50 px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 text-sm xxs:text-base"
                       >
                         <X className="h-4 w-4 xxs:h-5 xxs:w-5" />
                         <span>{t('profile.cancel')}</span>
@@ -1035,7 +1035,7 @@ const ProfilePage = () => {
                   ) : (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center justify-center space-x-2 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm xxs:text-base border border-gray-600/50"
+                      className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm xxs:text-base border border-blue-400 dark:border-gray-600/50"
                     >
                       <Edit3 className="h-4 w-4 xxs:h-5 xxs:w-5" />
                       <span>{t('profile.edit_profile')}</span>
@@ -1046,15 +1046,15 @@ const ProfilePage = () => {
             </div>
           
           {/* Password Change Section */}
-          <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-cyan-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-gray-700/50">
-                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
+          <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl shadow-2xl border border-blue-200 dark:border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-cyan-500/10 px-5 xxs:px-6 sm:px-8 lg:px-10 py-5 xxs:py-6 sm:py-7 border-b border-blue-200 dark:border-gray-700/50">
+                <h3 className="text-xl xxs:text-2xl sm:text-3xl font-bold text-blue-900 dark:text-white flex items-center space-x-3 xxs:space-x-4 mb-2">
                   <div className="p-2.5 xxs:p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
                     <Shield className="h-5 w-5 xxs:h-6 xxs:w-6 sm:h-7 sm:w-7 text-white" />
                   </div>
                   <span>{t('profile.security_settings')}</span>
                 </h3>
-                <p className="text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.change_password_description')}</p>
+                <p className="text-blue-700 dark:text-gray-400 text-sm xxs:text-base sm:text-lg ml-14 xxs:ml-16 sm:ml-18">{t('profile.change_password_description')}</p>
               </div>
               
               <div className="p-4 xxs:p-6 sm:p-8 lg:p-10">
@@ -1068,7 +1068,7 @@ const ProfilePage = () => {
                 ) : (
                   <div className="space-y-4 xxs:space-y-5 sm:space-y-6">
                                           <div>
-                        <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                        <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                           {t('profile.current_password')}
                         </label>
                       <div className="relative">
@@ -1076,13 +1076,13 @@ const ProfilePage = () => {
                           type={showPasswords.current ? "text" : "password"}
                           value={passwordData.currentPassword}
                           onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-gray-900/60 text-white border-2 border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
+                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 border-blue-300 dark:border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-blue-400 dark:placeholder-gray-500"
                           placeholder={t('profile.enter_current_password')}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors duration-200"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-gray-300 transition-colors duration-200"
                         >
                           {showPasswords.current ? <EyeOff className="h-4 w-4 xxs:h-5 xxs:w-5" /> : <Eye className="h-4 w-4 xxs:h-5 xxs:w-5" />}
                         </button>
@@ -1090,7 +1090,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                      <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                         {t('profile.new_password')}
                       </label>
                       <div className="relative">
@@ -1098,13 +1098,13 @@ const ProfilePage = () => {
                           type={showPasswords.new ? "text" : "password"}
                           value={passwordData.newPassword}
                           onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-gray-900/60 text-white border-2 border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
+                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 border-blue-300 dark:border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-blue-400 dark:placeholder-gray-500"
                           placeholder={t('profile.enter_new_password')}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors duration-200"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-gray-300 transition-colors duration-200"
                         >
                           {showPasswords.new ? <EyeOff className="h-4 w-4 xxs:h-5 xxs:w-5" /> : <Eye className="h-4 w-4 xxs:h-5 xxs:w-5" />}
                         </button>
@@ -1112,7 +1112,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2 xxs:mb-3">
+                      <label className="block text-xs xxs:text-sm font-semibold text-blue-800 dark:text-gray-300 mb-2 xxs:mb-3">
                         {t('profile.confirm_new_password')}
                       </label>
                       <div className="relative">
@@ -1120,13 +1120,13 @@ const ProfilePage = () => {
                           type={showPasswords.confirm ? "text" : "password"}
                           value={passwordData.confirmPassword}
                           onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-gray-900/60 text-white border-2 border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
+                          className="w-full px-4 xxs:px-5 py-3 xxs:py-3.5 pr-12 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 border-blue-300 dark:border-gray-700/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-blue-400 dark:placeholder-gray-500"
                           placeholder={t('profile.confirm_new_password_placeholder')}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors duration-200"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-gray-300 transition-colors duration-200"
                         >
                           {showPasswords.confirm ? <EyeOff className="h-4 w-4 xxs:h-5 xxs:w-5" /> : <Eye className="h-4 w-4 xxs:h-5 xxs:w-5" />}
                         </button>
@@ -1146,7 +1146,7 @@ const ProfilePage = () => {
                           setShowPasswordChange(false);
                           setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                         }}
-                        className="flex items-center justify-center space-x-2 border-2 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 text-sm xxs:text-base"
+                        className="flex items-center justify-center space-x-2 border-2 border-blue-300 dark:border-gray-600/50 text-blue-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700/50 hover:border-blue-400 dark:hover:border-gray-500 px-4 xxs:px-6 sm:px-8 py-3 xxs:py-3.5 rounded-2xl font-semibold transition-all duration-200 text-sm xxs:text-base"
                       >
                         <X className="h-4 w-4 xxs:h-5 xxs:w-5" />
                         <span>{t('profile.cancel')}</span>

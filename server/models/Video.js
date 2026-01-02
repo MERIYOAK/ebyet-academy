@@ -1,7 +1,19 @@
 const mongoose = require('mongoose');
 
 const videoSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  // Bilingual support - can be string (legacy) or object {en, tg}
+  title: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Title must be a string or object with en and tg properties'
+    }
+  },
   s3Key: { type: String, required: true },
   courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
   courseVersion: { type: Number, required: true, default: 1 },
@@ -31,8 +43,19 @@ const videoSchema = new mongoose.Schema({
     // Admin tracking
   uploadedBy: { type: String, default: 'admin' },
 
-  // Video metadata
-  description: { type: String },
+  // Video metadata - Bilingual support
+  description: {
+    type: mongoose.Schema.Types.Mixed,
+    validate: {
+      validator: function(v) {
+        if (!v) return true; // Optional field
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Description must be a string or object with en and tg properties'
+    }
+  },
   tags: [{ type: String }],
   
   // Free preview system

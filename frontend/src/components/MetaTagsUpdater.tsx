@@ -29,20 +29,26 @@ const MetaTagsUpdater: React.FC = () => {
   // Update HTML lang attribute (minimal DOM manipulation, only when language changes)
   useEffect(() => {
     document.documentElement.lang = metaData.htmlLang;
+    document.documentElement.setAttribute('translate', 'no');
   }, [metaData.htmlLang]);
 
   // Update JSON-LD structured data (only when language changes)
   useEffect(() => {
     const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
-    if (jsonLdScript) {
+    if (jsonLdScript && jsonLdScript.textContent) {
       try {
-        const jsonLd = JSON.parse(jsonLdScript.textContent || '{}');
+        const textContent = jsonLdScript.textContent.trim();
+        if (!textContent) {
+          return;
+        }
+        const jsonLd = JSON.parse(textContent);
         jsonLd.name = metaData.brandName;
         jsonLd.alternateName = metaData.brandName;
         jsonLd.description = metaData.pageDescription;
-        jsonLdScript.textContent = JSON.stringify(jsonLd);
+        jsonLdScript.textContent = JSON.stringify(jsonLd, null, 2);
       } catch (e) {
         console.error('Error updating JSON-LD:', e);
+        console.error('JSON-LD content:', jsonLdScript.textContent);
       }
     }
   }, [metaData.brandName, metaData.pageDescription]);
@@ -50,7 +56,7 @@ const MetaTagsUpdater: React.FC = () => {
   return (
     <Helmet>
       <title>{metaData.pageTitle}</title>
-      <html lang={metaData.htmlLang} />
+      <html lang={metaData.htmlLang} translate="no" />
       <meta name="title" content={metaData.pageTitle} />
       <meta name="description" content={metaData.pageDescription} />
       <meta name="keywords" content={metaData.pageKeywords} />

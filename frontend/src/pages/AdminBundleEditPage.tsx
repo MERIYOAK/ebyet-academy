@@ -4,11 +4,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Save, X, Upload, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import Toast from '../components/Toast';
+import { getEnglishText, getTigrinyaText } from '../utils/bilingualHelper';
 
 interface Course {
   _id: string;
-  title: string;
-  description: string;
+  title: string | { en: string; tg: string };
+  description: string | { en: string; tg: string };
   price: number;
   thumbnailURL?: string;
 }
@@ -41,9 +42,12 @@ const AdminBundleEditPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    longDescription: '',
+    titleEn: '',
+    titleTg: '',
+    descriptionEn: '',
+    descriptionTg: '',
+    longDescriptionEn: '',
+    longDescriptionTg: '',
     price: 0,
     originalValue: 0,
     courseIds: [] as string[],
@@ -95,11 +99,52 @@ const AdminBundleEditPage: React.FC = () => {
         const bundleInfo = bundleData.data.bundle;
         setBundle(bundleInfo);
         
-        // Set form data
+        // Helper function to parse and extract text from bilingual data
+        const parseBilingual = (text: any): { en: string; tg: string } => {
+          if (!text) return { en: '', tg: '' };
+          
+          // If it's a JSON string, parse it first
+          let parsedText = text;
+          if (typeof text === 'string' && (text.startsWith('{') || text.startsWith('"'))) {
+            try {
+              parsedText = JSON.parse(text);
+            } catch (e) {
+              // Not JSON, treat as plain string
+              return { en: text, tg: '' };
+            }
+          }
+          
+          // If it's a bilingual object
+          if (typeof parsedText === 'object' && parsedText !== null) {
+            return {
+              en: parsedText.en || '',
+              tg: parsedText.tg || ''
+            };
+          }
+          
+          // If it's a plain string, assume it's English
+          if (typeof parsedText === 'string') {
+            return { en: parsedText, tg: '' };
+          }
+          
+          return { en: '', tg: '' };
+        };
+        
+        // Parse all bilingual fields
+        const titleData = parseBilingual(bundleInfo.title);
+        const descriptionData = parseBilingual(bundleInfo.description);
+        const longDescriptionData = bundleInfo.longDescription 
+          ? parseBilingual(bundleInfo.longDescription)
+          : { en: descriptionData.en, tg: descriptionData.tg };
+        
+        // Set form data - extract both English and Tigrinya text from bilingual objects
         setFormData({
-          title: bundleInfo.title || '',
-          description: bundleInfo.description || '',
-          longDescription: bundleInfo.longDescription || bundleInfo.description || '',
+          titleEn: titleData.en,
+          titleTg: titleData.tg,
+          descriptionEn: descriptionData.en,
+          descriptionTg: descriptionData.tg,
+          longDescriptionEn: longDescriptionData.en,
+          longDescriptionTg: longDescriptionData.tg,
           price: bundleInfo.price || 0,
           originalValue: bundleInfo.originalValue || 0,
           courseIds: bundleInfo.courseIds.map((c: any) => c._id || c),
@@ -192,11 +237,11 @@ const AdminBundleEditPage: React.FC = () => {
         message: 'Updating bundle information...'
       });
 
-      // Update bundle
+      // Update bundle - convert to bilingual format
       const updatePayload = {
-        title: formData.title,
-        description: formData.description,
-        longDescription: formData.longDescription || formData.description,
+        title: JSON.stringify({ en: formData.titleEn, tg: formData.titleTg }),
+        description: JSON.stringify({ en: formData.descriptionEn, tg: formData.descriptionTg }),
+        longDescription: JSON.stringify({ en: formData.longDescriptionEn || formData.descriptionEn, tg: formData.longDescriptionTg || formData.descriptionTg }),
         price: formData.price,
         originalValue: formData.originalValue || undefined,
         courseIds: formData.courseIds,
@@ -339,34 +384,72 @@ const AdminBundleEditPage: React.FC = () => {
             <h2 className="text-xl font-semibold text-white mb-4">Basic Information</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Title *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Title (English) *</label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  value={formData.titleEn}
+                  onChange={(e) => setFormData(prev => ({ ...prev, titleEn: e.target.value }))}
                   required
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Enter bundle title in English"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Title (Tigrinya) *</label>
+                <input
+                  type="text"
+                  value={formData.titleTg}
+                  onChange={(e) => setFormData(prev => ({ ...prev, titleTg: e.target.value }))}
+                  required
+                  className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Enter bundle title in Tigrinya"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Description (English) *</label>
                 <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  value={formData.descriptionEn}
+                  onChange={(e) => setFormData(prev => ({ ...prev, descriptionEn: e.target.value }))}
                   required
                   rows={3}
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Enter bundle description in English"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Long Description</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Description (Tigrinya) *</label>
                 <textarea
-                  value={formData.longDescription}
-                  onChange={(e) => setFormData(prev => ({ ...prev, longDescription: e.target.value }))}
+                  value={formData.descriptionTg}
+                  onChange={(e) => setFormData(prev => ({ ...prev, descriptionTg: e.target.value }))}
+                  required
+                  rows={3}
+                  className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Enter bundle description in Tigrinya"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Long Description (English)</label>
+                <textarea
+                  value={formData.longDescriptionEn}
+                  onChange={(e) => setFormData(prev => ({ ...prev, longDescriptionEn: e.target.value }))}
                   rows={5}
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Enter detailed description in English (optional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Long Description (Tigrinya)</label>
+                <textarea
+                  value={formData.longDescriptionTg}
+                  onChange={(e) => setFormData(prev => ({ ...prev, longDescriptionTg: e.target.value }))}
+                  rows={5}
+                  className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Enter detailed description in Tigrinya (optional)"
                 />
               </div>
 
@@ -417,10 +500,10 @@ const AdminBundleEditPage: React.FC = () => {
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-white font-medium">{course.title}</h3>
+                      <h3 className="text-white font-medium">{getEnglishText(course.title)}</h3>
                       <span className="text-cyan-400 font-semibold">${course.price.toFixed(2)}</span>
                     </div>
-                    <p className="text-gray-400 text-sm mt-1 line-clamp-1">{course.description}</p>
+                    <p className="text-gray-400 text-sm mt-1 line-clamp-1">{getEnglishText(course.description)}</p>
                   </div>
                 </label>
               ))}
@@ -593,3 +676,11 @@ const AdminBundleEditPage: React.FC = () => {
 };
 
 export default AdminBundleEditPage;
+
+
+
+
+
+
+
+

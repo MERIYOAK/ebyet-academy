@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
+const optionalAuth = require('../middleware/optionalAuthMiddleware');
 const adminAuthMiddleware = require('../middleware/adminAuthMiddleware');
 const securityMiddleware = require('../middleware/securityMiddleware');
 const drmVideoController = require('../controllers/drmVideoController');
@@ -12,22 +13,19 @@ const security = securityMiddleware.getAllMiddleware();
 router.use(security.sessionSecurity);
 router.use(security.videoStreamingSecurity);
 
-// Apply authentication middleware to all routes
-router.use(authMiddleware);
-
 /**
  * @route GET /api/drm/videos/:videoId
  * @desc Get video by ID with DRM protection
  * @access Private (Student/User)
  */
-router.get('/videos/:videoId', security.validateVideoAccess, drmVideoController.getVideoByIdWithDRM);
+router.get('/videos/:videoId', authMiddleware, security.validateVideoAccess, drmVideoController.getVideoByIdWithDRM);
 
 /**
  * @route GET /api/drm/courses/:courseId/videos
- * @desc Get course videos with DRM protection
- * @access Private (Student/User)
+ * @desc Get course videos with DRM protection (public access, but videos locked for non-purchased users)
+ * @access Public (Optional auth - videos locked if not purchased)
  */
-router.get('/courses/:courseId/videos', drmVideoController.getCourseVideosWithDRM);
+router.get('/courses/:courseId/videos', optionalAuth, drmVideoController.getCourseVideosWithDRM);
 
 /**
  * @route POST /api/drm/decrypt-url

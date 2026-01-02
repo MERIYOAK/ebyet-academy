@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, CheckCircle, Calendar, BookOpen, Award, Share2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { buildApiUrl } from '../config/environment';
+import { buildApiUrl, config } from '../config/environment';
 
 interface Certificate {
   certificateId: string;
@@ -136,8 +136,10 @@ const CertificatesPage = () => {
       return;
     }
 
-    // Use the S3 URL directly for sharing
-    const shareUrl = certificate.pdfUrl || buildApiUrl(`/certificate-preview/${certificate.certificateId}`);
+    // Generate the public certificate preview URL
+    // This should point to the backend server's certificate-preview route
+    // Use the API_BASE_URL directly (backend server URL)
+    const shareUrl = `${config.API_BASE_URL}/certificate-preview/${certificate.certificateId}`;
     console.log('✅ Generated share URL:', shareUrl);
     
     // Check if we have a valid URL
@@ -272,10 +274,10 @@ const CertificatesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-3 xxs:px-4">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-3 xxs:px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-cyan-500 mx-auto mb-3 xxs:mb-4"></div>
-          <p className="text-gray-300 text-sm xxs:text-base">{t('common.loading')}</p>
+          <p className="text-blue-700 dark:text-gray-300 text-sm xxs:text-base">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -283,15 +285,15 @@ const CertificatesPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-3 xxs:px-4">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-3 xxs:px-4">
         <div className="text-center max-w-md mx-auto p-4 xxs:p-8">
-          <div className="text-red-400 mb-3 xxs:mb-4">
+          <div className="text-red-500 dark:text-red-400 mb-3 xxs:mb-4">
             <svg className="w-12 h-12 xxs:w-16 xxs:h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-xl xxs:text-2xl font-bold text-white mb-3 xxs:mb-4">{t('common.error')}</h2>
-          <p className="text-gray-300 mb-4 xxs:mb-6 text-sm xxs:text-base">{error}</p>
+          <h2 className="text-xl xxs:text-2xl font-bold text-blue-900 dark:text-white mb-3 xxs:mb-4">{t('common.error')}</h2>
+          <p className="text-blue-700 dark:text-gray-300 mb-4 xxs:mb-6 text-sm xxs:text-base">{error}</p>
           <button
             onClick={fetchCertificates}
             className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 xxs:px-6 py-2 xxs:py-3 rounded-lg transition-all duration-200 text-sm xxs:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
@@ -304,9 +306,9 @@ const CertificatesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Hero Header Section */}
-      <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 border-b border-gray-700/50">
+      <div className="bg-gradient-to-br from-blue-100 via-cyan-100 to-purple-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border-b border-blue-300 dark:border-gray-700/50">
         <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 pt-20 xxs:pt-24 pb-8 xxs:pb-12">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 xxs:gap-8">
             <div className="flex-1">
@@ -315,10 +317,10 @@ const CertificatesPage = () => {
                   <Award className="w-7 h-7 xxs:w-8 xxs:h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl xxs:text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
+                  <h1 className="text-3xl xxs:text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2 pb-4 xxs:pb-5 sm:pb-6">
                     {t('certificates.my_certificates')}
                   </h1>
-                  <p className="text-gray-300 text-base xxs:text-lg">
+                  <p className="text-blue-700 dark:text-gray-300 text-base xxs:text-lg">
                     {t('certificates.congratulations')}
                   </p>
                 </div>
@@ -332,14 +334,14 @@ const CertificatesPage = () => {
       <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-6 xxs:py-8 sm:py-12">
         {certificates.length === 0 ? (
           <div className="text-center py-12 xxs:py-16 sm:py-20">
-            <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-8 xxs:p-12 sm:p-16 max-w-lg mx-auto">
+            <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl shadow-2xl border border-blue-200 dark:border-gray-700/50 p-8 xxs:p-12 sm:p-16 max-w-lg mx-auto">
               <div className="flex items-center justify-center mb-6">
-                <div className="w-20 h-20 xxs:w-24 xxs:h-24 bg-gradient-to-br from-gray-700/50 to-gray-800/50 rounded-full flex items-center justify-center">
-                  <BookOpen className="w-10 h-10 xxs:w-12 xxs:h-12 text-gray-400" />
+                <div className="w-20 h-20 xxs:w-24 xxs:h-24 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-gray-700/50 dark:to-gray-800/50 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-10 h-10 xxs:w-12 xxs:h-12 text-blue-600 dark:text-gray-400" />
                 </div>
               </div>
-              <h3 className="text-xl xxs:text-2xl font-semibold text-white mb-3">{t('certificates.no_certificates')}</h3>
-              <p className="text-gray-400 mb-8 text-sm xxs:text-base">
+              <h3 className="text-xl xxs:text-2xl font-semibold text-blue-900 dark:text-white mb-3">{t('certificates.no_certificates')}</h3>
+              <p className="text-blue-700 dark:text-gray-400 mb-8 text-sm xxs:text-base">
                 {t('certificates.complete_courses')}
               </p>
               <Link
@@ -355,20 +357,20 @@ const CertificatesPage = () => {
           <>
             {/* Stats Card */}
             <div className="mb-8 xxs:mb-10 sm:mb-12">
-              <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/50 p-6 xxs:p-8">
+              <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl shadow-2xl border border-blue-200 dark:border-gray-700/50 p-6 xxs:p-8">
                 <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between gap-6">
                   <div className="flex items-center space-x-4 xxs:space-x-5">
                     <div className="w-14 h-14 xxs:w-16 xxs:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
                       <Sparkles className="w-7 w-7 xxs:w-8 xxs:h-8 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-3xl xxs:text-4xl font-bold text-white">{certificates.length}</h2>
-                      <p className="text-gray-300 text-sm xxs:text-base">{t('certificates.certificates_earned')}</p>
+                      <h2 className="text-3xl xxs:text-4xl font-bold text-blue-900 dark:text-white">{certificates.length}</h2>
+                      <p className="text-blue-700 dark:text-gray-300 text-sm xxs:text-base">{t('certificates.certificates_earned')}</p>
                     </div>
                   </div>
                   <div className="text-center xxs:text-right">
-                    <p className="text-xs xxs:text-sm text-gray-400 mb-1">{t('certificates.latest_achievement')}</p>
-                    <p className="font-semibold text-cyan-400 text-base xxs:text-lg">
+                    <p className="text-xs xxs:text-sm text-blue-600 dark:text-gray-400 mb-1">{t('certificates.latest_achievement')}</p>
+                    <p className="font-semibold text-blue-700 dark:text-cyan-400 text-base xxs:text-lg">
                       {certificates.length > 0 ? formatDate(certificates[0].completionDate) : 'N/A'}
                     </p>
                   </div>

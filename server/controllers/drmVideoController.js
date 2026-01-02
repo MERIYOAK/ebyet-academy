@@ -257,11 +257,27 @@ exports.getCourseVideosWithDRM = async (req, res) => {
       });
     }
 
-    // Check if user has purchased the course
-    const userHasPurchased = await checkVideoAccess(videos[0]._id, userId, isAdmin);
+    // Check if user has purchased the course (check first video to determine overall purchase status)
+    const firstVideoAccess = await checkVideoAccess(videos[0]._id, userId, isAdmin);
+    // User has purchased if they have access AND it's not just a free preview
+    const coursePurchased = firstVideoAccess.hasAccess && !videos[0].isFreePreview;
     
     // Generate DRM sessions for each video (for non-admin users)
     const videosWithDRM = await Promise.all(videos.map(async (video) => {
+      // IMPORTANT: Check access for EACH video individually to handle free previews correctly
+      const videoAccess = await checkVideoAccess(video._id, userId, isAdmin);
+      const hasAccess = videoAccess.hasAccess;
+      const isLocked = !hasAccess;
+      
+      // Log access status for debugging
+      console.log(`🔒 [DRM Controller] Video ${video._id.toString().substring(0, 8)}... access:`, {
+        userId: userId || 'unauthenticated',
+        hasAccess,
+        isLocked,
+        isFreePreview: video.isFreePreview,
+        lockReason: videoAccess.lockReason
+      });
+      
       const videoObj = {
         id: video._id,
         title: video.title,
@@ -272,8 +288,11 @@ exports.getCourseVideosWithDRM = async (req, res) => {
         courseId: video.courseId,
         courseVersion: video.courseVersion,
         isFreePreview: video.isFreePreview,
-        locked: !userHasPurchased.hasAccess && !video.isFreePreview,
-        hasAccess: userHasPurchased.hasAccess || video.isFreePreview,
+        locked: isLocked,
+        hasAccess: hasAccess,
+        // IMPORTANT: Do not include video URL or DRM data for locked videos
+        url: null, // Explicitly set to null for locked videos
+        videoUrl: null, // Explicitly set to null for locked videos
         drm: {
           enabled: false,
           sessionId: null,
@@ -282,8 +301,14 @@ exports.getCourseVideosWithDRM = async (req, res) => {
         }
       };
 
-      // Generate DRM session for non-admin users with access
-      if (!isAdmin && (userHasPurchased.hasAccess || video.isFreePreview)) {
+      // Only generate DRM session and URLs if user has access
+      if (!hasAccess) {
+        // Video is locked - return early without any URLs
+        return videoObj;
+      }
+
+      // Generate DRM session for non-admin users with access (only if user is authenticated)
+      if (!isAdmin && userId && hasAccess) {
         try {
           const drmSession = await drmService.generateDRMSession(userId, video._id, courseId);
           
@@ -305,12 +330,22 @@ exports.getCourseVideosWithDRM = async (req, res) => {
               };
             } catch (encryptionError) {
               console.error(`❌ Failed to generate encrypted video URL for video ${video._id}:`, encryptionError);
-              // Fall back to regular signed URL
-              try {
-                const signedUrl = await getSignedUrlForFile(video.s3Key);
-                videoObj.url = signedUrl;
-              } catch (fallbackError) {
-                console.error(`❌ Failed to generate fallback signed URL for video ${video._id}:`, fallbackError);
+              // Fall back to regular signed URL (only if user still has access)
+              if (hasAccess && !isLocked) {
+                try {
+                  const signedUrl = await getSignedUrlForFile(video.s3Key);
+                  videoObj.url = signedUrl;
+                  videoObj.videoUrl = signedUrl;
+                } catch (fallbackError) {
+                  console.error(`❌ Failed to generate fallback signed URL for video ${video._id}:`, fallbackError);
+                  // Ensure URLs remain null on error
+                  videoObj.url = null;
+                  videoObj.videoUrl = null;
+                }
+              } else {
+                // Video is locked, ensure no URLs
+                videoObj.url = null;
+                videoObj.videoUrl = null;
               }
             }
           }
@@ -319,14 +354,30 @@ exports.getCourseVideosWithDRM = async (req, res) => {
         }
       }
 
-      // Provide fallback regular URL if no DRM URL is available
-      if ((userHasPurchased.hasAccess || video.isFreePreview) && !videoObj.drm.encryptedUrl && video.s3Key) {
+      // Provide fallback regular URL if no DRM URL is available (only if user has access and video is not locked)
+      if (hasAccess && !isLocked && !videoObj.drm.encryptedUrl && video.s3Key) {
         try {
           const signedUrl = await getSignedUrlForFile(video.s3Key);
           videoObj.url = signedUrl;
+          videoObj.videoUrl = signedUrl;
         } catch (error) {
           console.error(`❌ Failed to generate signed URL for video ${video._id}:`, error);
+          // Keep URLs as null if generation fails
+          videoObj.url = null;
+          videoObj.videoUrl = null;
         }
+      }
+      
+      // Final safety check: Ensure locked videos NEVER have URLs (double-check before returning)
+      if (isLocked || !hasAccess) {
+        videoObj.url = null;
+        videoObj.videoUrl = null;
+        videoObj.drm = {
+          enabled: false,
+          sessionId: null,
+          encryptedUrl: null,
+          watermarkData: null
+        };
       }
 
       return videoObj;
@@ -341,7 +392,7 @@ exports.getCourseVideosWithDRM = async (req, res) => {
           description: course.description,
           videos: videosWithDRM
         },
-        userHasPurchased: userHasPurchased.hasAccess,
+        userHasPurchased: coursePurchased,
         drm: {
           enabled: !isAdmin,
           totalSessions: drmService.getSessionStats().activeSessions

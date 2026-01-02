@@ -64,9 +64,11 @@ const generateS3Key = (fileType, fileName, context = {}) => {
       key = `${S3_ROOT_PREFIX}/profile-pics/${timestamp}_${sanitizedFileName}`;
       break;
     case 'thumbnail':
-      const { courseName, version = 1 } = context;
+      // Thumbnails are NON-VERSIONED (shared across all versions)
+      // Version parameter is ignored - stored at: courses/{courseName}/thumbnails/
+      const { courseName } = context;
       const sanitizedCourseName = (courseName || 'unknown-course').replace(/[^a-zA-Z0-9.-]/g, '_');
-      key = `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/thumbnails/${timestamp}_${sanitizedFileName}`;
+      key = `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/thumbnails/${timestamp}_${sanitizedFileName}`;
       break;
     case 'course-video':
       const { courseName: videoCourseName, version: videoVersion = 1 } = context;
@@ -77,6 +79,19 @@ const generateS3Key = (fileType, fileName, context = {}) => {
       const { courseName: materialCourseName, version: materialVersion = 1 } = context;
       const sanitizedMaterialCourseName = (materialCourseName || 'unknown-course').replace(/[^a-zA-Z0-9.-]/g, '_');
       key = `${S3_ROOT_PREFIX}/courses/${sanitizedMaterialCourseName}/v${materialVersion}/materials/${timestamp}_${sanitizedFileName}`;
+      break;
+    case 'bundle-thumbnails':
+      // Bundle thumbnails go in bundles/thumbnails/ folder
+      // Context can be an object with bundleIdentifier, bundleId, or slug
+      let bundleIdentifier = sanitizedFileName;
+      if (context) {
+        if (context.bundleIdentifier) {
+          bundleIdentifier = String(context.bundleIdentifier).replace(/[^a-zA-Z0-9.-]/g, '_');
+        } else if (context.bundleId || context.slug) {
+          bundleIdentifier = (context.bundleId || context.slug).toString().replace(/[^a-zA-Z0-9.-]/g, '_');
+        }
+      }
+      key = `${S3_ROOT_PREFIX}/bundles/thumbnails/${timestamp}_${bundleIdentifier}`;
       break;
     default:
       key = `${S3_ROOT_PREFIX}/misc/${timestamp}_${sanitizedFileName}`;
@@ -89,15 +104,32 @@ const generateS3Key = (fileType, fileName, context = {}) => {
  * Generate course folder path for versioning
  */
 const getCourseFolderPath = (courseName, version = 1) => {
-  const sanitizedCourseName = courseName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  // Extract string from bilingual object or use string directly
+  let courseNameString = courseName;
+  if (typeof courseName === 'object' && courseName !== null) {
+    courseNameString = courseName.en || courseName.tg || 'course';
+  }
+  if (typeof courseNameString !== 'string') {
+    courseNameString = String(courseNameString);
+  }
+  const sanitizedCourseName = courseNameString.replace(/[^a-zA-Z0-9.-]/g, '_');
   return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}`;
 };
 
 /**
  * Generate archive folder path
+ * Handles both string and bilingual object {en, tg} inputs
  */
 const getArchiveFolderPath = (courseName, version = 1) => {
-  const sanitizedCourseName = courseName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  // Extract string from bilingual object or use string directly
+  let courseNameString = courseName;
+  if (typeof courseName === 'object' && courseName !== null) {
+    courseNameString = courseName.en || courseName.tg || 'course';
+  }
+  if (typeof courseNameString !== 'string') {
+    courseNameString = String(courseNameString);
+  }
+  const sanitizedCourseName = courseNameString.replace(/[^a-zA-Z0-9.-]/g, '_');
   return `${S3_ROOT_PREFIX}/archived-courses/${sanitizedCourseName}/v${version}`;
 };
 

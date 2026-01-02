@@ -1,9 +1,43 @@
 const mongoose = require('mongoose');
 
 const bundleSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  longDescription: { type: String }, // Detailed description for detail page
+  // Bilingual support - can be string (legacy) or object {en, tg}
+  title: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Title must be a string or object with en and tg properties'
+    }
+  },
+  description: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Description must be a string or object with en and tg properties'
+    }
+  },
+  longDescription: {
+    type: mongoose.Schema.Types.Mixed,
+    validate: {
+      validator: function(v) {
+        if (!v) return true; // Optional field
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Long description must be a string or object with en and tg properties'
+    }
+  }, // Detailed description for detail page
   price: { type: Number, required: true },
   originalValue: { type: Number }, // Total value if courses were purchased individually
   
@@ -119,7 +153,9 @@ async function generateUniqueSlug(title, existingSlug = null) {
 bundleSchema.pre('save', async function(next) {
   try {
     if (this.isModified('title') || !this.slug) {
-      this.slug = await generateUniqueSlug(this.title, this.slug);
+      // Extract title string for slug generation (use English if bilingual)
+      const titleString = typeof this.title === 'string' ? this.title : (this.title?.en || this.title?.tg || '');
+      this.slug = await generateUniqueSlug(titleString, this.slug);
     }
     next();
   } catch (error) {
@@ -177,6 +213,13 @@ bundleSchema.methods.enrollStudent = function(userId) {
   });
   
   this.totalEnrollments += 1;
+  
+  // Automatically set bundle to not public if max enrollments reached
+  if (this.maxEnrollments && this.totalEnrollments >= this.maxEnrollments) {
+    this.isPublic = false;
+    console.log(`🔒 Bundle "${this.title}" reached max enrollments (${this.totalEnrollments}/${this.maxEnrollments}), setting isPublic to false`);
+  }
+  
   return this.save();
 };
 

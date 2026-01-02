@@ -5,10 +5,11 @@ import { useParams, Link } from 'react-router-dom';
 
 import { BookOpen, Clock, Edit, Trash2, Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
+import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Video {
   id: string;
-  title: string;
+  title: string | { en: string; tg: string };
   duration: string;
   videoUrl: string;
   s3Key?: string;
@@ -18,7 +19,7 @@ interface Video {
 }
 
 interface CourseData {
-  title: string;
+  title: string | { en: string; tg: string };
   videos: Video[];
 }
 
@@ -125,9 +126,19 @@ const AdminVideoPlayerPage = () => {
                 console.log('❌ [BROWSER] No video URL received from server');
               }
               
+              // Parse title if it's a JSON string
+              let titleData = videoData.title;
+              if (typeof titleData === 'string' && (titleData.startsWith('{') || titleData.startsWith('"'))) {
+                try {
+                  titleData = JSON.parse(titleData);
+                } catch (e) {
+                  // Not JSON, use as is
+                }
+              }
+              
               return {
                 id: videoData.id,
-                title: videoData.title,
+                title: getEnglishText(titleData), // Extract English text only
                 duration: (() => {
                   // Handle both old string format and new number format
                   const duration = videoData.duration;
@@ -182,7 +193,7 @@ const AdminVideoPlayerPage = () => {
         console.log('All video details:', videoDetails);
         
         setCourseData({
-          title: course.title,
+          title: getEnglishText(course.title),
           videos: videoDetails.filter(v => v !== null) as Video[] // Filter out nulls
         });
         
@@ -532,7 +543,7 @@ const AdminVideoPlayerPage = () => {
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="hidden md:block h-6 w-px bg-gray-600" />
             <h1 className="hidden md:block text-white font-semibold truncate">
-              {courseData.title} - Admin View
+              {getEnglishText(courseData.title)} - Admin View
             </h1>
           </div>
           
@@ -565,7 +576,7 @@ const AdminVideoPlayerPage = () => {
                 {/* Watermark Overlay */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                   <div className="text-white/10 text-2xl sm:text-4xl lg:text-6xl font-bold transform -rotate-45 select-none">
-                    {courseData?.title || 'PROTECTED'}
+                    {courseData?.title ? getEnglishText(courseData.title) : 'PROTECTED'}
                   </div>
                 </div>
 
@@ -832,22 +843,12 @@ const AdminVideoPlayerPage = () => {
             <div className="max-w-4xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                 <div className="mb-4 md:mb-0">
-                  <h2 className="text-lg sm:text-2xl font-bold mb-2">{currentVideo.title}</h2>
+                  <h2 className="text-lg sm:text-2xl font-bold mb-2">{getEnglishText(currentVideo.title)}</h2>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-gray-300 text-sm">
                     <div className="flex items-center space-x-1">
                       <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span>{duration > 0 ? formatDuration(duration) : formatDuration(currentVideo.duration)}</span>
                     </div>
-                    {currentVideo.order && (
-                      <div className="flex items-center space-x-1">
-                        <span>Order: {currentVideo.order}</span>
-                      </div>
-                    )}
-                    {currentVideo.uploadedBy && (
-                      <div className="flex items-center space-x-1">
-                        <span>By: {currentVideo.uploadedBy}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -872,75 +873,21 @@ const AdminVideoPlayerPage = () => {
                 </div>
               </div>
 
-              {/* Video Details */}
-              <div className="bg-gray-700 rounded-lg p-3 sm:p-4 mb-4">
-                <h3 className="text-base sm:text-lg font-semibold mb-2">Video Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-                  <div>
-                    <span className="text-gray-400">Video ID:</span>
-                    <p className="font-mono text-gray-200 text-xs">{currentVideo.id}</p>
-                  </div>
-                  {currentVideo.s3Key && (
-                    <div>
-                      <span className="text-gray-400">S3 Key:</span>
-                      <p className="font-mono text-gray-200 text-xs break-all">{currentVideo.s3Key}</p>
-                    </div>
-                  )}
-                  {currentVideo.createdAt && (
-                    <div>
-                      <span className="text-gray-400">Created:</span>
-                      <p className="text-gray-200 text-xs sm:text-sm">{new Date(currentVideo.createdAt).toLocaleDateString()}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Navigation */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-4 border-t border-gray-700">
-                <button
-                  onClick={() => {
-                    const currentIndex = courseData.videos.findIndex(v => v.id === currentVideoId);
-                    const prevVideo = courseData.videos[currentIndex - 1];
-                    if (prevVideo) handleVideoSelect(prevVideo.id);
-                  }}
-                  disabled={courseData.videos.findIndex(v => v.id === currentVideoId) === 0}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-200 text-sm"
-                >
-                  Previous Video
-                </button>
-                <button
-                  onClick={() => {
-                    const currentIndex = courseData.videos.findIndex(v => v.id === currentVideoId);
-                    const nextVideo = courseData.videos[currentIndex + 1];
-                    if (nextVideo) handleVideoSelect(nextVideo.id);
-                  }}
-                  disabled={
-                    (() => {
-                      const currentIndex = courseData.videos.findIndex(v => v.id === currentVideoId);
-                      const nextVideo = courseData.videos[currentIndex + 1];
-                      return !nextVideo;
-                    })()
-                  }
-                  className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-200 text-sm"
-                >
-                  Next Video
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Playlist Sidebar */}
-        <div className={`bg-white border-l border-gray-200 transition-all duration-300 ${
+        <div className={`bg-gray-800 border-l border-gray-700 transition-all duration-300 ${
           showPlaylist ? 'w-full lg:w-80' : 'w-0'
         } ${showPlaylist ? 'block' : 'hidden lg:block'} lg:w-80`}>
           {showPlaylist && (
             <div className="p-3 sm:p-4">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Course Videos</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-white">Course Videos</h3>
                 <button
                   onClick={() => setShowPlaylist(false)}
-                  className="lg:hidden text-gray-500 hover:text-gray-700 text-lg"
+                  className="lg:hidden text-gray-400 hover:text-gray-300 text-lg"
                 >
                   ×
                 </button>
@@ -951,23 +898,34 @@ const AdminVideoPlayerPage = () => {
                     key={video.id}
                     className={`p-2 sm:p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
                       video.id === currentVideoId
-                        ? 'bg-cyan-500/20 border border-cyan-500/30'
-                        : 'bg-gray-50 hover:bg-gray-100'
+                        ? 'bg-cyan-500/20 border border-cyan-500/50'
+                        : 'bg-gray-700/50 hover:bg-gray-700 border border-gray-600'
                     }`}
                     onClick={() => handleVideoSelect(video.id)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-xs sm:text-sm">
-                          {video.title}
+                        <h4 className="font-medium text-white text-xs sm:text-sm">
+                          {(() => {
+                            // Ensure we always get English text, even if title is stored as bilingual object
+                            let titleValue = video.title;
+                            if (typeof titleValue === 'string' && (titleValue.startsWith('{') || titleValue.startsWith('"'))) {
+                              try {
+                                titleValue = JSON.parse(titleValue);
+                              } catch (e) {
+                                // Not JSON, use as is
+                              }
+                            }
+                            return getEnglishText(titleValue);
+                          })()}
                         </h4>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           {formatDuration(video.duration)} • {video.order ? `Order: ${video.order}` : `Video ${index + 1}`}
                         </p>
                       </div>
                       {video.id === currentVideoId && (
                         <div className="ml-2">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
                         </div>
                       )}
                     </div>
@@ -982,25 +940,25 @@ const AdminVideoPlayerPage = () => {
       {/* Mobile Playlist Overlay */}
       {showPlaylist && (
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex">
-          <div className="bg-white w-full sm:w-80 ml-auto h-full overflow-y-auto">
-            <div className="p-3 sm:p-4 border-b border-gray-200">
+          <div className="bg-gray-800 w-full sm:w-80 ml-auto h-full overflow-y-auto">
+            <div className="p-3 sm:p-4 border-b border-gray-700">
               <button
                 onClick={() => setShowPlaylist(false)}
-                className="text-gray-600 hover:text-gray-800 text-sm sm:text-base"
+                className="text-gray-300 hover:text-white text-sm sm:text-base"
               >
                 Close Playlist
               </button>
             </div>
             <div className="p-3 sm:p-4">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Course Videos</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Course Videos</h3>
               <div className="space-y-2">
                 {courseData.videos.map((video, index) => (
                   <div
                     key={video.id}
                     className={`p-2 sm:p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
                       video.id === currentVideoId
-                        ? 'bg-cyan-500/20 border border-cyan-500/30'
-                        : 'bg-gray-50 hover:bg-gray-100'
+                        ? 'bg-cyan-500/20 border border-cyan-500/50'
+                        : 'bg-gray-700/50 hover:bg-gray-700 border border-gray-600'
                     }`}
                     onClick={() => {
                       handleVideoSelect(video.id);
@@ -1009,16 +967,27 @@ const AdminVideoPlayerPage = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-xs sm:text-sm">
-                          {video.title}
+                        <h4 className="font-medium text-white text-xs sm:text-sm">
+                          {(() => {
+                            // Ensure we always get English text, even if title is stored as bilingual object
+                            let titleValue = video.title;
+                            if (typeof titleValue === 'string' && (titleValue.startsWith('{') || titleValue.startsWith('"'))) {
+                              try {
+                                titleValue = JSON.parse(titleValue);
+                              } catch (e) {
+                                // Not JSON, use as is
+                              }
+                            }
+                            return getEnglishText(titleValue);
+                          })()}
                         </h4>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           {formatDuration(video.duration)} • {video.order ? `Order: ${video.order}` : `Video ${index + 1}`}
                         </p>
                       </div>
                       {video.id === currentVideoId && (
                         <div className="ml-2">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
                         </div>
                       )}
                     </div>

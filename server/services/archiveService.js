@@ -76,7 +76,8 @@ const cleanupArchivedCourses = async () => {
         for (const version of versions) {
           try {
             // Delete archived S3 content
-            const archivePath = `persi-academy/archived-courses/${course.title.replace(/[^a-zA-Z0-9.-]/g, '_')}/v${version.versionNumber}/`;
+            const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
+            const archivePath = `${S3_ROOT_PREFIX}/archived-courses/${course.title.replace(/[^a-zA-Z0-9.-]/g, '_')}/v${version.versionNumber}/`;
             
             // Note: In a real implementation, you would list and delete all objects in this path
             // For now, we'll just log the cleanup

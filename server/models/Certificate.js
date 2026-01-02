@@ -65,7 +65,7 @@ const certificateSchema = new mongoose.Schema({
   // Metadata
   platformName: { 
     type: String, 
-    default: 'QENDIEL Academy' 
+    default: 'IBYET-INVESTING' 
   },
   totalLessons: { 
     type: Number, 

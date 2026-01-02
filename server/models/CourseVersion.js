@@ -4,15 +4,39 @@ const courseVersionSchema = new mongoose.Schema({
   courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
   versionNumber: { type: Number, required: true },
   
-  // Content for this version
-  title: { type: String, required: true },
-  description: { type: String, required: true },
+  // Content for this version - Bilingual support
+  title: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Allow string (legacy) or object with en and tg
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Title must be a string or object with en and tg properties'
+    }
+  },
+  description: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Allow string (legacy) or object with en and tg
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Description must be a string or object with en and tg properties'
+    }
+  },
   price: { type: Number, required: true },
   thumbnailURL: { type: String },
   thumbnailS3Key: { type: String }, // Store S3 key for generating fresh signed URLs
   category: { 
     type: String, 
-    enum: ['youtube', 'camera', 'photo', 'video', 'computer', 'english', 'other'],
+    enum: ['crypto', 'investing', 'trading', 'stock-market', 'etf', 'option-trading', 'other'],
     required: true 
   },
   level: { 
@@ -23,6 +47,9 @@ const courseVersionSchema = new mongoose.Schema({
   
   // Videos for this version
   videos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
+  
+  // Materials for this version
+  materials: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Material' }],
   
   // S3 organization
   s3FolderPath: { type: String, required: true }, // e.g., "courses/course-name/v1"
@@ -127,11 +154,14 @@ courseVersionSchema.methods.unarchive = function() {
 courseVersionSchema.methods.updateStatistics = async function() {
   const Video = mongoose.model('Video');
   
-  // Get videos for this version
+  // Get videos for this version - exclude deleted videos
   const videos = await Video.find({ 
-    courseId: this.courseId, 
-    courseVersion: this.versionNumber 
+    courseId: this.courseId.toString(), 
+    courseVersion: this.versionNumber,
+    status: { $ne: 'deleted' }
   });
+  
+  console.log(`📊 [updateStatistics] Version ${this.versionNumber}: Found ${videos.length} videos`);
   
   this.totalVideos = videos.length;
   
@@ -170,6 +200,8 @@ courseVersionSchema.methods.updateStatistics = async function() {
     const fileSize = video.fileSize || 0;
     return total + (isNaN(fileSize) ? 0 : fileSize);
   }, 0);
+  
+  console.log(`📊 [updateStatistics] Version ${this.versionNumber} stats: ${this.totalVideos} videos, ${this.totalDuration}s duration, ${this.fileSize} bytes`);
   
   return this.save();
 };

@@ -130,20 +130,65 @@ const generateS3Key = (fileType, fileName, context = {}) => {
       key = `profile-pics/${timestamp}_${sanitizedFileName}`;
       break;
     case 'thumbnail':
-      const courseName = context.courseName ? context.courseName.replace(/[^a-zA-Z0-9.-]/g, '_') : 'unknown';
+      let courseName = 'unknown';
+      if (context.courseName) {
+        if (typeof context.courseName === 'object' && context.courseName !== null) {
+          courseName = context.courseName.en || context.courseName.tg || 'course';
+        } else {
+          courseName = context.courseName;
+        }
+        courseName = String(courseName).replace(/[^a-zA-Z0-9.-]/g, '_');
+      }
       key = `thumbnails/${courseName}/${timestamp}_${sanitizedFileName}`;
       break;
     case 'video':
-      const videoCourseName = context.courseName ? context.courseName.replace(/[^a-zA-Z0-9.-]/g, '_') : 'unknown';
+      let videoCourseName = 'unknown';
+      if (context.courseName) {
+        if (typeof context.courseName === 'object' && context.courseName !== null) {
+          videoCourseName = context.courseName.en || context.courseName.tg || 'course';
+        } else {
+          videoCourseName = context.courseName;
+        }
+        videoCourseName = String(videoCourseName).replace(/[^a-zA-Z0-9.-]/g, '_');
+      }
       key = `videos/${videoCourseName}/${timestamp}_${sanitizedFileName}`;
       break;
     case 'course-material':
-      const materialCourseName = context.courseName ? context.courseName.replace(/[^a-zA-Z0-9.-]/g, '_') : 'unknown';
+      let materialCourseName = 'unknown';
+      if (context.courseName) {
+        if (typeof context.courseName === 'object' && context.courseName !== null) {
+          materialCourseName = context.courseName.en || context.courseName.tg || 'course';
+        } else {
+          materialCourseName = context.courseName;
+        }
+        materialCourseName = String(materialCourseName).replace(/[^a-zA-Z0-9.-]/g, '_');
+      }
       key = `course-materials/${materialCourseName}/${timestamp}_${sanitizedFileName}`;
       break;
     case 'certificate':
-      const certCourseName = context.courseName ? context.courseName.replace(/[^a-zA-Z0-9.-]/g, '_') : 'unknown';
+      let certCourseName = 'unknown';
+      if (context.courseName) {
+        if (typeof context.courseName === 'object' && context.courseName !== null) {
+          certCourseName = context.courseName.en || context.courseName.tg || 'course';
+        } else {
+          certCourseName = context.courseName;
+        }
+        certCourseName = String(certCourseName).replace(/[^a-zA-Z0-9.-]/g, '_');
+      }
       key = `certificates/${certCourseName}/${timestamp}_${sanitizedFileName}`;
+      break;
+    case 'bundle-thumbnails':
+      // Bundle thumbnails go in bundles/thumbnails/ folder
+      // Context can be an object with bundleIdentifier, bundleId, or slug
+      let bundleIdentifier = sanitizedFileName;
+      if (context) {
+        if (context.bundleIdentifier) {
+          bundleIdentifier = String(context.bundleIdentifier).replace(/[^a-zA-Z0-9.-]/g, '_');
+        } else if (context.bundleId || context.slug) {
+          bundleIdentifier = (context.bundleId || context.slug).toString().replace(/[^a-zA-Z0-9.-]/g, '_');
+        }
+      }
+      key = `bundles/thumbnails/${timestamp}_${bundleIdentifier}`;
       break;
     default:
       key = `misc/${timestamp}_${sanitizedFileName}`;
@@ -155,10 +200,12 @@ const generateS3Key = (fileType, fileName, context = {}) => {
  * Upload file with organized folder structure
  */
 const uploadFileWithOrganization = async (file, fileType, context = {}) => {
-  const s3Key = generateS3Key(fileType, file.originalname, context);
+  // Handle case where context is passed as a string (for bundle-thumbnails)
+  const contextObj = typeof context === 'string' ? { bundleIdentifier: context } : context;
+  const s3Key = generateS3Key(fileType, file.originalname, contextObj);
   
-  // Determine desired ACL - thumbnails and certificates should be public-read
-  const desiredAcl = (fileType === 'thumbnail' || fileType === 'certificate') ? 'public-read' : 'private';
+  // Determine desired ACL - thumbnails, bundle-thumbnails, and certificates should be public-read
+  const desiredAcl = (fileType === 'thumbnail' || fileType === 'bundle-thumbnails' || fileType === 'certificate') ? 'public-read' : 'private';
 
   let usedAcl = desiredAcl;
   try {
@@ -170,9 +217,9 @@ const uploadFileWithOrganization = async (file, fileType, context = {}) => {
     };
   } catch (error) {
     // If bucket has Object Ownership (ACLs disabled) or blocks public ACLs,
-    // retry without ACL for thumbnails and certificates.
+    // retry without ACL for thumbnails, bundle-thumbnails, and certificates.
     const looksLikeAclIssue = /ACL|AccessControlList|InvalidArgument|AccessDenied/i.test(error?.message || '');
-    if ((fileType === 'thumbnail' || fileType === 'certificate') && looksLikeAclIssue) {
+    if ((fileType === 'thumbnail' || fileType === 'bundle-thumbnails' || fileType === 'certificate') && looksLikeAclIssue) {
       try {
         usedAcl = undefined; // omit ACL
         const result = await uploadToS3(file, s3Key, undefined);

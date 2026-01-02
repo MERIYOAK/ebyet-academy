@@ -31,22 +31,51 @@ const s3Client = createS3Client();
 
 /**
  * Generate course folder path for versioning
+ * Handles both string and bilingual object {en, tg} inputs
  */
 const getCourseFolderPath = (courseName, version = 1) => {
-  const sanitizedCourseName = courseName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  // Extract string from bilingual object or use string directly
+  let courseNameString = courseName;
+  if (typeof courseName === 'object' && courseName !== null) {
+    courseNameString = courseName.en || courseName.tg || 'course';
+  }
+  if (typeof courseNameString !== 'string') {
+    courseNameString = String(courseNameString);
+  }
+  const sanitizedCourseName = courseNameString.replace(/[^a-zA-Z0-9.-]/g, '_');
   return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}`;
 };
 
 /**
  * Generate archive folder path
+ * Handles both string and bilingual object {en, tg} inputs
  */
 const getArchiveFolderPath = (courseName, version = 1) => {
-  const sanitizedCourseName = courseName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  // Extract string from bilingual object or use string directly
+  let courseNameString = courseName;
+  if (typeof courseName === 'object' && courseName !== null) {
+    courseNameString = courseName.en || courseName.tg || 'course';
+  }
+  if (typeof courseNameString !== 'string') {
+    courseNameString = String(courseNameString);
+  }
+  const sanitizedCourseName = courseNameString.replace(/[^a-zA-Z0-9.-]/g, '_');
   return `${S3_ROOT_PREFIX}/archived-courses/${sanitizedCourseName}/v${version}`;
 };
 
 /**
  * Generate S3 key for course files
+ */
+/**
+ * Generate S3 key for course files
+ * @param {string} fileType - 'thumbnail', 'video', 'material', or other
+ * @param {string} fileName - Original filename
+ * @param {string} courseName - Course name
+ * @param {number} version - Version number (ignored for thumbnails, used for videos/materials)
+ * @returns {string} S3 key path
+ * 
+ * Note: Thumbnails are NON-VERSIONED (shared across all versions)
+ *       Videos and Materials are VERSIONED (stored per version)
  */
 const generateCourseFileKey = (fileType, fileName, courseName, version = 1) => {
   const timestamp = Date.now();
@@ -55,12 +84,18 @@ const generateCourseFileKey = (fileType, fileName, courseName, version = 1) => {
   
   switch (fileType) {
     case 'thumbnail':
-      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/thumbnails/${timestamp}_${sanitizedFileName}`;
+      // Thumbnails are stored OUTSIDE version folder (non-versioned approach)
+      // This means: one thumbnail per course, shared across all versions
+      // Path: courses/{courseName}/thumbnails/ (version parameter is ignored)
+      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/thumbnails/${timestamp}_${sanitizedFileName}`;
     case 'video':
+      // Videos are versioned: courses/{courseName}/v{version}/videos/
       return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/videos/${timestamp}_${sanitizedFileName}`;
     case 'material':
+      // Materials are versioned: courses/{courseName}/v{version}/materials/
       return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/materials/${timestamp}_${sanitizedFileName}`;
     default:
+      // Other files are versioned: courses/{courseName}/v{version}/misc/
       return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/misc/${timestamp}_${sanitizedFileName}`;
   }
 };
@@ -216,25 +251,31 @@ const getSignedUrlForFile = async (s3Key, expiresIn = 3600, mimeType = null) => 
     // Generating secure signed URL
     console.log('🔐 [S3] MIME type:', mimeType || 'not specified');
     
+    // Check if it's a video file
+    const isVideo = s3Key.includes('/videos/') || (mimeType && mimeType.startsWith('video/'));
+    
     const commandParams = {
       Bucket: process.env.AWS_S3_BUCKET,
       Key: s3Key,
       // Add security headers to prevent downloads
       ResponseContentDisposition: 'inline', // Prevents download dialog
-      // Add referer restriction (optional - uncomment if you want to restrict by domain)
-      // ResponseCacheControl: 'no-cache, no-store, must-revalidate',
     };
     
-    // Don't force ResponseContentType - let S3 serve the file with its original content type
-    // This prevents issues where the forced content type doesn't match the actual file format
-    console.log('🔐 [S3] Not forcing content type - letting S3 serve with original MIME type');
+    // For videos, set the content type to ensure proper playback
+    if (isVideo && mimeType) {
+      commandParams.ResponseContentType = mimeType;
+      console.log('🔐 [S3] Setting content type for video:', mimeType);
+    } else {
+      // Don't force ResponseContentType for other files - let S3 serve with original content type
+      console.log('🔐 [S3] Not forcing content type - letting S3 serve with original MIME type');
+    }
     
     const command = new GetObjectCommand(commandParams);
     
     const signedUrl = await getSignedUrl(s3Client, command, { 
       expiresIn,
-      // Add additional security options
-      signableHeaders: new Set(['host']), // Only sign host header
+      // Sign all headers needed for CORS
+      signableHeaders: new Set(['host', 'range']), // Include range for video seeking
     });
 
     console.log('✅ [S3] Secure signed URL generated successfully');
@@ -296,6 +337,57 @@ const getPublicUrl = (s3Key) => {
 };
 
 /**
+ * Get thumbnail URL - uses presigned URL since bucket policies aren't working
+ * Presigned URLs work without public access
+ */
+const getThumbnailUrl = async (s3Key) => {
+  console.log(`🔍 [getThumbnailUrl] Called with s3Key: ${s3Key}`);
+  
+  if (!s3Key) {
+    console.log(`   ⚠️  No s3Key provided, returning null`);
+    return null;
+  }
+  
+  // Check if it's a thumbnail path (course thumbnails, bundle thumbnails, or image files in misc)
+  // Bundle thumbnails are now in: bundles/thumbnails/
+  // Course thumbnails are in: courses/{courseName}/thumbnails/
+  const isThumbnailPath = s3Key.includes('/thumbnails/') || s3Key.includes('bundle-thumbnails') || s3Key.includes('/bundles/thumbnails/');
+  
+  // Check if it's an image file in misc folder (legacy bundle thumbnails)
+  const isImageInMisc = s3Key.includes('/misc/') && 
+    /\.(jpeg|jpg|png|webp|gif)$/i.test(s3Key);
+  
+  const isThumbnail = isThumbnailPath || isImageInMisc;
+  console.log(`   - Is thumbnail path: ${isThumbnailPath}`);
+  console.log(`   - Is image in misc: ${isImageInMisc}`);
+  console.log(`   - Final isThumbnail: ${isThumbnail}`);
+  
+  if (isThumbnail) {
+    // Use presigned URL for thumbnails (works without public access)
+    // Presigned URLs are valid for 7 days (604800 seconds)
+    try {
+      console.log(`   - Generating presigned URL for thumbnail (expires in 7 days)...`);
+      const signedUrl = await getSignedUrlForFile(s3Key, 604800);
+      console.log(`   ✅ Generated presigned URL: ${signedUrl?.substring(0, 100)}...`);
+      return signedUrl;
+    } catch (error) {
+      console.error('   ❌ Error generating presigned URL for thumbnail:', error);
+      console.error('   - Error details:', error.message, error.stack);
+      // Fallback to public URL if presigned fails
+      const publicUrl = getPublicUrl(s3Key);
+      console.log(`   ⚠️  Using fallback public URL: ${publicUrl?.substring(0, 100)}...`);
+      return publicUrl;
+    }
+  }
+  
+  // For non-thumbnails, use public URL
+  console.log(`   - Not a thumbnail path, using public URL`);
+  const publicUrl = getPublicUrl(s3Key);
+  console.log(`   - Public URL: ${publicUrl?.substring(0, 100)}...`);
+  return publicUrl;
+};
+
+/**
  * List files in course version
  */
 const listCourseVersionFiles = async (courseName, version = 1) => {
@@ -326,6 +418,7 @@ module.exports = {
   deleteFileFromS3,
   validateFile,
   getPublicUrl,
+  getThumbnailUrl,
   getCourseFolderPath,
   getArchiveFolderPath,
   generateCourseFileKey,

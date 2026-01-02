@@ -12,6 +12,7 @@ import './utils/cacheClearer'; // Cache clearing utilities
 import UserLayout from './layouts/UserLayout';
 import AdminLayout from './layouts/AdminLayout';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ScrollManager from './components/ScrollManager';
 import SessionMonitorWrapper from './components/SessionMonitorWrapper';
 import MetaTagsUpdater from './components/MetaTagsUpdater';
@@ -26,7 +27,6 @@ import CertificatesPage from './pages/CertificatesPage';
 import CertificateVerificationPage from './pages/CertificateVerificationPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import DashboardPage from './pages/DashboardPage';
-import VideoPlayerPage from './pages/VideoPlayerPage';
 import AdminUploadPage from './pages/AdminUploadPage';
 import AdminCoursesPage from './pages/AdminCoursesPage';
 import AdminCourseViewPage from './pages/AdminCourseViewPage';
@@ -42,7 +42,6 @@ import AdminBundleUploadPage from './pages/AdminBundleUploadPage';
 import AdminBundleViewPage from './pages/AdminBundleViewPage';
 import AdminBundleEditPage from './pages/AdminBundleEditPage';
 import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
-import AdminNewsletterPage from './pages/AdminNewsletterPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import PaymentFailurePage from './pages/PaymentFailurePage';
@@ -55,7 +54,6 @@ import HelpCenterPage from './pages/HelpCenterPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import GoogleCallbackPage from './pages/GoogleCallbackPage';
-import UserCourseDetailPage from './pages/UserCourseDetailPage';
 import CompleteGoogleRegistrationPage from './pages/CompleteGoogleRegistrationPage';
 import PaymentFailureHandler from './components/PaymentFailureHandler';
 
@@ -85,12 +83,13 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <MetaTagsUpdater />
-        <SessionMonitorWrapper>
-          <ScrollManager>
-            <PaymentFailureHandler />
-            <Routes>
+      <ThemeProvider>
+        <Router>
+          <MetaTagsUpdater />
+          <SessionMonitorWrapper>
+            <ScrollManager>
+              <PaymentFailureHandler />
+              <Routes>
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -102,13 +101,13 @@ function App() {
           <Route path="/certificates" element={<CertificatesPage />} />
           <Route path="/verify" element={<CertificateVerificationPage />} />
           <Route path="/verify/:certificateId" element={<CertificateVerificationPage />} />
+          <Route path="/verify-certificate" element={<CertificateVerificationPage />} />
+          <Route path="/verify-certificate/:certificateId" element={<CertificateVerificationPage />} />
           <Route path="/course/:id" element={<CourseDetailPage />} />
-          <Route path="/my-course/:id" element={<UserCourseDetailPage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/bundles" element={<BundlesPage />} />
           <Route path="/bundles/:id" element={<BundleDetailPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/course/:id/watch/:videoId" element={<VideoPlayerPage />} />
           <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
           <Route path="/checkout/cancel" element={<CheckoutCancelPage />} />
           <Route path="/checkout/failure" element={<PaymentFailurePage />} />
@@ -143,12 +142,12 @@ function App() {
           <Route path="bundles/:bundleId" element={<AdminBundleViewPage />} />
           <Route path="bundles/:bundleId/edit" element={<AdminBundleEditPage />} />
           <Route path="announcements" element={<AdminAnnouncementsPage />} />
-          <Route path="newsletter" element={<AdminNewsletterPage />} />
         </Route>
             </Routes>
           </ScrollManager>
         </SessionMonitorWrapper>
       </Router>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

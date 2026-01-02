@@ -231,7 +231,7 @@ const AdminUsersPage: React.FC = () => {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 xxs:h-12 xxs:w-12 border-b-2 border-cyan-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-sm xxs:text-base">Loading users...</p>
+          <p className="mt-4 text-gray-400 text-sm xxs:text-base">Loading users...</p>
         </div>
       </div>
     );
@@ -261,7 +261,7 @@ const AdminUsersPage: React.FC = () => {
           <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-4 xxs:space-y-0">
             <div>
               <h1 className="text-2xl xxs:text-3xl font-bold text-white">User Management</h1>
-              <p className="mt-2 text-gray-600 text-sm xxs:text-base">Manage all registered users, view profiles, and control access</p>
+              <p className="mt-2 text-gray-400 text-sm xxs:text-base">Manage all registered users, view profiles, and control access</p>
             </div>
           </div>
         </div>
@@ -306,20 +306,20 @@ const AdminUsersPage: React.FC = () => {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 xxs:pl-4 flex items-center pointer-events-none">
-                    <Search className="h-3 w-3 xxs:h-4 xxs:w-4 text-gray-400" />
+                    <Search className="h-3 w-3 xxs:h-4 xxs:w-4 text-gray-500" />
                   </div>
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base bg-gray-900/80 text-white"
+                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-500"
                     placeholder="Search by name or email..."
                   />
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
-                      className="absolute inset-y-0 right-0 pr-3 xxs:pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 xxs:pr-4 flex items-center text-gray-500 hover:text-gray-400 transition-colors"
                     >
                       <X className="h-3 w-3 xxs:h-4 xxs:w-4" />
                     </button>
@@ -337,7 +337,7 @@ const AdminUsersPage: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-800"
+                    className="w-full px-4 py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -364,7 +364,7 @@ const AdminUsersPage: React.FC = () => {
                       setSortBy(field);
                       setSortOrder(order as 'asc' | 'desc');
                     }}
-                    className="w-full px-4 py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-800"
+                    className="w-full px-4 py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none"
                   >
                     <option value="createdAt-desc">Newest First</option>
                     <option value="createdAt-asc">Oldest First</option>
@@ -398,7 +398,7 @@ const AdminUsersPage: React.FC = () => {
             {/* Results Summary */}
             <div className="mt-6 flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-300">
                   <span className="font-semibold text-white">{pagination?.totalUsers || 0}</span> total users
                   {pagination && (
                     <span className="ml-2">
@@ -416,7 +416,7 @@ const AdminUsersPage: React.FC = () => {
                         </span>
                       )}
                       {statusFilter !== 'all' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
                           {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
                         </span>
                       )}
@@ -438,27 +438,27 @@ const AdminUsersPage: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-900">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         User
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Phone
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Courses
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Joined
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-gray-800 divide-y divide-gray-200">
+                  <tbody className="bg-gray-800 divide-y divide-gray-700">
                     {users.map((user) => (
                       <tr key={user._id} className="hover:bg-gray-900 transition-colors duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -636,14 +636,14 @@ const AdminUsersPage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={!pagination.hasPrevPage}
-                className="relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-600 text-xs xxs:text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={!pagination.hasNextPage}
-                className="ml-2 xxs:ml-3 relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ml-2 xxs:ml-3 relative inline-flex items-center px-3 xxs:px-4 py-2 border border-gray-600 text-xs xxs:text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -667,7 +667,7 @@ const AdminUsersPage: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={!pagination.hasPrevPage}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-800 text-sm font-medium text-gray-500 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -681,8 +681,8 @@ const AdminUsersPage: React.FC = () => {
                         onClick={() => handlePageChange(pageNum)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                           pageNum === currentPage
-                            ? 'z-10 bg-orange-500/20 border-orange-500 text-orange-400'
-                            : 'bg-gray-800 border-gray-300 text-gray-500 hover:bg-gray-900'
+                            ? 'z-10 bg-cyan-500/20 border-cyan-500 text-cyan-300'
+                            : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
                         }`}
                       >
                         {pageNum}
@@ -693,7 +693,7 @@ const AdminUsersPage: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={!pagination.hasNextPage}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-800 text-sm font-medium text-gray-500 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>

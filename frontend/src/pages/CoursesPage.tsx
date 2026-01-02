@@ -182,14 +182,29 @@ const CoursesPage: React.FC = () => {
   }, [courses]);
 
   const levels = useMemo(() => {
-    const uniqueLevels = [
+    // Predefined levels that should always be available
+    const predefinedLevels = ['beginner', 'intermediate', 'advanced'];
+    
+    // Get levels from courses
+    const courseLevels = [
       ...new Set(
         courses
           .map(course => course.level)
           .filter((level): level is string => typeof level === 'string' && level.length > 0)
       )
     ];
-    return uniqueLevels.sort();
+    
+    // Combine predefined with course levels, maintaining order
+    const allLevels = [...predefinedLevels];
+    
+    // Add any additional levels from courses that aren't in predefined list
+    courseLevels.forEach(level => {
+      if (!predefinedLevels.includes(level)) {
+        allLevels.push(level);
+      }
+    });
+    
+    return allLevels;
   }, [courses]);
 
   const tags = useMemo(() => {
@@ -277,6 +292,11 @@ const CoursesPage: React.FC = () => {
             instructor={t('brand.name')}
             tags={c.tags || []}
             onPurchaseSuccess={handlePurchaseSuccess}
+            isPurchased={c.isPurchased || false}
+            progress={c.isPurchased ? (c.progress || 0) : undefined}
+            totalLessons={c.isPurchased ? (c.totalLessons || (c.videos || []).length) : undefined}
+            completedLessons={c.isPurchased ? (c.completedLessons || 0) : undefined}
+            isCompleted={c.isPurchased ? (c.isCompleted || false) : undefined}
           />
         );})}
       </div>
@@ -284,13 +304,13 @@ const CoursesPage: React.FC = () => {
   }, [displayedCourses, loading, error, totalItems, handlePurchaseSuccess, handleRefetch, t]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pt-16 sm:pt-20 md:pt-24 pb-6 sm:pb-8 md:pb-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white pt-16 sm:pt-20 md:pt-24 pb-6 sm:pb-8 md:pb-12">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="text-center mb-6 sm:mb-8 md:mb-12">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 pb-2 sm:pb-3 md:pb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 md:mb-4 pb-2 sm:pb-3 md:pb-4">
             {t('courses.page_title_all')}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-gray-300">
             {t('courses.page_subtitle')}
           </p>
         </div>
@@ -298,27 +318,27 @@ const CoursesPage: React.FC = () => {
         {/* New Search and Filter Section - Compact Horizontal Layout */}
         <div className="mb-6 sm:mb-8 md:mb-12">
           {/* Unified Search and Filter Bar */}
-          <div className="bg-gradient-to-br from-gray-800 via-gray-800/95 to-gray-900 rounded-3xl shadow-2xl border border-gray-700/30 overflow-hidden backdrop-blur-xl">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700/30 overflow-hidden backdrop-blur-xl">
             {/* Top Row: Search and Quick Actions */}
-            <div className="p-4 sm:p-5 md:p-6 border-b border-gray-700/50">
+            <div className="p-4 sm:p-5 md:p-6 border-b border-gray-200 dark:border-gray-700/50">
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
                 {/* Search Input - Takes full width on mobile, flex on desktop */}
                 <div className="flex-1 w-full lg:w-auto min-w-0">
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative flex items-center bg-gray-900/60 border-2 border-gray-700/40 rounded-2xl px-4 py-3 focus-within:border-cyan-500/60 focus-within:bg-gray-900/80 transition-all duration-300">
-                      <Search className="h-5 w-5 text-cyan-400/70 mr-3 flex-shrink-0" />
+                    <div className="relative flex items-center bg-gray-100 dark:bg-gray-900/60 border-2 border-gray-300 dark:border-gray-700/40 rounded-2xl px-4 py-3 focus-within:border-cyan-500 dark:focus-within:border-cyan-500/60 focus-within:bg-gray-50 dark:focus-within:bg-gray-900/80 transition-all duration-300">
+                      <Search className="h-5 w-5 text-gray-600 dark:text-cyan-400/70 mr-3 flex-shrink-0" />
                       <input
                         type="text"
                         placeholder={t('courses.search_placeholder')}
                         value={searchTerm}
                         onChange={(e) => handleSearchChange(e.target.value)}
-                        className="flex-1 bg-transparent text-white placeholder-gray-500 focus:outline-none text-sm sm:text-base"
+                        className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none text-sm sm:text-base"
                       />
                       {searchTerm && (
                         <button
                           onClick={() => handleSearchChange('')}
-                          className="ml-2 p-1 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all duration-200"
+                          className="ml-2 p-1 text-gray-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all duration-200"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -336,7 +356,7 @@ const CoursesPage: React.FC = () => {
                       className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                         !selectedCategory
                           ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30'
-                          : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-600/50'
+                          : 'bg-gray-200 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600/50'
                       }`}
                     >
                       {t('courses.filter_all')}
@@ -348,7 +368,7 @@ const CoursesPage: React.FC = () => {
                         className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                           selectedCategory === category
                             ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/30'
-                            : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-600/50'
+                            : 'bg-gray-200 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600/50'
                         }`}
                       >
                         {t(`categories.${category}`)}
@@ -362,7 +382,7 @@ const CoursesPage: React.FC = () => {
                     className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
                       showFilters
                         ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/40'
-                        : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-600/50'
+                        : 'bg-gray-200 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600/50'
                     }`}
                   >
                     <Filter className="h-4 w-4" />
@@ -373,7 +393,7 @@ const CoursesPage: React.FC = () => {
                   {(searchTerm || selectedCategory || selectedLevel || selectedTag || priceRange) && (
                     <button
                       onClick={clearFilters}
-                      className="px-3 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700/50 border border-gray-600/50 rounded-xl transition-all duration-200 flex items-center gap-1.5"
+                      className="px-3 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600/50 transition-all duration-200 flex items-center gap-1.5"
                     >
                       <X className="h-3.5 w-3.5" />
                       <span>{t('common.reset')}</span>
@@ -385,18 +405,18 @@ const CoursesPage: React.FC = () => {
 
             {/* Expandable Filter Panel */}
             {showFilters && (
-              <div className="p-4 sm:p-5 md:p-6 bg-gradient-to-b from-gray-800/30 to-gray-900/50 border-t border-gray-700/30">
+              <div className="p-4 sm:p-5 md:p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700/30">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Category Filter */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                       <div className="w-1 h-4 bg-gradient-to-b from-cyan-400 to-blue-400 rounded-full"></div>
                       {t('courses.filter_category')}
                     </label>
                     <select
                       value={selectedCategory}
                       onChange={(e) => handleCategoryChange(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50 rounded-xl text-white text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-200 appearance-none"
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.filter_all')}</option>
                       {categories.map(category => (
@@ -409,14 +429,14 @@ const CoursesPage: React.FC = () => {
 
                   {/* Level Filter */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                       <div className="w-1 h-4 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full"></div>
                       {t('courses.filter_skill_level')}
                     </label>
                     <select
                       value={selectedLevel}
                       onChange={(e) => handleLevelChange(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 appearance-none"
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.filter_all')}</option>
                       {levels.map(level => (
@@ -432,14 +452,14 @@ const CoursesPage: React.FC = () => {
 
                   {/* Tag Filter */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                       <div className="w-1 h-4 bg-gradient-to-b from-purple-400 to-pink-400 rounded-full"></div>
                       {t('courses.filter_tags')}
                     </label>
                     <select
                       value={selectedTag}
                       onChange={(e) => handleTagChange(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50 rounded-xl text-white text-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200 appearance-none"
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.filter_all')}</option>
                       {tags.map(tag => (
@@ -452,14 +472,14 @@ const CoursesPage: React.FC = () => {
 
                   {/* Price Range Filter */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                       <div className="w-1 h-4 bg-gradient-to-b from-pink-400 to-cyan-400 rounded-full"></div>
                       {t('courses.filter_price_range')}
                     </label>
                     <select
                       value={priceRange}
                       onChange={(e) => handlePriceRangeChange(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50 rounded-xl text-white text-sm focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 transition-all duration-200 appearance-none"
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.price_all')}</option>
                       <option value="free">{t('courses.price_free')}</option>
@@ -474,9 +494,9 @@ const CoursesPage: React.FC = () => {
 
             {/* Active Filters Display - Inline with search bar */}
             {(searchTerm || selectedCategory || selectedLevel || selectedTag || priceRange) && (
-              <div className="px-4 sm:px-5 md:px-6 py-3 bg-gray-900/40 border-t border-gray-700/30">
+              <div className="px-4 sm:px-5 md:px-6 py-3 bg-gray-100 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700/30">
                 <div className="flex items-center flex-wrap gap-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-1">{t('courses.filtered_by')}:</span>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-500 uppercase tracking-wide mr-1">{t('courses.filtered_by')}:</span>
                   {searchTerm && (
                     <span className="inline-flex items-center px-2.5 py-1 bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-medium border border-cyan-500/30">
                       <Search className="h-3 w-3 mr-1" />
@@ -516,8 +536,8 @@ const CoursesPage: React.FC = () => {
           {/* Results Summary - Compact Design */}
           <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="px-3 py-1.5 bg-gray-800/40 rounded-lg border border-gray-700/30">
-                <span className="text-xs sm:text-sm text-gray-400">
+              <div className="px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700/30">
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="animate-spin h-3 w-3 border-2 border-cyan-400 border-t-transparent rounded-full"></span>
@@ -525,9 +545,9 @@ const CoursesPage: React.FC = () => {
                     </span>
                   ) : (
                     <>
-                      <span className="text-cyan-400 font-bold">{displayedCourses.length}</span>
+                      <span className="text-cyan-600 dark:text-cyan-400 font-bold">{displayedCourses.length}</span>
                       <span className="text-gray-500 mx-1">/</span>
-                      <span className="text-white font-semibold">{totalItems}</span>
+                      <span className="text-gray-900 dark:text-white font-semibold">{totalItems}</span>
                       <span className="text-gray-500 ml-1">{t('navbar.courses').toLowerCase()}</span>
                     </>
                   )}

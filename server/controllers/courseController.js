@@ -3,7 +3,8 @@ const Course = require('../models/Course');
 const Video = require('../models/Video');
 const GroupAccessToken = require('../models/GroupAccessToken');
 const Payment = require('../models/Payment');
-const { uploadToS3, deleteFromS3, uploadFileWithOrganization, deleteFileFromS3, getPublicUrl } = require('../utils/s3');
+const { uploadToS3, deleteFromS3, deleteFileFromS3 } = require('../utils/s3');
+const { uploadCourseFile, getPublicUrl } = require('../utils/s3CourseManager');
 const { getThumbnailPublicUrl } = require('../utils/s3Enhanced');
 
 // Helper function to ensure thumbnail is publicly accessible
@@ -56,34 +57,24 @@ exports.getCourses = async (req, res) => {
     const allCourses = await Course.find().populate('videos');
     console.log(`📚 [getCourses] Found ${allCourses.length} total courses from database`);
     
-    let filteredCourses = allCourses;
-    
-    // If user is authenticated, filter out purchased courses
+    // Get user's purchased courses to add purchase status (Udemy-style: show all courses)
+    let purchasedCourseIds = [];
     if (isAuthenticated) {
       const User = require('../models/User');
       const user = await User.findById(userId);
       
       if (user && user.purchasedCourses && user.purchasedCourses.length > 0) {
-        const purchasedCourseIds = user.purchasedCourses.map(id => id.toString());
+        purchasedCourseIds = user.purchasedCourses.map(id => id.toString());
         console.log(`🔍 [getCourses] User has ${purchasedCourseIds.length} purchased courses:`, purchasedCourseIds);
-        
-        // Filter out purchased courses
-        filteredCourses = allCourses.filter(course => {
-          const courseId = course._id.toString();
-          const isPurchased = purchasedCourseIds.includes(courseId);
-          
-          console.log(`🔍 [getCourses] Course "${course.title}" (${courseId}): ${isPurchased ? 'PURCHASED - EXCLUDING' : 'NOT PURCHASED - INCLUDING'}`);
-          
-          return !isPurchased;
-        });
-        
-        console.log(`📚 [getCourses] After filtering: ${filteredCourses.length} unpurchased courses remaining`);
       } else {
-        console.log(`🔍 [getCourses] User has no purchased courses, showing all ${allCourses.length} courses`);
+        console.log(`🔍 [getCourses] User has no purchased courses`);
       }
     } else {
-      console.log(`🔍 [getCourses] Public user, showing all ${allCourses.length} courses`);
+      console.log(`🔍 [getCourses] Public user, showing all ${allCourses.length} courses without purchase status`);
     }
+    
+    // Add purchase status to all courses (don't filter - Udemy approach)
+    const filteredCourses = allCourses;
     
     // Debug: Log each course's thumbnail before processing
     filteredCourses.forEach((course, index) => {
@@ -99,7 +90,12 @@ exports.getCourses = async (req, res) => {
         console.log(`\n🔄 [getCourses] Processing course ${index + 1}: "${course.title}"`);
         const processedCourse = await ensureThumbnailPublic(course);
         console.log(`   ✅ [getCourses] Processed thumbnailURL: ${processedCourse.thumbnailURL || 'NULL'}`);
-        return processedCourse;
+        
+        // Add purchase status (Udemy-style: show all courses with purchase indicator)
+        const courseObj = processedCourse.toObject ? processedCourse.toObject() : processedCourse;
+        courseObj.isPurchased = purchasedCourseIds.includes(course._id.toString());
+        
+        return courseObj;
       })
     );
 
@@ -173,10 +169,9 @@ exports.uploadThumbnail = async (req, res) => {
     const course = await Course.findById(courseId);
     if (!course) return res.status(404).json({ message: 'Course not found' });
     
-    // Upload with organized structure
-    const uploadResult = await uploadFileWithOrganization(req.file, 'thumbnail', {
-      courseName: course.title
-    });
+    // Upload with versioned path structure (use currentVersion or default to 1)
+    const version = course.currentVersion || 1;
+    const uploadResult = await uploadCourseFile(req.file, 'thumbnail', course.title, version);
     
     const publicUrl = getPublicUrl(uploadResult.s3Key);
     const updatedCourse = await Course.findByIdAndUpdate(courseId, { thumbnailURL: publicUrl }, { new: true });
@@ -223,10 +218,9 @@ exports.updateThumbnail = async (req, res) => {
       // No deletion needed - the admin might want to revert or reuse it
     }
     
-    // Upload new thumbnail with organized structure
-    const uploadResult = await uploadFileWithOrganization(req.file, 'thumbnail', {
-      courseName: course.title
-    });
+    // Upload new thumbnail with versioned path structure (use currentVersion or default to 1)
+    const version = course.currentVersion || 1;
+    const uploadResult = await uploadCourseFile(req.file, 'thumbnail', course.title, version);
     
     const publicUrl = getPublicUrl(uploadResult.s3Key);
     course.thumbnailURL = publicUrl;
@@ -273,23 +267,55 @@ const generateGroupToken = async (req, res) => {
       return res.status(404).json({ message: 'This course does not have a WhatsApp group' });
     }
 
-    // Check if user is enrolled in the course
-    const enrollment = course.getStudentEnrollment(userId);
-    if (!enrollment) {
-      return res.status(403).json({ message: 'You must be enrolled in this course to access the WhatsApp group' });
+    // Check if user has purchased the course (check purchasedCourses array)
+    const User = require('../models/User');
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if user has completed payment (for paid courses)
-    if (course.price > 0) {
-      const payment = await Payment.findOne({
-        userId,
-        courseId,
-        status: 'completed'
+    console.log('🔍 [WhatsApp] Checking purchase status:', {
+      userId,
+      courseId,
+      purchasedCoursesCount: user.purchasedCourses?.length || 0,
+      purchasedCourseIds: user.purchasedCourses?.map(id => id.toString()) || []
+    });
+
+    // Check if course is in user's purchasedCourses array
+    // Handle both ObjectId and string comparisons
+    const courseIdString = courseId.toString();
+    const hasPurchased = user.purchasedCourses && user.purchasedCourses.some(purchasedId => {
+      const purchasedIdString = purchasedId.toString();
+      return purchasedIdString === courseIdString || 
+             purchasedIdString === courseId || 
+             purchasedId === courseIdString ||
+             purchasedId === courseId;
+    });
+
+    console.log('🔍 [WhatsApp] Purchase check result:', {
+      hasPurchased,
+      courseIdString: courseId.toString(),
+      courseIdType: typeof courseId
+    });
+
+    if (!hasPurchased) {
+      // Also check enrollment - if user is enrolled, they have access
+      const enrollment = course.getStudentEnrollment(userId);
+      console.log('🔍 [WhatsApp] Enrollment check:', {
+        hasEnrollment: !!enrollment,
+        coursePrice: course.price
       });
 
-      if (!payment) {
-        return res.status(403).json({ message: 'You must complete payment to access the WhatsApp group' });
+      if (enrollment) {
+        // User is enrolled, grant access (enrollment happens on purchase)
+        console.log('✅ [WhatsApp] User is enrolled, granting access');
+      } else {
+        // Not enrolled and not in purchasedCourses - deny access
+        return res.status(403).json({ message: 'You must purchase this course to access the WhatsApp group' });
       }
+    } else {
+      console.log('✅ [WhatsApp] User has purchased course, granting access');
     }
 
     // Generate temporary WhatsApp group link (expires in 5 minutes)

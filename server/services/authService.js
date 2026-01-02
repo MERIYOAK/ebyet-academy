@@ -839,12 +839,11 @@ class AuthService {
   }
 
   /**
-   * Complete Google OAuth registration with phone number
+   * Complete Google OAuth registration
    * @param {string} userId - User ID
-   * @param {string} phoneNumber - Phone number
    * @returns {Object} - User object and auth token
    */
-  async completeGoogleRegistration(userId, phoneNumber) {
+  async completeGoogleRegistration(userId) {
     try {
       const user = await User.findById(userId);
       
@@ -855,14 +854,6 @@ class AuthService {
       if (user.authProvider !== 'google') {
         throw new Error('This endpoint is only for Google OAuth users');
       }
-
-      if (user.phoneNumber) {
-        throw new Error('User already has a phone number');
-      }
-
-      // Update user with phone number
-      user.phoneNumber = phoneNumber;
-      await user.save();
 
       // Generate auth token
       const token = this.generateToken(user);

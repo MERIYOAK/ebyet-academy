@@ -1,8 +1,33 @@
 const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
+  // Bilingual support - can be string (legacy) or object {en, tg}
+  title: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Allow string (legacy) or object with en and tg
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Title must be a string or object with en and tg properties'
+    }
+  },
+  description: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Allow string (legacy) or object with en and tg
+        if (typeof v === 'string') return true;
+        if (typeof v === 'object' && v !== null && v.en && v.tg) return true;
+        return false;
+      },
+      message: 'Description must be a string or object with en and tg properties'
+    }
+  },
   price: { type: Number, required: true },
   
   // Versioning
@@ -40,17 +65,21 @@ const courseSchema = new mongoose.Schema({
   // Metadata
   totalEnrollments: { type: Number, default: 0 },
   
-  // Archive tracking
+  // Deactivation tracking (for soft removal from public listings)
+  deactivatedAt: { type: Date }, // When course was deactivated
+  deactivationReason: { type: String }, // Reason for deactivation
+  
+  // Archive tracking (after 6 months of deactivation)
   archivedAt: { type: Date },
   archiveReason: { type: String },
-  archiveGracePeriod: { type: Date }, // When archived content becomes inaccessible
+  archiveGracePeriod: { type: Date }, // When archived content becomes inaccessible (6 months after deactivation)
   
   // SEO and display
   slug: { type: String, unique: true, sparse: true, index: true },
   tags: [{ type: String }],
   category: { 
     type: String, 
-    enum: ['youtube', 'camera', 'photo', 'video', 'computer', 'english', 'other'],
+    enum: ['crypto', 'investing', 'trading', 'stock-market', 'etf', 'option-trading', 'other'],
     required: true 
   },
   level: { 
@@ -67,6 +96,7 @@ const courseSchema = new mongoose.Schema({
   isPublic: { type: Boolean, default: true },
   requiresApproval: { type: Boolean, default: false },
   maxEnrollments: { type: Number }, // null for unlimited
+  featured: { type: Boolean, default: false }, // Whether this course should be featured on homepage
   
   // WhatsApp group settings
   whatsappGroupLink: { type: String }, // WhatsApp group invite link
@@ -82,9 +112,11 @@ const courseSchema = new mongoose.Schema({
 courseSchema.index({ status: 1, currentVersion: 1 });
 courseSchema.index({ 'enrolledStudents.userId': 1 });
 courseSchema.index({ archivedAt: 1 });
+courseSchema.index({ deactivatedAt: 1 });
 courseSchema.index({ category: 1 });
 courseSchema.index({ tags: 1 });
 courseSchema.index({ createdBy: 1 });
+courseSchema.index({ featured: 1 }); // Index for featured courses query
 
 // Virtual for checking if course is available for new enrollments
 courseSchema.virtual('isAvailableForEnrollment').get(function() {
@@ -143,7 +175,9 @@ async function generateUniqueSlug(title, existingSlug = null) {
 courseSchema.pre('save', async function(next) {
   try {
     if (this.isModified('title') || !this.slug) {
-      this.slug = await generateUniqueSlug(this.title, this.slug);
+      // Extract title string for slug generation (use English if bilingual)
+      const titleString = typeof this.title === 'string' ? this.title : (this.title?.en || this.title?.tg || '');
+      this.slug = await generateUniqueSlug(titleString, this.slug);
     }
     next();
   } catch (error) {
@@ -209,16 +243,41 @@ courseSchema.methods.enrollStudent = function(userId) {
   return this.save();
 };
 
-// Instance method to archive course
-courseSchema.methods.archive = function(reason = 'Admin request', gracePeriodMonths = 6) {
+// Instance method to deactivate course (removes from public listings, enrolled students keep access)
+courseSchema.methods.deactivate = function(reason = 'Admin request') {
+  this.status = 'inactive';
+  this.deactivatedAt = new Date();
+  this.deactivationReason = reason;
+  
+  // Set archive grace period (6 months from now)
+  const gracePeriod = new Date();
+  gracePeriod.setMonth(gracePeriod.getMonth() + 6);
+  this.archiveGracePeriod = gracePeriod;
+  
+  return this.save();
+};
+
+// Instance method to reactivate course
+courseSchema.methods.reactivate = function() {
+  this.status = 'active';
+  this.deactivatedAt = null;
+  this.deactivationReason = null;
+  this.archiveGracePeriod = null;
+  return this.save();
+};
+
+// Instance method to archive course (after 6 months of deactivation)
+courseSchema.methods.archive = function(reason = 'Auto-archived after 6 months deactivation') {
   this.status = 'archived';
   this.archivedAt = new Date();
   this.archiveReason = reason;
   
-  // Set grace period (default 6 months)
-  const gracePeriod = new Date();
-  gracePeriod.setMonth(gracePeriod.getMonth() + gracePeriodMonths);
-  this.archiveGracePeriod = gracePeriod;
+  // Keep the existing archiveGracePeriod if set, otherwise set to 6 months from now
+  if (!this.archiveGracePeriod) {
+    const gracePeriod = new Date();
+    gracePeriod.setMonth(gracePeriod.getMonth() + 6);
+    this.archiveGracePeriod = gracePeriod;
+  }
   
   return this.save();
 };
@@ -228,6 +287,8 @@ courseSchema.methods.unarchive = function() {
   this.status = 'active';
   this.archivedAt = null;
   this.archiveReason = null;
+  this.deactivatedAt = null;
+  this.deactivationReason = null;
   this.archiveGracePeriod = null;
   return this.save();
 };

@@ -8,10 +8,17 @@ const optionalAuth = async (req, res, next) => {
       try {
         const decoded = authService.verifyToken(token);
         req.user = decoded;
+        // Ensure userId is set from any possible field
+        if (!req.user.userId && req.user.id) {
+          req.user.userId = req.user.id;
+        } else if (!req.user.userId && req.user._id) {
+          req.user.userId = req.user._id;
+        }
         console.log('🔧 [optionalAuth] User authenticated:', {
-          userId: decoded.userId,
+          userId: req.user.userId || req.user.id || req.user._id,
           email: decoded.email,
-          role: decoded.role
+          role: decoded.role,
+          decodedKeys: Object.keys(decoded)
         });
       } catch (error) {
         console.log('⚠️ [optionalAuth] Invalid token provided, continuing as public user');

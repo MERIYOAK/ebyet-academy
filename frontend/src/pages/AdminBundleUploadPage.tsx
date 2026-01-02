@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import Toast from '../components/Toast';
+import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Course {
   _id: string;
@@ -17,9 +18,9 @@ const AdminBundleUploadPage: React.FC = () => {
   const navigate = useNavigate();
   
   const [bundle, setBundle] = useState({
-    title: '',
-    description: '',
-    longDescription: '',
+    title: { en: '', tg: '' },
+    description: { en: '', tg: '' },
+    longDescription: { en: '', tg: '' },
     price: 0,
     originalValue: 0,
     courseIds: [] as string[],
@@ -124,13 +125,13 @@ const AdminBundleUploadPage: React.FC = () => {
     setError(null);
     
     // Validation
-    if (!bundle.title.trim()) {
-      setError('Bundle title is required');
+    if (!bundle.title.en?.trim() || !bundle.title.tg?.trim()) {
+      setError('Bundle title in both English and Tigrinya is required');
       setIsLoading(false);
       return;
     }
-    if (!bundle.description.trim()) {
-      setError('Bundle description is required');
+    if (!bundle.description.en?.trim() || !bundle.description.tg?.trim()) {
+      setError('Bundle description in both English and Tigrinya is required');
       setIsLoading(false);
       return;
     }
@@ -161,9 +162,9 @@ const AdminBundleUploadPage: React.FC = () => {
 
       // Step 1: Create the bundle
       const bundlePayload = {
-        title: bundle.title,
-        description: bundle.description,
-        longDescription: bundle.longDescription || bundle.description,
+        title: JSON.stringify(bundle.title),
+        description: JSON.stringify(bundle.description),
+        longDescription: JSON.stringify(bundle.longDescription.en || bundle.longDescription.tg ? bundle.longDescription : bundle.description),
         price: bundle.price,
         originalValue: bundle.originalValue || undefined,
         courseIds: bundle.courseIds,
@@ -222,7 +223,7 @@ const AdminBundleUploadPage: React.FC = () => {
         progress: 100,
         status: 'success',
         title: 'Bundle Created Successfully',
-        message: `Bundle "${bundle.title}" has been created successfully!`
+        message: `Bundle "${bundle.title.en}" has been created successfully!`
       });
 
       // Redirect after a short delay
@@ -289,12 +290,12 @@ const AdminBundleUploadPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Bundle Title *
+                  Bundle Title (English) *
                 </label>
                 <input
                   type="text"
-                  value={bundle.title}
-                  onChange={(e) => setBundle(prev => ({ ...prev, title: e.target.value }))}
+                  value={bundle.title.en}
+                  onChange={(e) => setBundle(prev => ({ ...prev, title: { ...prev.title, en: e.target.value } }))}
                   required
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   placeholder="e.g., Complete Trading Mastery Bundle"
@@ -303,28 +304,69 @@ const AdminBundleUploadPage: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Short Description *
+                  Bundle Title (Tigrinya) *
                 </label>
-                <textarea
-                  value={bundle.description}
-                  onChange={(e) => setBundle(prev => ({ ...prev, description: e.target.value }))}
+                <input
+                  type="text"
+                  value={bundle.title.tg}
+                  onChange={(e) => setBundle(prev => ({ ...prev, title: { ...prev.title, tg: e.target.value } }))}
                   required
-                  rows={3}
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                  placeholder="Brief description of the bundle"
+                  placeholder="e.g., ምሉእ ናይ ንግዲ ምስላል ባንድል"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Long Description
+                  Short Description (English) *
                 </label>
                 <textarea
-                  value={bundle.longDescription}
-                  onChange={(e) => setBundle(prev => ({ ...prev, longDescription: e.target.value }))}
+                  value={bundle.description.en}
+                  onChange={(e) => setBundle(prev => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
+                  required
+                  rows={3}
+                  className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Brief description of the bundle (English)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Short Description (Tigrinya) *
+                </label>
+                <textarea
+                  value={bundle.description.tg}
+                  onChange={(e) => setBundle(prev => ({ ...prev, description: { ...prev.description, tg: e.target.value } }))}
+                  required
+                  rows={3}
+                  className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Brief description of the bundle (Tigrinya)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Long Description (English)
+                </label>
+                <textarea
+                  value={bundle.longDescription.en}
+                  onChange={(e) => setBundle(prev => ({ ...prev, longDescription: { ...prev.longDescription, en: e.target.value } }))}
                   rows={5}
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                  placeholder="Detailed description for the bundle detail page"
+                  placeholder="Detailed description for the bundle detail page (English)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Long Description (Tigrinya)
+                </label>
+                <textarea
+                  value={bundle.longDescription.tg}
+                  onChange={(e) => setBundle(prev => ({ ...prev, longDescription: { ...prev.longDescription, tg: e.target.value } }))}
+                  rows={5}
+                  className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  placeholder="Detailed description for the bundle detail page (Tigrinya)"
                 />
               </div>
 
@@ -391,10 +433,10 @@ const AdminBundleUploadPage: React.FC = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-white font-medium">{course.title}</h3>
+                        <h3 className="text-white font-medium">{getEnglishText(course.title)}</h3>
                         <span className="text-cyan-400 font-semibold">${course.price.toFixed(2)}</span>
                       </div>
-                      <p className="text-gray-400 text-sm mt-1 line-clamp-1">{course.description}</p>
+                      <p className="text-gray-400 text-sm mt-1 line-clamp-1">{getEnglishText(course.description)}</p>
                     </div>
                   </label>
                 ))}
@@ -572,6 +614,8 @@ const AdminBundleUploadPage: React.FC = () => {
 };
 
 export default AdminBundleUploadPage;
+
+
 
 
 

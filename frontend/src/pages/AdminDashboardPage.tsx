@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
-import { BookOpen, Users, Play, Plus, ArrowRight, Package, Megaphone, Mail } from 'lucide-react';
+import { BookOpen, Users, Play, Plus, ArrowRight, Package, Megaphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface AdminUser {
@@ -226,20 +226,6 @@ const AdminDashboardPage = () => {
               </div>
             </Link>
 
-            <Link
-              to="/admin/newsletter"
-              className="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-3 xxs:p-4 sm:p-6 hover:shadow-md hover:border-cyan-500/50 transition-all duration-200"
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0 p-2 xxs:p-3 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-                  <Mail className="h-4 w-4 xxs:h-5 xxs:w-5 sm:h-6 sm:w-6 text-cyan-400" />
-                </div>
-                <div className="ml-2 xxs:ml-3 sm:ml-4">
-                  <h3 className="text-sm xxs:text-base sm:text-lg font-medium text-white">Newsletter</h3>
-                  <p className="text-xs xxs:text-sm text-gray-400">Manage subscribers and send emails</p>
-                </div>
-              </div>
-            </Link>
           </div>
         </section>
       </div>

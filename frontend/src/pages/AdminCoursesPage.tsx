@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 
 import { Link } from 'react-router-dom';
-import { Plus, Eye, Edit, Trash2, Upload, Search, Filter, BookOpen, X } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Upload, Filter, BookOpen, X } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Toast from '../components/Toast';
 import useCourseDeletion from '../hooks/useCourseDeletion';
+import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Course {
   _id: string;
-  title: string;
-  description: string;
+  title: string | { en: string; tg: string };
+  description: string | { en: string; tg: string };
   price: number;
   status: 'active' | 'inactive' | 'archived';
   thumbnailURL?: string;
   totalEnrollments: number;
   createdAt: string;
   updatedAt: string;
+  featured?: boolean;
 }
 
 const AdminCoursesPage: React.FC = () => {
@@ -38,15 +40,55 @@ const AdminCoursesPage: React.FC = () => {
   const { deleteCourse, isLoading: isDeleting, error: deleteError } = useCourseDeletion();
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletionSummary, setDeletionSummary] = useState<any>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Fetch deletion summary when delete button is clicked
+  const handleDeleteClick = async (course: Course) => {
+    setCourseToDelete(course);
+    setShowDeleteModal(true);
+    setLoadingSummary(true);
+    setDeletionSummary(null);
+
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      const response = await fetch(buildApiUrl(`/api/courses/${course._id}/deletion-summary`), {
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDeletionSummary(data.data.summary);
+      } else {
+        console.error('Failed to fetch deletion summary');
+      }
+    } catch (error) {
+      console.error('Error fetching deletion summary:', error);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
   // Handle course deletion
-  const handleDeleteCourse = async (courseId: string) => {
-    const success = await deleteCourse(courseId);
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
+    const success = await deleteCourse(courseToDelete._id);
     
     if (success) {
       // Remove course from state
-      setCourses(prev => prev.filter(course => course._id !== courseId));
+      setCourses(prev => prev.filter(course => course._id !== courseToDelete._id));
+      setShowDeleteModal(false);
+      setCourseToDelete(null);
+      setDeletionSummary(null);
       setToast({
         message: 'Course deleted successfully',
         type: 'success'
@@ -54,6 +96,46 @@ const AdminCoursesPage: React.FC = () => {
     } else {
       setToast({
         message: deleteError || 'Failed to delete course',
+        type: 'error'
+      });
+    }
+  };
+
+  // Handle featured toggle
+  const handleToggleFeatured = async (courseId: string, currentFeatured: boolean) => {
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      const response = await fetch(buildApiUrl(`/api/courses/${courseId}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured: !currentFeatured }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update featured status');
+      }
+
+      // Update course in state
+      setCourses(prev => prev.map(course => 
+        course._id === courseId 
+          ? { ...course, featured: !currentFeatured }
+          : course
+      ));
+
+      setToast({
+        message: `Course ${!currentFeatured ? 'added to' : 'removed from'} homepage`,
+        type: 'success'
+      });
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Failed to update featured status',
         type: 'error'
       });
     }
@@ -73,13 +155,11 @@ const AdminCoursesPage: React.FC = () => {
       const queryParams = new URLSearchParams({
         status: statusFilter === 'all' ? 'all' : statusFilter,
         page: page.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
+        sortBy: sortBy,
+        sortOrder: sortOrder
       });
 
-      // Add search term if provided
-      if (searchTerm.trim()) {
-        queryParams.append('search', searchTerm.trim());
-      }
 
       const response = await fetch(buildApiUrl(`/api/courses?${queryParams.toString()}`), {
         headers: {
@@ -135,24 +215,21 @@ const AdminCoursesPage: React.FC = () => {
     fetchCourses();
   }, []);
 
-  // Debounced search effect
+  // Filter and sort change effect
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchCourses(1, itemsPerPage);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, statusFilter]);
+    setCurrentPage(1); // Reset to first page when filters or sort change
+    fetchCourses(1, itemsPerPage);
+  }, [statusFilter, sortBy, sortOrder]);
 
   // Use courses directly since filtering is now handled server-side
   const displayedCourses = courses;
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-500/90 text-white border border-green-400';
+      case 'inactive': return 'bg-yellow-500/90 text-white border border-yellow-400';
+      case 'archived': return 'bg-gray-600/90 text-white border border-gray-400';
+      default: return 'bg-gray-600/90 text-white border border-gray-400';
     }
   };
 
@@ -223,17 +300,16 @@ const AdminCoursesPage: React.FC = () => {
               <div className="flex items-center space-x-2 xxs:space-x-3">
                 <Filter className="h-4 w-4 xxs:h-5 xxs:w-5 text-cyan-400" />
                 <h3 className="text-base xxs:text-lg font-semibold text-white">Course Management</h3>
-                {(searchTerm || statusFilter !== 'all') && (
+                {statusFilter !== 'all' && (
                   <span className="bg-cyan-500/20 text-cyan-300 text-xs font-medium px-2 py-0.5 rounded-full">
                     Filtered
                   </span>
                 )}
               </div>
               <div className="flex items-center space-x-2 xxs:space-x-3">
-                {(searchTerm || statusFilter !== 'all') && (
+                {statusFilter !== 'all' && (
                   <button
                     onClick={() => {
-                      handleSearchChange('');
                       handleStatusFilterChange('all');
                     }}
                     className="flex items-center space-x-1 xxs:space-x-2 px-2 xxs:px-3 py-1 xxs:py-1.5 text-xs xxs:text-sm text-gray-400 hover:text-cyan-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
@@ -248,44 +324,17 @@ const AdminCoursesPage: React.FC = () => {
 
           {/* Filter Options */}
           <div className="p-3 xxs:p-4 sm:p-6">
-            <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 xxs:gap-4 sm:gap-6">
-              {/* Search */}
-              <div className="xxs:col-span-1 sm:col-span-2 space-y-2">
-                <label className="block text-xs xxs:text-sm font-semibold text-gray-700">
-                  Search Courses
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 xxs:pl-4 flex items-center pointer-events-none">
-                    <Search className="h-3 w-3 xxs:h-4 xxs:w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="block w-full pl-8 xxs:pl-10 pr-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base"
-                    placeholder="Search by title or description..."
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute inset-y-0 right-0 pr-3 xxs:pr-4 flex items-center text-gray-400 hover:text-gray-400 transition-colors"
-                    >
-                      <X className="h-3 w-3 xxs:h-4 xxs:w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 gap-3 xxs:gap-4 sm:gap-6">
               {/* Status Filter */}
               <div className="space-y-2">
-                <label className="block text-xs xxs:text-sm font-semibold text-gray-700">
+                <label className="block text-xs xxs:text-sm font-semibold text-gray-300">
                   Status
                 </label>
                 <div className="relative">
                   <select
                     value={statusFilter}
                     onChange={(e) => handleStatusFilterChange(e.target.value)}
-                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-900/80 text-sm xxs:text-base"
+                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none text-sm xxs:text-base"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -302,7 +351,7 @@ const AdminCoursesPage: React.FC = () => {
 
               {/* Sort */}
               <div className="space-y-2">
-                <label className="block text-xs xxs:text-sm font-semibold text-gray-700">
+                <label className="block text-xs xxs:text-sm font-semibold text-gray-300">
                   Sort By
                 </label>
                 <div className="relative">
@@ -312,8 +361,9 @@ const AdminCoursesPage: React.FC = () => {
                       const [field, order] = e.target.value.split('-');
                       setSortBy(field);
                       setSortOrder(order as 'asc' | 'desc');
+                      setCurrentPage(1); // Reset to first page when sort changes
                     }}
-                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 border-2 border-gray-700 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none bg-gray-900/80 text-sm xxs:text-base"
+                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none text-sm xxs:text-base"
                   >
                     <option value="createdAt-desc">Newest First</option>
                     <option value="createdAt-asc">Oldest First</option>
@@ -339,20 +389,13 @@ const AdminCoursesPage: React.FC = () => {
                 <div className="text-xs xxs:text-sm text-gray-400">
                   Showing <span className="font-semibold text-white">{displayedCourses.length}</span> of <span className="font-semibold text-white">{totalItems}</span> courses
                 </div>
-                {(searchTerm || statusFilter !== 'all') && (
+                {statusFilter !== 'all' && (
                   <div className="flex flex-col xxs:flex-row xxs:items-center space-y-2 xxs:space-y-0 xxs:space-x-2">
                     <span className="text-xs xxs:text-sm text-gray-500">Filtered by:</span>
                     <div className="flex flex-wrap gap-1 xxs:gap-2">
-                      {searchTerm && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300">
-                          "{searchTerm}"
-                        </span>
-                      )}
-                      {statusFilter !== 'all' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
-                        </span>
-                      )}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
+                        {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -376,7 +419,7 @@ const AdminCoursesPage: React.FC = () => {
                     {/* Actual image */}
                     <img
                       src={course.thumbnailURL}
-                      alt={course.title}
+                      alt={getEnglishText(course.title)}
                       className="w-full h-full object-cover relative z-10"
                       onLoad={(e) => {
                         // Hide loading state when image loads
@@ -414,8 +457,8 @@ const AdminCoursesPage: React.FC = () => {
                     <span className="text-gray-400 text-xs xxs:text-sm">No thumbnail</span>
                   </div>
                 </div>
-                <div className="absolute top-2 right-2">
-                  <span className={`inline-flex items-center px-1.5 xxs:px-2 py-0.5 xxs:py-1 rounded-full text-xs font-medium ${getStatusColor(course.status)}`}>
+                <div className="absolute top-2 right-2 z-20">
+                  <span className={`inline-flex items-center px-2 xxs:px-2.5 py-0.5 xxs:py-1 rounded-md text-xs font-semibold uppercase tracking-wide shadow-lg ${getStatusColor(course.status)}`}>
                     {course.status}
                   </span>
                 </div>
@@ -424,10 +467,10 @@ const AdminCoursesPage: React.FC = () => {
               {/* Course Info */}
               <div className="p-3 xxs:p-4 sm:p-6 flex flex-col flex-grow">
                 <h3 className="text-sm xxs:text-base sm:text-lg font-semibold text-white mb-2 line-clamp-2 h-12 xxs:h-14">
-                  {course.title}
+                  {getEnglishText(course.title)}
                 </h3>
                 <p className="text-gray-400 text-xs xxs:text-sm mb-3 xxs:mb-4 line-clamp-3 flex-grow">
-                  {course.description}
+                  {getEnglishText(course.description)}
                 </p>
 
                 {/* Stats */}
@@ -436,11 +479,28 @@ const AdminCoursesPage: React.FC = () => {
                   <span>{course.totalEnrollments || 0} enrolled</span>
                 </div>
 
+                {/* Featured Checkbox */}
+                <div className="flex items-center space-x-2 mb-3 xxs:mb-4">
+                  <input
+                    type="checkbox"
+                    id={`featured-${course._id}`}
+                    checked={course.featured || false}
+                    onChange={() => handleToggleFeatured(course._id, course.featured || false)}
+                    className="w-4 h-4 text-cyan-600 bg-gray-800 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                  />
+                  <label 
+                    htmlFor={`featured-${course._id}`}
+                    className="text-xs xxs:text-sm text-gray-300 cursor-pointer"
+                  >
+                    Show on homepage (max 3)
+                  </label>
+                </div>
+
                 {/* Actions */}
                 <div className="flex flex-col xxs:flex-row space-y-2 xxs:space-y-0 xxs:space-x-2 mt-auto">
                   <Link
                     to={`/admin/courses/${course._id}`}
-                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-gray-300 text-xs xxs:text-sm font-medium rounded-lg text-gray-700 bg-gray-900/80 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-gray-600 text-xs xxs:text-sm font-medium rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
                   >
                     <Eye className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1" />
                     View
@@ -453,11 +513,8 @@ const AdminCoursesPage: React.FC = () => {
                     Edit
                   </Link>
                   <button
-                    onClick={() => {
-                      setCourseToDelete(course);
-                      setShowDeleteModal(true);
-                    }}
-                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-transparent text-xs xxs:text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+                    onClick={() => handleDeleteClick(course)}
+                    className="flex-1 inline-flex items-center justify-center px-2 xxs:px-3 py-2 border border-transparent text-xs xxs:text-sm font-medium rounded-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     <Trash2 className="h-3 w-3 xxs:h-4 xxs:w-4 mr-1" />
                     Delete
@@ -480,11 +537,11 @@ const AdminCoursesPage: React.FC = () => {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
             {/* Items per page selector */}
             <div className="flex items-center space-x-2">
-              <label className="text-sm text-gray-700">Show:</label>
+              <label className="text-sm text-gray-300">Show:</label>
               <select
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="px-3 py-1 bg-gray-800 text-white border border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
                 <option value={6}>6 per page</option>
                 <option value={12}>12 per page</option>
@@ -494,7 +551,7 @@ const AdminCoursesPage: React.FC = () => {
             </div>
 
             {/* Pagination info */}
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-gray-300">
               Page {currentPage} of {totalPages} ({totalItems} total courses)
             </div>
 
@@ -504,7 +561,7 @@ const AdminCoursesPage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -528,7 +585,7 @@ const AdminCoursesPage: React.FC = () => {
                       <button
                         key={1}
                         onClick={() => handlePageChange(1)}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900"
+                        className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700"
                       >
                         1
                       </button>
@@ -551,7 +608,7 @@ const AdminCoursesPage: React.FC = () => {
                         className={`px-3 py-2 text-sm font-medium rounded-md ${
                           i === currentPage
                             ? 'text-white bg-gradient-to-r from-cyan-600 to-blue-600 border border-cyan-500'
-                            : 'text-gray-700 bg-gray-900/80 border border-gray-300 hover:bg-gray-900'
+                            : 'text-gray-300 bg-gray-800 border border-gray-600 hover:bg-gray-700'
                         }`}
                       >
                         {i}
@@ -572,7 +629,7 @@ const AdminCoursesPage: React.FC = () => {
                       <button
                         key={totalPages}
                         onClick={() => handlePageChange(totalPages)}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900"
+                        className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700"
                       >
                         {totalPages}
                       </button>
@@ -587,7 +644,7 @@ const AdminCoursesPage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-900/80 border border-gray-300 rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -603,12 +660,12 @@ const AdminCoursesPage: React.FC = () => {
             </div>
             <h3 className="mt-2 text-sm font-medium text-white">No courses found</h3>
             <p className="mt-1 text-xs xxs:text-sm text-gray-500">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filter criteria.'
+              {statusFilter !== 'all' 
+                ? 'Try adjusting your filter criteria.'
                 : 'Get started by uploading your first course.'
               }
             </p>
-            {!searchTerm && statusFilter === 'all' && (
+            {statusFilter === 'all' && (
               <div className="mt-4 xxs:mt-6">
                 <Link
                   to="/admin/upload"
@@ -634,19 +691,18 @@ const AdminCoursesPage: React.FC = () => {
       {showDeleteModal && courseToDelete && (
         <DeleteConfirmationModal
           isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={() => {
-            if (courseToDelete) {
-              handleDeleteCourse(courseToDelete._id);
-              setShowDeleteModal(false);
-              setCourseToDelete(null);
-            }
+          onClose={() => {
+            setShowDeleteModal(false);
+            setCourseToDelete(null);
+            setDeletionSummary(null);
           }}
+          onConfirm={handleDeleteCourse}
           title="Delete Course"
-          message={`Are you sure you want to delete "${courseToDelete.title}"? This action cannot be undone and will permanently remove the course, all its videos, and associated files.`}
+          message={`Are you sure you want to delete "${getEnglishText(courseToDelete.title)}"? This action cannot be undone and will permanently remove the course, all its videos, and associated files.`}
           confirmText="Delete Course"
           cancelText="Cancel"
           isLoading={isDeleting}
+          deletionSummary={loadingSummary ? null : deletionSummary}
         />
       )}
 

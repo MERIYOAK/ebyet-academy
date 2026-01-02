@@ -5,10 +5,11 @@ import { buildApiUrl } from '../config/environment';
 import { Link } from 'react-router-dom';
 import { Play, Clock, CheckCircle, BookOpen, Trophy, Award, Sparkles, Eye } from 'lucide-react';
 import CourseProgressBar from './CourseProgressBar';
+import { getLocalizedText } from '../utils/bilingualHelper';
 
 interface DashboardCardProps {
   _id: string;
-  title: string;
+  title: string | { en: string; tg: string };
   thumbnail: string;
   progress: number;
   totalLessons: number;
@@ -30,15 +31,16 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   videos,
   isCompleted = false
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
+  const localizedTitle = getLocalizedText(title, currentLanguage);
   const [generating, setGenerating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [certificateExists, setCertificateExists] = useState(false);
   const [certificateId, setCertificateId] = useState<string | null>(null);
 
-  // Get the first video ID for the watch link
-  const firstVideoId = videos && videos.length > 0 ? videos[0]._id || videos[0].id : null;
-  const watchLink = firstVideoId ? `/course/${_id}/watch/${firstVideoId}` : `/course/${_id}`;
+  // Link to course detail page
+  const watchLink = `/course/${_id}`;
 
   // Determine if course is completed (100% progress and all lessons completed)
   const courseCompleted = isCompleted || progress >= 100;
@@ -172,11 +174,11 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   const condition = getCourseCondition();
 
   return (
-    <div className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative ${
+    <div className={`w-full min-w-0 bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200 dark:border-gray-700 flex flex-col ${
       courseCompleted 
-        ? 'ring-2 ring-green-500 ring-opacity-50 bg-gradient-to-br from-green-50 to-white' 
+        ? 'ring-2 ring-green-500 ring-opacity-50 bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-gray-800' 
         : ''
-    }`}>
+    }`} style={{ minWidth: '300px' }}>
       {/* Completion badge */}
       {courseCompleted && (
         <div className="absolute top-3 xxs:top-4 right-3 xxs:right-4 z-10">
@@ -236,11 +238,11 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
         </div>
       </div>
 
-      <div className="p-4 xxs:p-6">
+      <div className="p-4 xxs:p-6 flex-1 flex flex-col">
         <h3 className={`course-title text-base xxs:text-lg font-bold mb-2 xxs:mb-3 transition-colors duration-200 overflow-hidden ${
           courseCompleted 
-            ? 'text-green-800 group-hover:text-green-900' 
-            : 'text-gray-800 group-hover:text-red-600'
+            ? 'text-green-800 dark:text-green-300 group-hover:text-green-900 dark:group-hover:text-green-200' 
+            : 'text-gray-800 dark:text-gray-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
         }`} style={{ 
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -248,16 +250,16 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
           overflow: 'hidden',
           textOverflow: 'ellipsis'
         }}>
-          {title}
+          {localizedTitle}
         </h3>
 
         <div className="space-y-2 xxs:space-y-3 mb-3 xxs:mb-4">
           <div className="flex items-center justify-between text-xs xxs:text-sm">
-            <div className="flex items-center space-x-1 xxs:space-x-2 text-gray-600">
+            <div className="flex items-center space-x-1 xxs:space-x-2 text-gray-600 dark:text-gray-400">
               <BookOpen className="h-3 w-3 xxs:h-4 xxs:w-4" />
               <span>{completedLessons}/{totalLessons} {t('dashboard_card.lessons')}</span>
             </div>
-            <div className="flex items-center space-x-1 xxs:space-x-2 text-gray-600">
+            <div className="flex items-center space-x-1 xxs:space-x-2 text-gray-600 dark:text-gray-400">
               <Clock className="h-3 w-3 xxs:h-4 xxs:w-4" />
               <span>{duration}</span>
             </div>
@@ -284,16 +286,16 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
             {courseCompleted ? t('dashboard_card.review_course') : progress > 0 ? t('dashboard_card.continue') : t('dashboard_card.start_course')}
           </Link>
           <Link
-            to={`/my-course/${_id}`}
-            className="flex-1 border border-gray-300 hover:border-red-300 text-gray-700 hover:text-red-600 font-semibold py-2 px-3 xxs:px-4 rounded-lg transition-all duration-200 text-center text-xs xxs:text-sm"
+            to={`/course/${_id}`}
+            className="flex-1 border border-gray-300 dark:border-gray-600 hover:border-cyan-500 dark:hover:border-cyan-500 text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 font-semibold py-2 px-3 xxs:px-4 rounded-lg transition-all duration-200 text-center text-xs xxs:text-sm bg-white dark:bg-gray-700/50"
           >
             {t('dashboard_card.view_details')}
           </Link>
         </div>
 
         {/* Course Condition Explanation */}
-        <div className={`p-2 xxs:p-3 rounded-lg border ${condition.bgColor} ${condition.borderColor} mb-2 xxs:mb-3`}>
-          <p className={`text-xs xxs:text-sm font-medium ${condition.color}`}>
+        <div className={`p-2 xxs:p-3 rounded-lg border ${condition.bgColor} dark:bg-gray-700/30 ${condition.borderColor} dark:border-gray-600 mb-2 xxs:mb-3`}>
+          <p className={`text-xs xxs:text-sm font-medium ${condition.color} dark:text-gray-300`}>
             {condition.text}
           </p>
         </div>
@@ -301,8 +303,8 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
         {/* Certificate Actions */}
         {courseCompleted && (
           <div className="flex flex-col xxs:flex-row xxs:items-center xxs:justify-between space-y-2 xxs:space-y-0">
-            <div className="flex items-center space-x-1 xxs:space-x-2 text-xs xxs:text-sm text-gray-600">
-              <Award className="h-3 w-3 xxs:h-4 xxs:w-4 text-green-500" />
+            <div className="flex items-center space-x-1 xxs:space-x-2 text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
+              <Award className="h-3 w-3 xxs:h-4 xxs:w-4 text-green-500 dark:text-green-400" />
               <span>
                 {certificateExists ? t('dashboard_card.certificate_ready') : t('dashboard_card.certificate_available')}
               </span>

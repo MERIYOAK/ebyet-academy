@@ -1268,7 +1268,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
               handleSeek(newTime);
             }}>
               <div 
-                className="bg-red-600 h-2 rounded-full transition-all duration-200"
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 h-2 rounded-full transition-all duration-200"
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
               />
             </div>
@@ -1311,7 +1311,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                         setShowSettings(false);
                       }}
                       className={`block w-full text-left px-2 py-1 text-sm rounded hover:bg-gray-700 ${
-                        currentPlaybackRate === rate ? 'bg-red-600' : ''
+                        currentPlaybackRate === rate ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white' : 'text-white'
                       }`}
                     >
                       {rate}x

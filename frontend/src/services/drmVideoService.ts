@@ -122,16 +122,19 @@ class DRMVideoService {
   public async getCourseVideosWithDRM(courseId: string, version: number = 1): Promise<DRMCourseVideosData> {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
+      
+      // Build headers - include token if available, but don't require it
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await fetch(buildApiUrl(`/api/drm/courses/${courseId}/videos?version=${version}`), {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {

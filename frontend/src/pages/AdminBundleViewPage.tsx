@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 import { useParams, Link } from 'react-router-dom';
 import { Edit, BookOpen, DollarSign, Users, Calendar, Tag } from 'lucide-react';
+import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Bundle {
   _id: string;
-  title: string;
-  description: string;
-  longDescription?: string;
+  title: string; // Processed to English only
+  description: string; // Processed to English only
+  longDescription?: string; // Processed to English only
   price: number;
   originalValue?: number;
   status: 'active' | 'inactive' | 'archived';
@@ -17,8 +18,8 @@ interface Bundle {
   tags?: string[];
   courseIds: Array<{
     _id: string;
-    title: string;
-    description: string;
+    title: string; // Processed to English only
+    description: string; // Processed to English only
     price: number;
     thumbnailURL?: string;
   }>;
@@ -55,7 +56,50 @@ const AdminBundleViewPage: React.FC = () => {
         }
 
         const data = await response.json();
-        setBundle(data.data.bundle);
+        console.log('📦 [AdminBundleViewPage] Bundle data received:', data);
+        
+        if (!data.success || !data.data || !data.data.bundle) {
+          throw new Error('Invalid bundle data structure received');
+        }
+        
+        // Process bundle data to ensure English text is extracted
+        const bundleData = data.data.bundle;
+        
+        // Helper function to parse and extract English text
+        const extractEnglish = (text: any): string => {
+          if (!text) return '';
+          if (typeof text === 'string') {
+            // Check if it's a JSON string
+            if (text.startsWith('{') || text.startsWith('"')) {
+              try {
+                const parsed = JSON.parse(text);
+                return typeof parsed === 'object' && parsed !== null && 'en' in parsed ? parsed.en : text;
+              } catch (e) {
+                return text;
+              }
+            }
+            return text;
+          }
+          if (typeof text === 'object' && text !== null && 'en' in text) {
+            return text.en || '';
+          }
+          return '';
+        };
+        
+        // Process bundle to extract English text only
+        const processedBundle = {
+          ...bundleData,
+          title: extractEnglish(bundleData.title),
+          description: extractEnglish(bundleData.description),
+          longDescription: bundleData.longDescription ? extractEnglish(bundleData.longDescription) : undefined,
+          courseIds: bundleData.courseIds ? bundleData.courseIds.map((course: any) => ({
+            ...course,
+            title: extractEnglish(course.title),
+            description: extractEnglish(course.description)
+          })) : []
+        };
+        
+        setBundle(processedBundle);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch bundle');
       } finally {
@@ -94,6 +138,14 @@ const AdminBundleViewPage: React.FC = () => {
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-orange-400 mb-4">{error || 'Bundle not found'}</p>
+          {error && (
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors"
+            >
+              Reload Page
+            </button>
+          )}
         </div>
       </div>
     );
@@ -158,20 +210,33 @@ const AdminBundleViewPage: React.FC = () => {
             <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
               <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <BookOpen className="h-6 w-6 text-cyan-400" />
-                Included Courses ({bundle.courseIds.length})
+                Included Courses ({bundle.courseIds ? bundle.courseIds.length : 0})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {bundle.courseIds.map((course) => (
-                  <div
-                    key={course._id}
-                    className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 hover:border-cyan-500/50 transition-colors"
-                  >
-                    <h3 className="text-white font-medium mb-1">{course.title}</h3>
-                    <p className="text-gray-400 text-sm line-clamp-2">{course.description}</p>
-                    <p className="text-cyan-400 text-sm mt-2 font-semibold">${course.price.toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
+              {bundle.courseIds && bundle.courseIds.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {bundle.courseIds.map((course: any) => {
+                    const courseId = course._id || course;
+                    const courseData = typeof course === 'object' && course._id ? course : null;
+                    
+                    if (!courseData) {
+                      return null;
+                    }
+                    
+                    return (
+                      <div
+                        key={courseId}
+                        className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 hover:border-cyan-500/50 transition-colors"
+                      >
+                        <h3 className="text-white font-medium mb-1">{courseData.title}</h3>
+                        <p className="text-gray-400 text-sm line-clamp-2">{courseData.description}</p>
+                        <p className="text-cyan-400 text-sm mt-2 font-semibold">${(courseData.price || 0).toFixed(2)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400">No courses included in this bundle</p>
+              )}
             </div>
           </div>
 
@@ -203,7 +268,7 @@ const AdminBundleViewPage: React.FC = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-gray-300">
                     <BookOpen className="h-4 w-4 text-cyan-400" />
-                    <span>{bundle.courseIds.length} courses</span>
+                    <span>{bundle.courseIds ? bundle.courseIds.length : 0} courses</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Users className="h-4 w-4 text-cyan-400" />
@@ -266,6 +331,8 @@ const AdminBundleViewPage: React.FC = () => {
 };
 
 export default AdminBundleViewPage;
+
+
 
 
 

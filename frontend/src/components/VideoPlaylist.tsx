@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, CheckCircle, Clock, Lock } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
+import { getLocalizedText } from '../utils/bilingualHelper';
 
 interface VideoProgress {
   watchedDuration: number;
@@ -13,7 +15,7 @@ interface VideoProgress {
 
 interface Video {
   id: string;
-  title: string;
+  title: string | { en: string; tg: string };
   duration: string;
   videoUrl: string;
   completed?: boolean;
@@ -44,6 +46,8 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   onVideoSelect,
   courseProgress
 }) => {
+  const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   // Calculate progress from courseProgress if available, otherwise from videos
   const completedCount = courseProgress 
     ? courseProgress.completedVideos 
@@ -57,14 +61,14 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
     <div className="bg-gray-800 h-full flex flex-col text-white overflow-hidden">
       {/* Header - Hidden on mobile overlay since it's in the overlay header */}
       <div className="hidden md:block p-4 xxs:p-6 border-b border-gray-700">
-        <h3 className="font-bold text-base xxs:text-lg text-white mb-2">Course Content</h3>
+        <h3 className="font-bold text-base xxs:text-lg text-white mb-2">{t('course_detail.course_content', 'Course Content')}</h3>
         <div className="flex items-center justify-between text-xs xxs:text-sm text-gray-300 mb-2 xxs:mb-3">
-          <span>{completedCount}/{videos.length} completed</span>
-          <span>{Math.round(progressPercentage)}% done</span>
+          <span>{completedCount}/{videos.length} {t('course_detail.completed', 'completed')}</span>
+          <span>{Math.round(progressPercentage)}% {t('course_detail.done', 'done')}</span>
         </div>
         <div className="bg-gray-700 rounded-full h-2">
           <div
-            className="bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -73,12 +77,12 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
       {/* Mobile Progress Header - Only shown in mobile overlay */}
       <div className="md:hidden p-3 xxs:p-4 border-b border-gray-700">
         <div className="flex items-center justify-between text-xs xxs:text-sm text-gray-300 mb-2">
-          <span>{completedCount}/{videos.length} completed</span>
-          <span>{Math.round(progressPercentage)}% done</span>
+          <span>{completedCount}/{videos.length} {t('course_detail.completed', 'completed')}</span>
+          <span>{Math.round(progressPercentage)}% {t('course_detail.done', 'done')}</span>
         </div>
         <div className="bg-gray-700 rounded-full h-1.5 xxs:h-2">
           <div
-            className="bg-gradient-to-r from-red-500 to-pink-500 h-1.5 xxs:h-2 rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-cyan-500 to-blue-500 h-1.5 xxs:h-2 rounded-full transition-all duration-500"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -99,7 +103,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
                 ? 'cursor-not-allowed opacity-50' 
                   : 'cursor-pointer hover:bg-gray-700'
             } ${
-                isCurrent ? 'bg-red-900 border-red-600' : ''
+                isCurrent ? 'bg-cyan-900/30 border-cyan-600' : ''
             }`}
             onClick={() => !video.locked && onVideoSelect(video.id)}
           >
@@ -114,7 +118,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
                     <CheckCircle className="h-3 w-3 xxs:h-4 xxs:w-4 text-white" />
                   </div>
                 ) : isCurrent ? (
-                  <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-red-600 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full flex items-center justify-center">
                     <Play className="h-3 w-3 xxs:h-4 xxs:w-4 text-white fill-current" />
                   </div>
                 ) : (
@@ -126,12 +130,12 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
               
               <div className="flex-1 min-w-0">
                 <h4 className={`font-medium text-xs xxs:text-sm mb-1 line-clamp-2 ${
-                    isCurrent ? 'text-red-400' : 'text-white'
+                    isCurrent ? 'text-cyan-400' : 'text-white'
                 }`}>
-                  {video.title}
+                  {getLocalizedText(video.title, currentLanguage)}
                   {video.isFreePreview && !video.locked && (
                     <span className="ml-1 xxs:ml-2 inline-flex items-center px-1 xxs:px-1.5 py-0.5 rounded text-xs font-medium bg-green-600 text-white">
-                      🔓 Free
+                      🔓 {t('course_detail.free', 'Free')}
                     </span>
                   )}
                 </h4>
@@ -154,7 +158,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
                         className={`h-1 rounded-full transition-all duration-300 ${
                           isCompleted 
                             ? 'bg-green-500' 
-                            : 'bg-gradient-to-r from-red-500 to-pink-500'
+                            : 'bg-gradient-to-r from-cyan-500 to-blue-500'
                         }`}
                         style={{ width: `${progress.completionPercentage}%` }}
                       />

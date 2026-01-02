@@ -13,6 +13,7 @@ export interface ApiCourse {
   totalEnrollments?: number;
   tags?: string[];
   videos?: Array<{ _id: string; duration?: string }>;
+  isPurchased?: boolean;
 }
 
 export interface CoursesResponse {
@@ -112,7 +113,7 @@ export const useCourses = (filters: CourseFilters = {}): UseQueryResult<CoursesR
   });
 };
 
-// Hook for fetching featured courses (first 3 courses)
+// Hook for fetching featured courses (max 3 from API)
 export const useFeaturedCourses = (): UseQueryResult<ApiCourse[]> => {
   const queryClient = useQueryClient();
   
@@ -126,7 +127,7 @@ export const useFeaturedCourses = (): UseQueryResult<ApiCourse[]> => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(buildApiUrl('/api/courses'), { headers });
+      const response = await fetch(buildApiUrl('/api/courses/featured'), { headers });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -145,7 +146,7 @@ export const useFeaturedCourses = (): UseQueryResult<ApiCourse[]> => {
         coursesData = data.data.courses;
       }
       
-      // Return first 3 courses as featured
+      // API already returns max 3, but ensure we don't exceed 3
       const featuredCourses = coursesData.slice(0, 3);
       
       // Cache individual featured courses for faster access

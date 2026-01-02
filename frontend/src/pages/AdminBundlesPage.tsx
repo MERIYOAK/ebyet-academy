@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 import { Link } from 'react-router-dom';
-import { Plus, Eye, Edit, Trash2, Search, Filter, BookOpen, X } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Filter, BookOpen, X } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Toast from '../components/Toast';
+import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Bundle {
   _id: string;
-  title: string;
-  description: string;
+  title: string; // Processed to English only
+  description: string; // Processed to English only
   price: number;
   originalValue?: number;
   status: 'active' | 'inactive' | 'archived';
@@ -25,9 +26,7 @@ const AdminBundlesPage: React.FC = () => {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
@@ -60,16 +59,6 @@ const AdminBundlesPage: React.FC = () => {
         limit: limit.toString()
       });
 
-      // Add search term if provided
-      if (searchTerm.trim()) {
-        queryParams.append('search', searchTerm.trim());
-      }
-
-      // Add category filter if provided
-      if (categoryFilter) {
-        queryParams.append('category', categoryFilter);
-      }
-
       const response = await fetch(buildApiUrl(`/api/bundles?${queryParams.toString()}`), {
         headers: {
           'Authorization': `Bearer ${adminToken}`,
@@ -82,7 +71,55 @@ const AdminBundlesPage: React.FC = () => {
       }
 
       const data = await response.json();
-      setBundles(data.data.bundles || []);
+      console.log('📦 [AdminBundlesPage] Fetched bundles data:', data);
+      console.log('📦 [AdminBundlesPage] Bundles array:', data.data?.bundles);
+      
+      const bundlesList = data.data.bundles || [];
+      console.log(`📦 [AdminBundlesPage] Processing ${bundlesList.length} bundles`);
+      
+      // Helper function to parse and extract English text
+      const extractEnglish = (text: any): string => {
+        if (!text) return '';
+        if (typeof text === 'string') {
+          // Check if it's a JSON string
+          if (text.startsWith('{') || text.startsWith('"')) {
+            try {
+              const parsed = JSON.parse(text);
+              return typeof parsed === 'object' && parsed !== null && 'en' in parsed ? parsed.en : text;
+            } catch (e) {
+              return text;
+            }
+          }
+          return text;
+        }
+        if (typeof text === 'object' && text !== null && 'en' in text) {
+          return text.en || '';
+        }
+        return '';
+      };
+      
+      // Process bundles to extract English text only
+      const processedBundles = bundlesList.map((bundle: any) => {
+        const processed = {
+          ...bundle,
+          title: extractEnglish(bundle.title),
+          description: extractEnglish(bundle.description),
+          longDescription: bundle.longDescription ? extractEnglish(bundle.longDescription) : undefined
+        };
+        
+        console.log(`📦 [AdminBundlesPage] Bundle ${processed._id}:`, {
+          id: processed._id,
+          title: processed.title,
+          hasThumbnailURL: !!processed.thumbnailURL,
+          thumbnailURL: processed.thumbnailURL,
+          hasThumbnailS3Key: !!processed.thumbnailS3Key,
+          thumbnailS3Key: processed.thumbnailS3Key
+        });
+        
+        return processed;
+      });
+      
+      setBundles(processedBundles);
       
       // Update pagination info
       if (data.data.pagination) {
@@ -105,7 +142,7 @@ const AdminBundlesPage: React.FC = () => {
 
   useEffect(() => {
     fetchBundles();
-  }, [currentPage, itemsPerPage, statusFilter, categoryFilter, searchTerm]);
+  }, [currentPage, itemsPerPage, statusFilter]);
 
   // Handle bundle deletion
   const handleDeleteBundle = async (bundleId: string) => {
@@ -151,19 +188,8 @@ const AdminBundlesPage: React.FC = () => {
     }
   };
 
-  // Get unique categories from bundles
-  const categories = Array.from(new Set(bundles.map(b => b.category).filter(Boolean))) as string[];
-
-  // Filter bundles based on search and filters
-  const filteredBundles = bundles.filter(bundle => {
-    const matchesSearch = !searchTerm || 
-      bundle.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bundle.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = !categoryFilter || bundle.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  });
+  // Filter bundles based on filters (no client-side filtering needed, server handles it)
+  const filteredBundles = bundles;
 
   // Sort bundles
   const sortedBundles = [...filteredBundles].sort((a, b) => {
@@ -188,13 +214,51 @@ const AdminBundlesPage: React.FC = () => {
     currentPage * itemsPerPage
   );
 
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || categoryFilter;
+  const hasActiveFilters = statusFilter !== 'all';
 
   const clearFilters = () => {
-    setSearchTerm('');
     setStatusFilter('all');
-    setCategoryFilter('');
     setCurrentPage(1);
+  };
+
+  // Handle featured toggle
+  const handleToggleFeatured = async (bundleId: string, currentFeatured: boolean) => {
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      const response = await fetch(buildApiUrl(`/api/bundles/${bundleId}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured: !currentFeatured }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update featured status');
+      }
+
+      // Update bundle in state
+      setBundles(prev => prev.map(bundle => 
+        bundle._id === bundleId 
+          ? { ...bundle, featured: !currentFeatured }
+          : bundle
+      ));
+
+      setToast({
+        message: `Bundle ${!currentFeatured ? 'added to' : 'removed from'} homepage`,
+        type: 'success'
+      });
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Failed to update featured status',
+        type: 'error'
+      });
+    }
   };
 
   if (loading && bundles.length === 0) {
@@ -248,22 +312,7 @@ const AdminBundlesPage: React.FC = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search bundles..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
-                />
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Status Filter */}
               <select
                 value={statusFilter}
@@ -277,21 +326,6 @@ const AdminBundlesPage: React.FC = () => {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="archived">Archived</option>
-              </select>
-
-              {/* Category Filter */}
-              <select
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
-              >
-                <option value="">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
               </select>
 
               {/* Sort */}
@@ -326,11 +360,6 @@ const AdminBundlesPage: React.FC = () => {
                   {statusFilter !== 'all' && (
                     <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded text-xs">
                       Status: {statusFilter}
-                    </span>
-                  )}
-                  {categoryFilter && (
-                    <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded text-xs">
-                      Category: {categoryFilter}
                     </span>
                   )}
                 </div>
@@ -420,6 +449,23 @@ const AdminBundlesPage: React.FC = () => {
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  {/* Featured Checkbox */}
+                  <div className="flex items-center space-x-2 mb-4">
+                    <input
+                      type="checkbox"
+                      id={`featured-${bundle._id}`}
+                      checked={bundle.featured || false}
+                      onChange={() => handleToggleFeatured(bundle._id, bundle.featured || false)}
+                      className="w-4 h-4 text-cyan-600 bg-gray-800 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                    />
+                    <label 
+                      htmlFor={`featured-${bundle._id}`}
+                      className="text-sm text-gray-300 cursor-pointer"
+                    >
+                      Show on homepage (max 3)
+                    </label>
                   </div>
 
                   {/* Actions */}
@@ -533,6 +579,8 @@ const AdminBundlesPage: React.FC = () => {
 };
 
 export default AdminBundlesPage;
+
+
 
 
 

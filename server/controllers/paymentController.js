@@ -4,6 +4,8 @@ const Bundle = require('../models/Bundle');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
 const mongoose = require('mongoose');
+const PDFDocument = require('pdfkit');
+const { getEnglishText } = require('../utils/bilingualHelper');
 
 /**
  * Create a Stripe checkout session for course or bundle purchase
@@ -131,7 +133,7 @@ exports.createCheckoutSession = async (req, res) => {
           paymentMethod: 'card',
           metadata: {
             userEmail: req.user.email,
-            courseTitle: course.title,
+            courseTitle: getEnglishText(course.title),
             paymentDate: new Date()
           }
         };
@@ -171,7 +173,7 @@ exports.createCheckoutSession = async (req, res) => {
           paymentMethod: 'card',
           metadata: {
             userEmail: req.user.email,
-            bundleTitle: bundle.title,
+            bundleTitle: getEnglishText(bundle.title),
             paymentDate: new Date()
           }
         };
@@ -370,7 +372,7 @@ async function handleCheckoutSessionCompleted(session) {
         paymentMethod: 'card',
         metadata: {
           userEmail: userEmail,
-          bundleTitle: bundle.title,
+          bundleTitle: getEnglishText(bundle.title),
           paymentDate: new Date()
         }
       };
@@ -403,7 +405,7 @@ async function handleCheckoutSessionCompleted(session) {
         paymentMethod: 'card',
         metadata: {
           userEmail: userEmail,
-          courseTitle: course.title,
+          courseTitle: getEnglishText(course.title),
           paymentDate: new Date()
         }
       };
@@ -678,6 +680,15 @@ exports.downloadReceipt = async (req, res) => {
     console.log(`   - User ID: ${userId}`);
     console.log(`   - Course ID: ${courseId}`);
 
+    // Get user info first
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
     // Find the payment record
     let payment = await Payment.findOne({
       userId: userId,
@@ -689,8 +700,7 @@ exports.downloadReceipt = async (req, res) => {
     if (!payment) {
       console.log(`⚠️  No payment record found, checking if user owns the course...`);
       
-      const user = await User.findById(userId);
-      if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+      if (!user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
         console.log(`❌ User ${userId} has not purchased course ${courseId}`);
         return res.status(404).json({ 
           success: false, 
@@ -731,17 +741,23 @@ exports.downloadReceipt = async (req, res) => {
       console.log(`✅ Fallback payment record created: $${payment.amount}`);
     }
 
-    // Generate receipt HTML
-    const receiptHtml = generateReceiptHTML(payment);
+    // Generate receipt PDF
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="receipt-${payment._id.toString().slice(-8)}.pdf"`);
 
-    // Set response headers for HTML download
-    res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Content-Disposition', `attachment; filename="receipt-${payment._id.toString().slice(-8)}.html"`);
+    // Pipe PDF to response
+    doc.pipe(res);
 
-    console.log(`✅ Receipt HTML generated for payment ${payment._id}`);
+    // Generate PDF content
+    await generateReceiptPDF(doc, payment, user);
 
-    // Send the HTML content
-    res.send(receiptHtml);
+    // Finalize PDF
+    doc.end();
+
+    console.log(`✅ Receipt PDF generated for payment ${payment._id}`);
 
   } catch (error) {
     console.error('❌ Error downloading receipt:', error);
@@ -756,9 +772,9 @@ exports.downloadReceipt = async (req, res) => {
 
 
 /**
- * Generate receipt HTML
+ * Generate receipt PDF
  */
-function generateReceiptHTML(payment) {
+async function generateReceiptPDF(doc, payment, user) {
   const orderId = payment._id.toString().slice(-8).toUpperCase();
   const paymentDate = payment.createdAt.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -768,134 +784,110 @@ function generateReceiptHTML(payment) {
     minute: '2-digit'
   });
 
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt - ${orderId}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .receipt {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #e5e5e5;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 10px;
-        }
-        .receipt-title {
-            font-size: 18px;
-            color: #374151;
-            margin-bottom: 5px;
-        }
-        .order-id {
-            font-size: 14px;
-            color: #6b7280;
-        }
-        .details {
-            margin-bottom: 30px;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .detail-label {
-            font-weight: 500;
-            color: #374151;
-        }
-        .detail-value {
-            color: #1f2937;
-        }
-        .total {
-            border-top: 2px solid #e5e5e5;
-            padding-top: 20px;
-            margin-top: 20px;
-        }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 18px;
-            font-weight: bold;
-            color: #059669;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e5e5;
-            color: #6b7280;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div class="receipt">
-        <div class="header">
-            <div class="logo">QENDIEL Academy</div>
-            <div class="receipt-title">Payment Receipt</div>
-            <div class="order-id">Order #${orderId}</div>
-        </div>
-        
-        <div class="details">
-            <div class="detail-row">
-                <span class="detail-label">Course:</span>
-                <span class="detail-value">${payment.metadata.courseTitle}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Customer:</span>
-                <span class="detail-value">${payment.metadata.userEmail}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Payment Date:</span>
-                <span class="detail-value">${paymentDate}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Payment Method:</span>
-                <span class="detail-value">Credit Card</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Status:</span>
-                <span class="detail-value">Completed</span>
-            </div>
-        </div>
-        
-        <div class="total">
-            <div class="total-row">
-                <span>Total Amount:</span>
-                <span>$${payment.amount.toFixed(2)} ${payment.currency.toUpperCase()}</span>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Thank you for your purchase!</p>
-            <p>This receipt serves as proof of payment for your course purchase.</p>
-            <p>For support, contact us at ${process.env.SUPPORT_EMAIL || 'support@qendiel.com'}</p>
-        </div>
-    </div>
-</body>
-</html>
-  `;
+  // Extract English text from course/bundle title
+  let courseTitle = 'Course';
+  if (payment.courseId?.title) {
+    courseTitle = getEnglishText(payment.courseId.title);
+  } else if (payment.bundleId) {
+    // For bundles, we need to fetch the bundle to get the title
+    const Bundle = require('../models/Bundle');
+    const bundle = await Bundle.findById(payment.bundleId);
+    if (bundle) {
+      courseTitle = getEnglishText(bundle.title);
+    } else if (payment.metadata?.bundleTitle) {
+      courseTitle = getEnglishText(payment.metadata.bundleTitle);
+    }
+  } else if (payment.metadata?.courseTitle) {
+    courseTitle = getEnglishText(payment.metadata.courseTitle);
+  } else if (payment.metadata?.bundleTitle) {
+    courseTitle = getEnglishText(payment.metadata.bundleTitle);
+  }
+  const amount = payment.amount || 0;
+  const currency = (payment.currency || 'USD').toUpperCase();
+  const userEmail = user?.email || payment.metadata?.userEmail || 'N/A';
+  const paymentMethod = payment.paymentMethod || 'Credit Card';
+
+  // Header
+  doc.fontSize(24)
+     .fillColor('#00BFFF')
+     .text('Ibyet Academy', 50, 50, { align: 'center' });
+  
+  doc.fontSize(12)
+     .fillColor('#666666')
+     .text('Payment Receipt', 50, 80, { align: 'center' });
+
+  // Receipt Details
+  doc.fontSize(10)
+     .fillColor('#000000')
+     .moveDown(2);
+
+  // Order ID
+  doc.fontSize(12)
+     .fillColor('#333333')
+     .text('Order ID:', 50, doc.y)
+     .fillColor('#000000')
+     .text(orderId, 150, doc.y);
+  
+  doc.moveDown(1);
+
+  // Payment Date
+  doc.fillColor('#333333')
+     .text('Payment Date:', 50, doc.y)
+     .fillColor('#000000')
+     .text(paymentDate, 150, doc.y);
+  
+  doc.moveDown(1);
+
+  // Course/Bundle Title
+  const itemLabel = payment.bundleId ? 'Bundle:' : 'Course:';
+  doc.fillColor('#333333')
+     .text(itemLabel, 50, doc.y)
+     .fillColor('#000000')
+     .text(courseTitle, 150, doc.y, { width: 400 });
+  
+  doc.moveDown(1);
+
+  // Amount
+  doc.fontSize(14)
+     .fillColor('#333333')
+     .text('Amount Paid:', 50, doc.y)
+     .fillColor('#10b981')
+     .fontSize(16)
+     .text(`$${amount.toFixed(2)} ${currency}`, 150, doc.y);
+  
+  doc.moveDown(1);
+
+  // Payment Method
+  doc.fontSize(10)
+     .fillColor('#333333')
+     .text('Payment Method:', 50, doc.y)
+     .fillColor('#000000')
+     .text(paymentMethod, 150, doc.y);
+  
+  doc.moveDown(1);
+
+  // Customer Email
+  doc.fillColor('#333333')
+     .text('Customer Email:', 50, doc.y)
+     .fillColor('#000000')
+     .text(userEmail, 150, doc.y);
+  
+  doc.moveDown(2);
+
+  // Status
+  doc.fontSize(12)
+     .fillColor('#10b981')
+     .text('✓ Payment Completed', 50, doc.y);
+
+  doc.moveDown(3);
+
+  // Footer
+  doc.fontSize(8)
+     .fillColor('#999999')
+     .text('Thank you for your purchase!', 50, doc.y, { align: 'center' })
+     .moveDown(0.5)
+     .text('This is an official receipt for your records.', 50, doc.y, { align: 'center' })
+     .moveDown(0.5)
+     .text(`Receipt ID: ${orderId}`, 50, doc.y, { align: 'center' });
 }
 

@@ -1,6 +1,7 @@
 const Progress = require('../models/Progress');
 const Course = require('../models/Course');
 const User = require('../models/User');
+const { getThumbnailUrl, getPublicUrl } = require('../utils/s3CourseManager');
 
 // Udemy-style progress tracking: Request deduplication and batching
 const pendingProgressUpdates = new Map(); // Track pending requests per user-video
@@ -464,10 +465,28 @@ exports.getDashboardProgress = async (req, res) => {
       user.purchasedCourses.map(async (course) => {
         const courseProgressSummary = await Progress.getCourseProgressSummary(userId, course._id, course.videos ? course.videos.length : 0);
         
+        // Generate thumbnail URL if needed (using presigned URL for thumbnails)
+        let thumbnailUrl = course.thumbnailURL;
+        if (course.thumbnailS3Key) {
+          try {
+            const generatedUrl = await getThumbnailUrl(course.thumbnailS3Key);
+            if (generatedUrl) {
+              thumbnailUrl = generatedUrl;
+              console.log(`   ✅ Generated thumbnail URL for dashboard course: ${course.title}`);
+            }
+          } catch (error) {
+            console.error(`   ❌ Error generating thumbnail URL for course ${course._id}:`, error);
+            // Fallback to public URL if presigned URL generation fails
+            if (!thumbnailUrl || !thumbnailUrl.includes('s3.amazonaws.com')) {
+              thumbnailUrl = getPublicUrl(course.thumbnailS3Key);
+            }
+          }
+        }
+        
         return {
           _id: course._id,
           title: course.title,
-          thumbnail: course.thumbnailURL,
+          thumbnail: thumbnailUrl,
           duration: course.videos ? `${course.videos.length} lessons` : '0 lessons',
           totalLessons: course.videos ? course.videos.length : 0,
           completedLessons: courseProgressSummary.completedVideos,

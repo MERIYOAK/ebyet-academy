@@ -1,4 +1,5 @@
 let stripe, createCheckoutSession, verifyWebhook;
+const { getEnglishText } = require('./bilingualHelper');
 
 if (process.env.STRIPE_SECRET_KEY) {
   const Stripe = require('stripe');
@@ -19,9 +20,9 @@ if (process.env.STRIPE_SECRET_KEY) {
       let productName, productDescription, productImages, unitAmount, metadata;
 
       if (bundle) {
-        console.log(`   - Bundle: ${bundle.title} ($${bundle.price})`);
-        productName = bundle.title;
-        productDescription = bundle.description || 'Course bundle';
+        console.log(`   - Bundle: ${getEnglishText(bundle.title)} ($${bundle.price})`);
+        productName = getEnglishText(bundle.title);
+        productDescription = getEnglishText(bundle.description) || 'Course bundle';
         productImages = bundle.thumbnailURL ? [bundle.thumbnailURL] : [];
         unitAmount = Math.round(bundle.price * 100);
         metadata = {
@@ -31,9 +32,9 @@ if (process.env.STRIPE_SECRET_KEY) {
           type: 'bundle'
         };
       } else if (course) {
-        console.log(`   - Course: ${course.title} ($${course.price})`);
-        productName = course.title;
-        productDescription = course.description || 'Educational course';
+        console.log(`   - Course: ${getEnglishText(course.title)} ($${course.price})`);
+        productName = getEnglishText(course.title);
+        productDescription = getEnglishText(course.description) || 'Educational course';
         productImages = course.thumbnailURL ? [course.thumbnailURL] : [];
         unitAmount = Math.round(course.price * 100);
         metadata = {

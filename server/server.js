@@ -19,6 +19,7 @@ const courseRoutesEnhanced = require('./routes/courseRoutesEnhanced');
 const myCoursesRoutes = require('./routes/myCoursesRoutes');
 const archiveRoutes = require('./routes/archiveRoutes');
 const videoRoutes = require('./routes/videoRoutes');
+const materialRoutes = require('./routes/materialRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -28,7 +29,6 @@ const drmVideoRoutes = require('./routes/drmVideoRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const bundleRoutes = require('./routes/bundleRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
-const newsletterRoutes = require('./routes/newsletterRoutes');
 
 // Import controllers for fallback routes
 const authController = require('./controllers/authController');
@@ -59,16 +59,7 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
   process.env.CLIENT_URL || 'http://localhost:5173',
-      'https://www.qendiel.com', // Production domain
-  'https://qendiel.com', // Production domain (without www)
-  'https://persi-academy.vercel.app', // Your current Vercel domain
-  'http://localhost:3000',
-  'http://localhost:4173',
-  'http://localhost:8080',
   'http://127.0.0.1:5173', // Alternative localhost
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:4173',
-  'http://127.0.0.1:8080'
 ].filter(Boolean); // Remove any undefined values
 
 // Apply security middleware
@@ -218,38 +209,15 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
       `);
     }
     
-    // Use the S3 URL directly - no need to check local file
-    const s3Url = certificate.pdfUrl;
+    // Generate PDF on-the-fly for display
+    const certificateController = require('./controllers/certificateController');
+    const pdfBuffer = await certificateController.generateCertificatePDF(certificate);
     
-    if (!s3Url) {
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Certificate PDF Not Found</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
-          <div class="text-center max-w-md mx-auto p-8">
-            <div class="text-red-500 mb-4">
-              <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h2 class="text-2xl font-bold mb-4 text-gray-900">Certificate PDF Not Found</h2>
-            <p class="text-gray-600 mb-6">The certificate file could not be located.</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
-              Go to Homepage
-            </a>
-          </div>
-        </body>
-        </html>
-      `);
-    }
+    // Convert PDF buffer to base64 for embedding
+    const pdfBase64 = pdfBuffer.toString('base64');
+    const pdfDataUri = `data:application/pdf;base64,${pdfBase64}`;
     
-    // Format dates for display
+    // Format date for display
     const formatDate = (dateString) => {
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -258,13 +226,7 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
       });
     };
     
-    // Social share meta
-    const shareTitle = 'Congratulations on Your Certificate!';
-    const shareDescription = 'Celebrate your achievement with QENDIEL Academy. View and share your certificate now.';
-    const shareImage = 'https://persi-edu-platform.s3.us-east-1.amazonaws.com/persi-academy/Ig-images/congratulations.jpeg';
-    const shareUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify/${certificate.certificateId}`;
-    
-    // Create HTML page with PDF viewer and verify button
+    // Create simple HTML page with PDF viewer and verify button only
     const html = `
      <!DOCTYPE html>
      <html lang="en">
@@ -272,40 +234,25 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
        <meta charset="UTF-8">
        <meta name="viewport" content="width=device-width, initial-scale=1.0">
        <title>Certificate of Completion - ${certificate.courseTitle}</title>
-       <meta name="description" content="${shareDescription}">
-       <meta property="og:type" content="website">
-       <meta property="og:title" content="${shareTitle}">
-       <meta property="og:description" content="${shareDescription}">
-       <meta property="og:image" content="${shareImage}">
-       <meta property="og:url" content="${shareUrl}">
-       <meta name="twitter:card" content="summary_large_image">
-       <meta name="twitter:title" content="${shareTitle}">
-       <meta name="twitter:description" content="${shareDescription}">
-       <meta name="twitter:image" content="${shareImage}">
+       <meta name="description" content="Certificate of Completion issued by IBYET-INVESTING">
        <script src="https://cdn.tailwindcss.com"></script>
        <style>
          .pdf-container {
-           height: calc(100vh - 200px);
-           min-height: 500px;
+           height: calc(100vh - 180px);
+           min-height: 600px;
          }
          @media (max-width: 768px) {
            .pdf-container {
-             height: calc(100vh - 300px);
-             min-height: 400px;
+             height: calc(100vh - 220px);
+             min-height: 500px;
            }
          }
        </style>
      </head>
-     <body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-       <!-- Animated Background -->
-       <div class="fixed inset-0 overflow-hidden pointer-events-none">
-         <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full opacity-10 animate-pulse"></div>
-         <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-green-400 to-blue-600 rounded-full opacity-10 animate-pulse" style="animation-delay: 2s;"></div>
-       </div>
-       
-       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+     <body class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50">
+       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
          <!-- Header -->
-         <div class="text-center mb-8">
+         <div class="text-center mb-6">
            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-4 shadow-lg">
              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -314,45 +261,27 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
            <h1 class="text-3xl font-bold text-gray-900 mb-2">Certificate of Completion</h1>
            <p class="text-lg text-gray-600">${certificate.courseTitle}</p>
            <p class="text-sm text-gray-500 mt-2">Issued to ${certificate.studentName} on ${formatDate(certificate.dateIssued)}</p>
-         </div>
-         
-         <!-- Certificate Info Card -->
-         <div class="bg-white rounded-xl shadow-lg p-6 mb-6 max-w-2xl mx-auto">
-           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-             <div>
-               <div class="text-2xl font-bold text-green-600">${certificate.completionPercentage}%</div>
-               <div class="text-sm text-gray-600">Completion</div>
-             </div>
-             <div>
-               <div class="text-2xl font-bold text-blue-600">${certificate.completedLessons}/${certificate.totalLessons}</div>
-               <div class="text-sm text-gray-600">Lessons Completed</div>
-             </div>
-             <div>
-               <div class="text-2xl font-bold text-purple-600">${certificate.certificateId.slice(-8)}</div>
-               <div class="text-sm text-gray-600">Certificate ID</div>
-             </div>
-           </div>
+           <p class="text-xs text-gray-400 mt-1">Certificate ID: ${certificate.certificateId}</p>
          </div>
          
          <!-- PDF Viewer -->
          <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b">
              <h3 class="text-lg font-semibold text-gray-900">Certificate Preview</h3>
-             <p class="text-sm text-gray-600">View your certificate of completion below</p>
            </div>
            <div class="pdf-container">
              <iframe 
-               src="${s3Url}" 
+               src="${pdfDataUri}" 
                class="w-full h-full border-0"
                title="Certificate PDF"
              ></iframe>
            </div>
          </div>
          
-         <!-- Action Buttons -->
-         <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
+         <!-- Verify Button Only -->
+         <div class="flex justify-center">
            <a
-             href="/api/certificates/verify/${certificate.certificateId}"
+             href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify/${certificate.certificateId}"
              target="_blank"
              class="flex items-center justify-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
            >
@@ -361,23 +290,11 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
              </svg>
              <span>Verify Certificate</span>
            </a>
-           
-           <a
-             href="${s3Url}"
-             download
-             class="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
-           >
-             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-             </svg>
-             <span>Download Certificate</span>
-           </a>
          </div>
          
          <!-- Footer -->
          <div class="text-center mt-8 text-sm text-gray-500">
-           <p>This certificate is issued by ${certificate.platformName || 'QENDIEL Academy'}</p>
-           <p class="mt-1">Certificate ID: ${certificate.certificateId}</p>
+           <p>This certificate is issued by IBYET-INVESTING</p>
          </div>
        </div>
      </body>
@@ -427,11 +344,33 @@ mongoose.connect(MONGODB_URI, {
 })
   .then(() => {
     console.log('✅ Connected to MongoDB');
+    
+    // Start auto-archive scheduler only after MongoDB is connected
+    const { startAutoArchiveScheduler } = require('./utils/autoArchiveScheduler');
+    startAutoArchiveScheduler();
   })
   .catch((error) => {
-    console.error('❌ MongoDB connection error:', error);
-    console.log('💡 Make sure MongoDB is running or create a .env file with MONGODB_URI');
-    console.log('💡 Example: MONGODB_URI=mongodb://localhost:27017/persi-academy');
+    console.error('❌ MongoDB connection error:', error.message);
+    
+    // Provide specific help for MongoDB Atlas connection issues
+    if (error.message && error.message.includes('Atlas')) {
+      console.log('\n🔒 MongoDB Atlas Connection Issue Detected');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📋 To fix this, you need to whitelist your IP address:');
+      console.log('   1. Go to: https://cloud.mongodb.com/');
+      console.log('   2. Select your cluster');
+      console.log('   3. Click "Network Access" in the left sidebar');
+      console.log('   4. Click "Add IP Address"');
+      console.log('   5. Click "Add Current IP Address" (or enter 0.0.0.0/0 for all IPs - less secure)');
+      console.log('   6. Wait 1-2 minutes for changes to propagate');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    } else if (MONGODB_URI && MONGODB_URI.includes('localhost')) {
+      console.log('💡 Make sure MongoDB is running locally');
+      console.log('   Start MongoDB: mongod (or use MongoDB service)');
+    } else {
+      console.log('💡 Check your MONGODB_URI in .env file');
+      console.log('   Make sure the connection string is correct');
+    }
     
     // In development, don't exit on MongoDB connection failure
     if (process.env.NODE_ENV === 'production') {
@@ -484,6 +423,7 @@ app.use('/api/archive', archiveRoutes);
 
 // Video routes
 app.use('/api/videos', videoRoutes);
+app.use('/api/materials', materialRoutes);
 
 // DRM Video routes
 app.use('/api/drm', drmVideoRoutes);
@@ -507,7 +447,6 @@ app.use('/api/user', userRoutes);
 // Contact routes
 app.use('/api/contact', contactRoutes);
 app.use('/api/announcements', announcementRoutes);
-app.use('/api/newsletter', newsletterRoutes);
 
 // Admin dashboard stats (basic stats only)
 app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
@@ -685,6 +624,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  
+  // Note: Auto-archive scheduler is started after MongoDB connection is established
   
   // Check S3 configuration on startup
   console.log('\n🔍 Checking S3 configuration...');

@@ -7,10 +7,11 @@ import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import WhatsAppGroupButton from '../components/WhatsAppGroupButton';
 import { buildApiUrl } from '../config/environment';
 import DRMVideoService from '../services/drmVideoService';
+import { getLocalizedText } from '../utils/bilingualHelper';
 
 interface Video {
   id: string;
-  title: string;
+  title: string | { en: string; tg: string };
   duration: string;
   videoUrl: string;
   completed?: boolean;
@@ -35,7 +36,7 @@ interface Video {
 }
 
 interface CourseData {
-  title: string;
+  title: string | { en: string; tg: string };
   videos: Video[];
   overallProgress?: {
     totalVideos: number;
@@ -49,7 +50,8 @@ interface CourseData {
 }
 
 const VideoPlayerPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   const { id, videoId } = useParams<{ id: string; videoId: string }>();
   const navigate = useNavigate();
   const [currentVideoId, setCurrentVideoId] = useState(videoId || '');
@@ -1670,7 +1672,7 @@ const VideoPlayerPage = () => {
       <div className="bg-gray-800 border-b border-gray-700 px-3 xxs:px-4 py-3">
         <div className="flex items-center justify-between">
           <h1 className="text-white font-semibold truncate">
-            {courseData?.title || 'Loading...'}
+            {courseData?.title ? getLocalizedText(courseData.title, currentLanguage) : 'Loading...'}
           </h1>
           
           <div className="flex items-center space-x-2">
@@ -1715,7 +1717,7 @@ const VideoPlayerPage = () => {
               <EnhancedVideoPlayer
                 key={`${currentVideoId}-${currentVideo.videoUrl}`}
                 src={currentVideo.videoUrl}
-              title={courseData?.title}
+              title={courseData?.title ? getLocalizedText(courseData.title, currentLanguage) : undefined}
               userId={(() => {
                 try {
                   const token = localStorage.getItem('token');
@@ -1882,7 +1884,9 @@ const VideoPlayerPage = () => {
           {/* Video Info */}
           <div className="bg-gray-800 px-3 xxs:px-4 py-3 xxs:py-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-white font-semibold text-base xxs:text-lg line-clamp-2">{currentVideo?.title}</h2>
+              <h2 className="text-white font-semibold text-base xxs:text-lg line-clamp-2">
+                {currentVideo?.title ? getLocalizedText(currentVideo.title, currentLanguage) : ''}
+              </h2>
               {currentVideo?.completed && (
                 <div className="flex items-center space-x-1 text-green-400">
                   <CheckCircle className="h-3 w-3 xxs:h-4 xxs:w-4" />

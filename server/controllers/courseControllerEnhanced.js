@@ -11,7 +11,8 @@ const {
   validateFile,
   getCourseFolderPath,
   getSignedUrlForFile,
-  deleteFileFromS3
+  deleteFileFromS3,
+  getThumbnailUrl
 } = require('../utils/s3CourseManager');
 
 /**
@@ -31,11 +32,11 @@ const createCourse = async (req, res) => {
     }
 
     // Validate category
-    const validCategories = ['youtube', 'camera', 'photo', 'video', 'computer', 'english', 'other'];
+    const validCategories = ['crypto', 'investing', 'trading', 'stock-market', 'etf', 'option-trading', 'other'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Category must be one of: youtube, camera, photo, video, computer, english, other' 
+        message: 'Category must be one of: crypto, investing, trading, stock-market, etf, option-trading, other' 
       });
     }
 
@@ -85,7 +86,9 @@ const createCourse = async (req, res) => {
 
     await courseVersion.save();
 
-    console.log(`✅ Course created: ${course.title} (ID: ${course._id}) by ${adminEmail}`);
+    // Extract title string for logging
+    const titleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || 'Untitled');
+    console.log(`✅ Course created: ${titleString} (ID: ${course._id}) by ${adminEmail}`);
 
     res.status(201).json({
       success: true,
@@ -133,6 +136,7 @@ const createCourse = async (req, res) => {
 
 /**
  * Upload thumbnail for a course version
+ * NOTE: This does NOT create a new version - only adding/deleting videos or materials triggers version increments
  */
 const uploadThumbnail = async (req, res) => {
   try {
@@ -199,12 +203,18 @@ const uploadThumbnail = async (req, res) => {
       });
     }
     
-    // Ensure we have a public URL - if uploadResult.publicUrl is null, generate one
-    let thumbnailURL = uploadResult.publicUrl;
-    if (!thumbnailURL) {
-      // If the upload didn't result in a public URL, generate one using the S3 key
-      thumbnailURL = getPublicUrl(uploadResult.s3Key);
-      // Upload didn't return public URL, generated fallback
+    // Generate presigned URL for thumbnail (works without public access)
+    // This is important because the bucket might not be public
+    let thumbnailURL;
+    try {
+      console.log(`🔍 [uploadThumbnail] Generating presigned URL for thumbnail...`);
+      thumbnailURL = await getThumbnailUrl(uploadResult.s3Key);
+      console.log(`✅ [uploadThumbnail] Generated presigned URL: ${thumbnailURL?.substring(0, 100)}...`);
+    } catch (error) {
+      console.error(`❌ [uploadThumbnail] Error generating presigned URL:`, error);
+      // Fallback to public URL if presigned URL generation fails
+      thumbnailURL = uploadResult.publicUrl || getPublicUrl(uploadResult.s3Key);
+      console.log(`⚠️ [uploadThumbnail] Using fallback public URL: ${thumbnailURL?.substring(0, 100)}...`);
     }
 
     // Update course version with thumbnail URL
@@ -414,12 +424,13 @@ const createNewVersion = async (req, res) => {
 };
 
 /**
- * Update course metadata
+ * Update course metadata (title, description, price, category, etc.)
+ * NOTE: This does NOT create a new version - only adding/deleting videos or materials triggers version increments
  */
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, price, category, tags, level, status, isPublic, maxEnrollments, hasWhatsappGroup, whatsappGroupLink } = req.body;
+    const { title, description, price, category, tags, level, status, isPublic, maxEnrollments, hasWhatsappGroup, whatsappGroupLink, featured } = req.body;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
 
     const course = await Course.findById(id);
@@ -435,11 +446,11 @@ const updateCourse = async (req, res) => {
     if (description) course.description = description;
     if (price) course.price = parseFloat(price);
     if (category) {
-      const validCategories = ['youtube', 'camera', 'photo', 'video', 'computer', 'english', 'other'];
+      const validCategories = ['crypto', 'investing', 'trading', 'stock-market', 'etf', 'option-trading', 'other'];
       if (!validCategories.includes(category)) {
         return res.status(400).json({
           success: false,
-          message: 'Category must be one of: youtube, camera, photo, video, computer, english, other'
+          message: 'Category must be one of: crypto, investing, trading, stock-market, etf, option-trading, other'
         });
       }
       course.category = category;
@@ -474,6 +485,9 @@ const updateCourse = async (req, res) => {
     }
     if (whatsappGroupLink !== undefined) {
       course.whatsappGroupLink = whatsappGroupLink;
+    }
+    if (typeof featured === 'boolean') {
+      course.featured = featured;
     }
 
     course.lastModifiedBy = adminEmail;
@@ -514,6 +528,109 @@ const updateCourse = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update course',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Deactivate course (removes from public listings, enrolled students keep access)
+ */
+const deactivateCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { reason } = req.body;
+    const adminEmail = req.admin?.email || req.user?.email || 'admin';
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found'
+      });
+    }
+
+    if (course.status === 'inactive') {
+      return res.status(400).json({
+        success: false,
+        message: 'Course is already deactivated'
+      });
+    }
+
+    // Deactivate the course
+    await course.deactivate(reason || 'Admin request');
+
+    console.log(`✅ Course deactivated: ${course.title} by ${adminEmail}`);
+
+    res.json({
+      success: true,
+      message: 'Course deactivated successfully',
+      data: {
+        course: {
+          id: course._id,
+          title: course.title,
+          status: course.status,
+          deactivatedAt: course.deactivatedAt,
+          archiveGracePeriod: course.archiveGracePeriod
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Deactivate course error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to deactivate course',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Reactivate course (makes it visible in public listings again)
+ */
+const reactivateCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const adminEmail = req.admin?.email || req.user?.email || 'admin';
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found'
+      });
+    }
+
+    if (course.status === 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Course is already active'
+      });
+    }
+
+    // Reactivate the course
+    await course.reactivate();
+
+    console.log(`✅ Course reactivated: ${course.title} by ${adminEmail}`);
+
+    res.json({
+      success: true,
+      message: 'Course reactivated successfully',
+      data: {
+        course: {
+          id: course._id,
+          title: course.title,
+          status: course.status
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Reactivate course error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reactivate course',
       error: error.message
     });
   }
@@ -630,7 +747,95 @@ const unarchiveCourse = async (req, res) => {
 };
 
 /**
+ * Get deletion summary for a course (before deletion)
+ * Returns what will be deleted without actually deleting
+ */
+const getDeletionSummary = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate course ID
+    if (!id || !require('mongoose').Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid course ID'
+      });
+    }
+
+    // Find the course
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found'
+      });
+    }
+
+    // Get counts of what will be deleted
+    const courseVersions = await CourseVersion.find({ courseId: id });
+    const videos = await Video.find({ courseId: id });
+    const Material = require('../models/Material');
+    const materials = await Material.find({ courseId: id });
+    const Certificate = require('../models/Certificate');
+    const certificates = await Certificate.find({ courseId: id });
+    const Progress = require('../models/Progress');
+    const progressRecords = await Progress.find({ courseId: id });
+    const User = require('../models/User');
+    const usersWithCourse = await User.countDocuments({ purchasedCourses: id });
+    const Bundle = require('../models/Bundle');
+    const bundlesWithCourse = await Bundle.find({ courseIds: id });
+
+    // Count S3 files (excluding certificates - they are preserved)
+    let s3FilesCount = 0;
+    if (course.thumbnailS3Key) s3FilesCount++;
+    s3FilesCount += videos.filter(v => v.s3Key).length;
+    s3FilesCount += materials.filter(m => m.s3Key).length;
+    // Certificates are NOT counted - they are preserved for users
+
+    const titleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || 'Untitled');
+
+    res.json({
+      success: true,
+      data: {
+        course: {
+          id: course._id,
+          title: titleString,
+          price: course.price,
+          totalEnrollments: course.totalEnrollments || 0
+        },
+        summary: {
+          videos: videos.length,
+          materials: materials.length,
+          certificates: certificates.length, // Count for info, but they won't be deleted
+          certificatesPreserved: true, // Flag to indicate certificates are kept
+          versions: courseVersions.length,
+          progressRecords: progressRecords.length,
+          usersAffected: usersWithCourse,
+          bundlesAffected: bundlesWithCourse.length,
+          s3Files: s3FilesCount,
+          bundles: bundlesWithCourse.map(b => ({
+            id: b._id,
+            title: typeof b.title === 'string' ? b.title : (b.title?.en || b.title?.tg || 'Untitled'),
+            willBecomeInactive: b.courseIds.length === 1 // Will have 0 courses after removal
+          }))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Get deletion summary error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get deletion summary',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Delete course permanently (admin only)
+ * Deletes all course data from database and all files from AWS S3
+ * Uses database transactions for atomicity
+ * Logs deletion to audit log
  */
 const deleteCourse = async (req, res) => {
   try {
@@ -662,16 +867,31 @@ const deleteCourse = async (req, res) => {
     const courseVersions = await CourseVersion.find({ courseId: id });
     console.log(`📚 Found ${courseVersions.length} course versions to delete`);
 
-    // Delete all videos associated with this course
+    // Get all videos associated with this course
     const videos = await Video.find({ courseId: id });
     console.log(`🎥 Found ${videos.length} videos to delete`);
+
+    // Get all materials associated with this course
+    const Material = require('../models/Material');
+    const materials = await Material.find({ courseId: id });
+    console.log(`📦 Found ${materials.length} materials to delete`);
+
+    // Get all certificates associated with this course (for counting only - we keep them)
+    const Certificate = require('../models/Certificate');
+    const certificates = await Certificate.find({ courseId: id });
+    console.log(`📜 Found ${certificates.length} certificates (will be preserved for users)`);
+
+    // Get all progress records associated with this course
+    const Progress = require('../models/Progress');
+    const progressRecords = await Progress.find({ courseId: id });
+    console.log(`📊 Found ${progressRecords.length} progress records to delete`);
 
     // Delete files from S3
     const s3DeletionPromises = [];
 
     // Delete thumbnail from S3
     if (course.thumbnailS3Key) {
-      // Deleting thumbnail from S3
+      console.log(`🗑️ Deleting thumbnail from S3: ${course.thumbnailS3Key}`);
       s3DeletionPromises.push(
         deleteFileFromS3(course.thumbnailS3Key).catch(error => {
           console.warn(`⚠️ Failed to delete thumbnail from S3: ${error.message}`);
@@ -682,7 +902,7 @@ const deleteCourse = async (req, res) => {
     // Delete all video files from S3
     for (const video of videos) {
       if (video.s3Key) {
-        // Deleting video from S3
+        console.log(`🗑️ Deleting video from S3: ${video.s3Key}`);
         s3DeletionPromises.push(
           deleteFileFromS3(video.s3Key).catch(error => {
             console.warn(`⚠️ Failed to delete video from S3: ${error.message}`);
@@ -691,38 +911,169 @@ const deleteCourse = async (req, res) => {
       }
     }
 
-    // Wait for all S3 deletions to complete
+    // Delete all material files from S3
+    for (const material of materials) {
+      if (material.s3Key) {
+        console.log(`🗑️ Deleting material from S3: ${material.s3Key}`);
+        s3DeletionPromises.push(
+          deleteFileFromS3(material.s3Key).catch(error => {
+            console.warn(`⚠️ Failed to delete material from S3: ${error.message}`);
+          })
+        );
+      }
+    }
+
+      // Certificates are NOT deleted - users need them for their records
+      // Certificate files in S3 and database records are preserved
+      console.log(`📜 Preserving ${certificates.length} certificates for users`);
+
+    // Get user info for audit log
+    const User = require('../models/User');
+    const adminUser = await User.findOne({ email: adminEmail });
+    const adminUserId = adminUser ? adminUser._id : null;
+
+    // Get IP address and user agent for audit log
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    // Extract title for logging
+    const titleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || 'Untitled');
+
+    // Get bundles info before deletion
+    const Bundle = require('../models/Bundle');
+    const bundlesWithCourse = await Bundle.find({ courseIds: id });
+    const bundlesAffected = bundlesWithCourse.length;
+
+    // Count S3 files
+    let s3FilesCount = 0;
+    if (course.thumbnailS3Key) s3FilesCount++;
+    s3FilesCount += videos.filter(v => v.s3Key).length;
+    s3FilesCount += materials.filter(m => m.s3Key).length;
+    s3FilesCount += certificates.filter(c => c.s3Key).length;
+
+    // Wait for all S3 deletions to complete (outside transaction)
     await Promise.all(s3DeletionPromises);
     console.log(`✅ S3 deletion completed`);
 
-    // Delete all videos from database
-    if (videos.length > 0) {
-      await Video.deleteMany({ courseId: id });
-      console.log(`✅ Deleted ${videos.length} videos from database`);
-    }
+    // Start database transaction for atomicity
+    const mongoose = require('mongoose');
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Delete all course versions from database
-    if (courseVersions.length > 0) {
-      await CourseVersion.deleteMany({ courseId: id });
-      console.log(`✅ Deleted ${courseVersions.length} course versions from database`);
-    }
-
-    // Delete the main course
-    await Course.findByIdAndDelete(id);
-    console.log(`✅ Deleted course "${course.title}" from database`);
-
-    console.log(`🎉 Course deletion completed successfully by ${adminEmail}`);
-
-    res.json({
-      success: true,
-      message: 'Course deleted successfully',
-      data: {
-        courseId: id,
-        courseTitle: course.title,
-        deletedVideos: videos.length,
-        deletedVersions: courseVersions.length
+    try {
+      // Delete all progress records from database
+      if (progressRecords.length > 0) {
+        await Progress.deleteMany({ courseId: id }).session(session);
+        console.log(`✅ Deleted ${progressRecords.length} progress records from database`);
       }
-    });
+
+      // Delete all videos from database
+      if (videos.length > 0) {
+        await Video.deleteMany({ courseId: id }).session(session);
+        console.log(`✅ Deleted ${videos.length} videos from database`);
+      }
+
+      // Delete all materials from database
+      if (materials.length > 0) {
+        await Material.deleteMany({ courseId: id }).session(session);
+        console.log(`✅ Deleted ${materials.length} materials from database`);
+      }
+
+      // Certificates are NOT deleted from database - users need them for their records
+      // The courseId reference will remain, but certificates are preserved
+      console.log(`📜 Preserved ${certificates.length} certificates in database for users`);
+
+      // Delete all course versions from database
+      if (courseVersions.length > 0) {
+        await CourseVersion.deleteMany({ courseId: id }).session(session);
+        console.log(`✅ Deleted ${courseVersions.length} course versions from database`);
+      }
+
+      // Remove course from users' purchasedCourses arrays
+      const updateResult = await User.updateMany(
+        { purchasedCourses: id },
+        { $pull: { purchasedCourses: id } }
+      ).session(session);
+      console.log(`✅ Removed course from ${updateResult.modifiedCount} users' purchased courses`);
+
+      // Remove course from bundles' courseIds arrays
+      if (bundlesWithCourse.length > 0) {
+        for (const bundle of bundlesWithCourse) {
+          bundle.courseIds = bundle.courseIds.filter(cId => cId.toString() !== id.toString());
+          
+          // If bundle has no courses left, mark it as inactive
+          if (bundle.courseIds.length === 0) {
+            bundle.status = 'inactive';
+            bundle.isPublic = false;
+            console.log(`⚠️ Bundle "${bundle.title}" has no courses left, marking as inactive`);
+          }
+          
+          await bundle.save({ session });
+        }
+        console.log(`✅ Removed course from ${bundlesWithCourse.length} bundles`);
+      }
+
+      // Delete the main course
+      await Course.findByIdAndDelete(id).session(session);
+      console.log(`✅ Deleted course "${titleString}" from database`);
+
+      // Create audit log entry
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.logAction({
+        action: 'course_deleted',
+        entityType: 'course',
+        entityId: id,
+        entityTitle: titleString,
+        performedBy: adminEmail,
+        performedById: adminUserId,
+        details: {
+          coursePrice: course.price,
+          totalEnrollments: course.totalEnrollments || 0,
+          category: course.category,
+          level: course.level
+        },
+        deletionSummary: {
+          videosDeleted: videos.length,
+          materialsDeleted: materials.length,
+          certificatesPreserved: certificates.length, // Changed from deleted to preserved
+          versionsDeleted: courseVersions.length,
+          progressRecordsDeleted: progressRecords.length,
+          usersAffected: updateResult.modifiedCount,
+          bundlesAffected: bundlesAffected,
+          s3FilesDeleted: s3FilesCount
+        },
+        ipAddress: ipAddress,
+        userAgent: userAgent
+      });
+
+      // Commit transaction
+      await session.commitTransaction();
+      console.log(`🎉 Course deletion completed successfully by ${adminEmail}`);
+
+      res.json({
+        success: true,
+        message: 'Course deleted successfully',
+        data: {
+          courseId: id,
+          courseTitle: titleString,
+          deletedVideos: videos.length,
+          deletedMaterials: materials.length,
+          certificatesPreserved: certificates.length,
+          deletedVersions: courseVersions.length,
+          deletedProgressRecords: progressRecords.length,
+          removedFromUsers: updateResult.modifiedCount,
+          bundlesAffected: bundlesAffected,
+          s3FilesDeleted: s3FilesCount
+        }
+      });
+
+    } catch (error) {
+      // Rollback transaction on error
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
 
   } catch (error) {
     console.error('❌ Delete course error:', error);
@@ -741,10 +1092,55 @@ const getAllCourses = async (req, res) => {
   try {
     console.log('🔍 getAllCourses called with query:', req.query);
     
-    const { status, category, search, level, tag, priceRange, limit = 20, page = 1 } = req.query;
+    const { status, category, search, level, tag, priceRange, limit = 20, page = 1, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     let query = {};
+    
+    // Build sort object
+    const sortDirection = sortOrder === 'asc' ? 1 : -1;
+    let sortObject = {};
+    
+    // Map frontend sort fields to database fields
+    switch (sortBy) {
+      case 'title':
+        sortObject = { title: sortDirection };
+        break;
+      case 'price':
+        sortObject = { price: sortDirection };
+        break;
+      case 'totalEnrollments':
+        sortObject = { totalEnrollments: sortDirection };
+        break;
+      case 'createdAt':
+      default:
+        sortObject = { createdAt: sortDirection };
+        break;
+    }
+    
+    // Check if user is authenticated and enrolled
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    let enrolledCourseIds = [];
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.userId) {
+          userId = decoded.userId;
+          // Get user's enrolled/purchased courses
+          const User = require('../models/User');
+          const user = await User.findById(userId);
+          if (user && user.purchasedCourses) {
+            enrolledCourseIds = user.purchasedCourses.map(id => id.toString());
+          }
+        }
+      } catch (error) {
+        // Invalid token, treat as public user
+      }
+    }
     
     // Filter by status
     if (status && status === 'all') {
@@ -753,66 +1149,107 @@ const getAllCourses = async (req, res) => {
     } else if (status && ['active', 'inactive', 'archived'].includes(status)) {
       query.status = status;
     } else {
-      // Default to active courses for public access
-      query.status = 'active';
+      // For public/non-enrolled users: only show active courses (exclude inactive/archived)
+      // For enrolled users: show active courses + their enrolled inactive courses (but not archived)
+      if (userId && enrolledCourseIds.length > 0) {
+        // Enrolled users can see active courses + their enrolled inactive courses
+        const mongoose = require('mongoose');
+        query.$and = [
+          {
+            $or: [
+              { status: 'active' },
+              { 
+                status: 'inactive',
+                _id: { $in: enrolledCourseIds.map(id => new mongoose.Types.ObjectId(id)) }
+              }
+            ]
+          },
+          { status: { $ne: 'archived' } }
+        ];
+      } else {
+        // Public users only see active courses (exclude inactive and archived)
+        query.status = 'active';
+      }
     }
+
+    // Build additional filters that need to be combined
+    const additionalFilters = {};
 
     // Filter by category
     if (category) {
-      query.category = category;
+      additionalFilters.category = category;
     }
 
     // Filter by level
     if (level) {
-      query.level = level;
+      console.log(`🔍 [getAllCourses] Filtering by level: ${level}`);
+      additionalFilters.level = level;
     }
 
     // Filter by tag
     if (tag) {
-      query.tags = { $in: [tag] };
+      additionalFilters.tags = { $in: [tag] };
     }
 
     // Filter by price range
     if (priceRange) {
       switch (priceRange) {
         case 'free':
-          query.price = 0;
+          additionalFilters.price = 0;
           break;
         case 'under-50':
-          query.price = { $gt: 0, $lt: 50 };
+          additionalFilters.price = { $gt: 0, $lt: 50 };
           break;
         case '50-100':
-          query.price = { $gte: 50, $lte: 100 };
+          additionalFilters.price = { $gte: 50, $lte: 100 };
           break;
         case 'over-100':
-          query.price = { $gt: 100 };
+          additionalFilters.price = { $gt: 100 };
           break;
       }
     }
 
-    // Filter by search term
+    // Combine additional filters with existing query
+    // If $and exists, add filters to $and array; otherwise add directly to query
+    if (query.$and && Object.keys(additionalFilters).length > 0) {
+      query.$and.push(additionalFilters);
+    } else if (Object.keys(additionalFilters).length > 0) {
+      Object.assign(query, additionalFilters);
+    }
+
+    // Filter by search term (needs special handling with $and)
     if (search && search.trim()) {
-      query.$or = [
-        { title: { $regex: search.trim(), $options: 'i' } },
-        { description: { $regex: search.trim(), $options: 'i' } }
-      ];
+      const searchFilter = {
+        $or: [
+          { title: { $regex: search.trim(), $options: 'i' } },
+          { description: { $regex: search.trim(), $options: 'i' } }
+        ]
+      };
+      
+      if (query.$and) {
+        query.$and.push(searchFilter);
+      } else {
+        query.$or = searchFilter.$or;
+      }
     }
 
     console.log('📊 Database query:', JSON.stringify(query, null, 2));
+    if (level) {
+      console.log(`✅ [getAllCourses] Level filter applied: ${level}`);
+    }
 
     const courses = await Course.find(query)
       .populate('videos')
-      .sort({ createdAt: -1 })
+      .sort(sortObject)
       .skip(skip)
       .limit(parseInt(limit));
 
     console.log(`📚 Found ${courses.length} courses from database`);
 
-    // Filter out purchased courses for logged-in users
+    // Filter out purchased courses for logged-in users (if not already done above)
     let filteredCourses = courses;
     
-    // Check for authentication token in headers
-    const authHeader = req.headers.authorization;
+    // Reuse authHeader from above - check for authentication token in headers
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.substring(7);
@@ -831,11 +1268,9 @@ const getAllCourses = async (req, res) => {
             const purchasedCourseIds = user.purchasedCourses.map(id => id.toString());
             console.log('🔍 User has purchased courses:', purchasedCourseIds);
             
-            filteredCourses = courses.filter(course => 
-              !purchasedCourseIds.includes(course._id.toString())
-            );
-            
-            console.log(`📚 Filtered from ${courses.length} to ${filteredCourses.length} courses`);
+            // Don't filter out purchased courses - show them with isPurchased flag
+            // This allows users to see their purchased courses on the courses page
+            console.log(`📚 Showing all ${courses.length} courses (including ${purchasedCourseIds.length} purchased)`);
           } else {
             console.log('🔍 User has no purchased courses');
           }
@@ -847,20 +1282,96 @@ const getAllCourses = async (req, res) => {
       console.log('🔍 No authentication token, showing all courses');
     }
 
-    // Ensure all courses have proper public thumbnail URLs
-    const coursesWithFixedThumbnails = filteredCourses.map(course => {
-      console.log(`🔍 Course: "${course.title}"`);
-      // Processing course thumbnail
-      
-      if (course.thumbnailS3Key && (!course.thumbnailURL || !course.thumbnailURL.includes('s3.amazonaws.com'))) {
-        // Generate public URL from S3 key
-        course.thumbnailURL = getPublicUrl(course.thumbnailS3Key);
-        // Fixed thumbnail URL for course
+    // Get purchased course IDs for authenticated users
+    let purchasedCourseIds = [];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        if (decoded && decoded.userId) {
+          const User = require('../models/User');
+          const user = await User.findById(decoded.userId);
+          
+          if (user && user.purchasedCourses && user.purchasedCourses.length > 0) {
+            purchasedCourseIds = user.purchasedCourses.map(id => id.toString());
+          }
+        }
+      } catch (error) {
+        // Invalid token, no purchased courses
       }
-      
-      // Final thumbnail URL processed
-      return course;
-    });
+    }
+
+    // Ensure all courses have proper thumbnail URLs (using presigned URLs for thumbnails)
+    // Also add isPurchased flag for authenticated users
+    const coursesWithFixedThumbnails = await Promise.all(
+      filteredCourses.map(async (course) => {
+        console.log(`🔍 Course: "${course.title}"`);
+        // Processing course thumbnail
+        
+        if (course.thumbnailS3Key) {
+          // Use getThumbnailUrl which generates presigned URLs for thumbnails
+          try {
+            const thumbnailUrl = await getThumbnailUrl(course.thumbnailS3Key);
+            if (thumbnailUrl) {
+              course.thumbnailURL = thumbnailUrl;
+              console.log(`   ✅ Generated thumbnail URL for course`);
+            } else {
+              console.log(`   ⚠️  Could not generate thumbnail URL`);
+            }
+          } catch (error) {
+            console.error(`   ❌ Error generating thumbnail URL:`, error);
+            // Fallback to public URL if presigned URL generation fails
+            if (!course.thumbnailURL || !course.thumbnailURL.includes('s3.amazonaws.com')) {
+              course.thumbnailURL = getPublicUrl(course.thumbnailS3Key);
+            }
+          }
+        } else if (!course.thumbnailURL || !course.thumbnailURL.includes('s3.amazonaws.com')) {
+          // If no S3 key but we have a URL that doesn't look valid, try to keep existing or set to null
+          console.log(`   ⚠️  No thumbnailS3Key found for course`);
+        }
+        
+        // Add isPurchased flag
+        const courseObj = course.toObject ? course.toObject() : course;
+        const isPurchased = purchasedCourseIds.includes(course._id.toString());
+        courseObj.isPurchased = isPurchased;
+        
+        // Add progress data for purchased courses
+        if (isPurchased && authHeader && authHeader.startsWith('Bearer ')) {
+          try {
+            const token = authHeader.substring(7);
+            const jwt = require('jsonwebtoken');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            
+            if (decoded && decoded.userId) {
+              const Progress = require('../models/Progress');
+              const courseProgressSummary = await Progress.getCourseProgressSummary(
+                decoded.userId, 
+                course._id.toString(),
+                course.videos ? course.videos.length : 0
+              );
+              
+              courseObj.progress = courseProgressSummary.courseProgressPercentage || 0;
+              courseObj.completedLessons = courseProgressSummary.completedVideos || 0;
+              courseObj.totalLessons = courseProgressSummary.totalVideos || (course.videos ? course.videos.length : 0);
+              courseObj.isCompleted = courseProgressSummary.courseProgressPercentage >= 100 && 
+                                      courseProgressSummary.completedVideos >= courseProgressSummary.totalVideos;
+            }
+          } catch (error) {
+            // If progress fetch fails, just set defaults
+            console.log(`⚠️ Could not fetch progress for course ${course._id}:`, error.message);
+            courseObj.progress = 0;
+            courseObj.completedLessons = 0;
+            courseObj.totalLessons = course.videos ? course.videos.length : 0;
+            courseObj.isCompleted = false;
+          }
+        }
+        
+        // Final thumbnail URL processed
+        return courseObj;
+      })
+    );
 
     const total = await Course.countDocuments(query);
     console.log(`📊 Total courses in database: ${total}`);
@@ -883,6 +1394,71 @@ const getAllCourses = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch courses',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get featured courses (max 3 for homepage)
+ */
+const getFeaturedCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({ 
+      status: 'active',
+      isPublic: true,
+      featured: true
+    })
+      .populate('videos')
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    // Get user's purchased courses to add purchase status
+    let purchasedCourseIds = [];
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        if (decoded && decoded.userId) {
+          const User = require('../models/User');
+          const user = await User.findById(decoded.userId);
+          
+          if (user && user.purchasedCourses && user.purchasedCourses.length > 0) {
+            purchasedCourseIds = user.purchasedCourses.map(id => id.toString());
+          }
+        }
+      } catch (error) {
+        // Invalid token, treat as public user
+      }
+    }
+
+    // Ensure all courses have proper thumbnail URLs (use presigned URLs) and add purchase status
+    const coursesWithFixedThumbnails = await Promise.all(courses.map(async (course) => {
+      if (course.thumbnailS3Key) {
+        try {
+          course.thumbnailURL = await getThumbnailUrl(course.thumbnailS3Key);
+        } catch (error) {
+          console.error(`Error generating thumbnail URL for course ${course._id}:`, error);
+          course.thumbnailURL = getPublicUrl(course.thumbnailS3Key);
+        }
+      }
+      
+      const courseObj = course.toObject ? course.toObject() : course;
+      courseObj.isPurchased = purchasedCourseIds.includes(course._id.toString());
+      
+      return courseObj;
+    }));
+
+    res.json(coursesWithFixedThumbnails);
+
+  } catch (error) {
+    console.error('❌ Get featured courses error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch featured courses',
       error: error.message
     });
   }
@@ -945,20 +1521,38 @@ const getUserPurchasedCourses = async (req, res) => {
 
     console.log(`📚 Found ${purchasedCourses.length} purchased courses from database`);
 
-    // Ensure all courses have proper public thumbnail URLs
-    const coursesWithFixedThumbnails = purchasedCourses.map(course => {
-      console.log(`🔍 Purchased Course: "${course.title}"`);
-      // Processing course thumbnail
-      
-      if (course.thumbnailS3Key && (!course.thumbnailURL || !course.thumbnailURL.includes('s3.amazonaws.com'))) {
-        // Generate public URL from S3 key
-        course.thumbnailURL = getPublicUrl(course.thumbnailS3Key);
-        // Fixed thumbnail URL for course
-      }
-      
-      // Final thumbnail URL processed
-      return course;
-    });
+    // Ensure all courses have proper thumbnail URLs (using presigned URLs for thumbnails)
+    const coursesWithFixedThumbnails = await Promise.all(
+      purchasedCourses.map(async (course) => {
+        console.log(`🔍 Purchased Course: "${course.title}"`);
+        // Processing course thumbnail
+        
+        if (course.thumbnailS3Key) {
+          // Use getThumbnailUrl which generates presigned URLs for thumbnails
+          try {
+            const thumbnailUrl = await getThumbnailUrl(course.thumbnailS3Key);
+            if (thumbnailUrl) {
+              course.thumbnailURL = thumbnailUrl;
+              console.log(`   ✅ Generated thumbnail URL for purchased course`);
+            } else {
+              console.log(`   ⚠️  Could not generate thumbnail URL`);
+            }
+          } catch (error) {
+            console.error(`   ❌ Error generating thumbnail URL:`, error);
+            // Fallback to public URL if presigned URL generation fails
+            if (!course.thumbnailURL || !course.thumbnailURL.includes('s3.amazonaws.com')) {
+              course.thumbnailURL = getPublicUrl(course.thumbnailS3Key);
+            }
+          }
+        } else if (!course.thumbnailURL || !course.thumbnailURL.includes('s3.amazonaws.com')) {
+          // If no S3 key but we have a URL that doesn't look valid, try to keep existing or set to null
+          console.log(`   ⚠️  No thumbnailS3Key found for purchased course`);
+        }
+        
+        // Final thumbnail URL processed
+        return course;
+      })
+    );
 
     const total = await Course.countDocuments({
       _id: { $in: user.purchasedCourses },
@@ -1008,6 +1602,10 @@ const getCourseById = async (req, res) => {
 
     // Get version information
     let courseVersion;
+    const versionToFetch = version ? parseInt(version) : (course.currentVersion || course.version || 1);
+    
+    console.log(`🔍 [getCourseById] Fetching course ${id}, version: ${versionToFetch}`);
+    
     if (version) {
       courseVersion = await CourseVersion.findOne({ 
         courseId: id, 
@@ -1016,14 +1614,24 @@ const getCourseById = async (req, res) => {
     } else {
       courseVersion = await CourseVersion.findOne({ 
         courseId: id, 
-        versionNumber: course.currentVersion 
+        versionNumber: versionToFetch 
       }).populate('videos');
     }
 
     if (!courseVersion) {
+      console.log(`❌ [getCourseById] CourseVersion not found for course ${id}, version ${versionToFetch}`);
       return res.status(404).json({
         success: false,
-        message: 'Course version not found'
+        message: `Course version ${versionToFetch} not found`
+      });
+    }
+    
+    console.log(`✅ [getCourseById] Found CourseVersion ${courseVersion.versionNumber}, videos array length: ${courseVersion.videos?.length || 0}`);
+    if (courseVersion.videos && courseVersion.videos.length > 0) {
+      console.log(`📹 [getCourseById] First video from populate:`, {
+        id: courseVersion.videos[0]._id,
+        title: courseVersion.videos[0].title,
+        isObjectId: courseVersion.videos[0].constructor.name === 'ObjectId'
       });
     }
 
@@ -1034,7 +1642,84 @@ const getCourseById = async (req, res) => {
 
     // Populate the course's videos array with the current version's videos
     const courseData = course.toObject();
-    courseData.videos = courseVersion.videos || [];
+    
+    // ALWAYS query videos directly from Video collection - don't rely on CourseVersion.videos array
+    // This ensures we get ALL videos even if CourseVersion.videos array is out of sync
+    const Video = require('../models/Video');
+    
+    // First, try to get videos from the current version
+    let videos = await Video.find({ 
+      courseId: id, 
+      courseVersion: courseVersion.versionNumber,
+      status: { $ne: 'deleted' }
+    }).sort({ order: 1 });
+    
+    console.log(`📹 [getCourseById] Found ${videos.length} videos in version ${courseVersion.versionNumber}`);
+    
+    // If no videos in current version, OR if we have videos but want to ensure we have ALL videos,
+    // check all versions and get videos from the latest version that has videos
+    if (videos.length === 0) {
+      console.log(`⚠️ [getCourseById] No videos in version ${courseVersion.versionNumber}, checking all versions...`);
+      const allVideos = await Video.find({ 
+        courseId: id, 
+        status: { $ne: 'deleted' }
+      }).sort({ courseVersion: -1, order: 1 }); // Sort by version (newest first), then order
+      
+      console.log(`📹 [getCourseById] Found ${allVideos.length} videos across all versions:`, 
+        allVideos.map(v => ({ 
+          id: v._id, 
+          title: typeof v.title === 'string' ? v.title : (v.title?.en || v.title?.tg || 'Unknown'),
+          version: v.courseVersion 
+        }))
+      );
+      
+      // Get videos from the latest version that has videos
+      if (allVideos.length > 0) {
+        // Group videos by version
+        const videosByVersion = {};
+        allVideos.forEach(v => {
+          if (!videosByVersion[v.courseVersion]) {
+            videosByVersion[v.courseVersion] = [];
+          }
+          videosByVersion[v.courseVersion].push(v);
+        });
+        
+        console.log(`📹 [getCourseById] Videos by version:`, 
+          Object.keys(videosByVersion).sort((a, b) => Number(b) - Number(a)).map(v => `v${v}: ${videosByVersion[v].length}`).join(', ')
+        );
+        
+        // Use videos from the latest version that has videos
+        const latestVersionWithVideos = Math.max(...Object.keys(videosByVersion).map(Number));
+        videos = allVideos.filter(v => v.courseVersion === latestVersionWithVideos);
+        console.log(`📹 [getCourseById] Using ${videos.length} videos from version ${latestVersionWithVideos} (fallback)`);
+      }
+    }
+    
+    // Final verification: Log what we're returning
+    console.log(`📹 [getCourseById] Final result: Returning ${videos.length} videos`);
+    videos.forEach((v, i) => {
+      const title = typeof v.title === 'string' ? v.title : (v.title?.en || v.title?.tg || 'Unknown');
+      console.log(`   ${i + 1}. ${title} (v${v.courseVersion})`);
+    });
+    
+    courseData.videos = videos;
+    
+    // Fix thumbnail URL if needed (use presigned URL for thumbnails)
+    if (courseData.thumbnailS3Key) {
+      try {
+        const thumbnailUrl = await getThumbnailUrl(courseData.thumbnailS3Key);
+        if (thumbnailUrl) {
+          courseData.thumbnailURL = thumbnailUrl;
+          console.log(`   ✅ Generated thumbnail URL for course by ID`);
+        }
+      } catch (error) {
+        console.error(`   ❌ Error generating thumbnail URL:`, error);
+        // Fallback to public URL if presigned URL generation fails
+        if (!courseData.thumbnailURL || !courseData.thumbnailURL.includes('s3.amazonaws.com')) {
+          courseData.thumbnailURL = getPublicUrl(courseData.thumbnailS3Key);
+        }
+      }
+    }
     
     console.log('📹 Course videos data:', {
       courseId: id,
@@ -1163,8 +1848,12 @@ module.exports = {
   updateCourse,
   archiveCourse,
   unarchiveCourse,
+  deactivateCourse,
+  reactivateCourse,
+  getDeletionSummary,
   deleteCourse,
   getAllCourses,
+  getFeaturedCourses,
   getUserPurchasedCourses,
   getCourseById,
   enrollStudent,

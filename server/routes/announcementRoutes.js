@@ -22,3 +22,12 @@ router.delete('/:id', adminAuthMiddleware, deleteAnnouncement);
 
 module.exports = router;
 
+
+
+
+
+
+
+
+
+

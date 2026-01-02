@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, BookOpen, Award, Users, Clock, Star, HelpCircle, Mail, CheckCircle, Megaphone } from 'lucide-react';
-import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from 'react-icons/fa';
+import { ArrowRight, BookOpen, Award, Users, Clock, Star, HelpCircle, Megaphone } from 'lucide-react';
+import { FaFacebook, FaYoutube, FaTiktok } from 'react-icons/fa';
 import CourseCard from '../components/CourseCard';
 import BundleCard from '../components/BundleCard';
 import LoadingMessage from '../components/LoadingMessage';
@@ -11,6 +11,14 @@ import { parseDurationToSeconds } from '../utils/durationFormatter';
 import { useFeaturedBundles } from '../hooks/useBundles';
 import { buildApiUrl } from '../config/environment';
 import heroImage from '../assets/images/hero-image.jpeg';
+
+// Import student images
+import abrhamtesfayImage from '../assets/images/students image/Abrham Tesfay.jpg';
+import amanuelmengisteabImage from '../assets/images/students image/Amanuel Mengisteab.jpg';
+import frezgikasaImage from '../assets/images/students image/frezgi kasa 1.jpg';
+import hailetekieImage from '../assets/images/students image/Haile Tekie.jpg';
+import teamedebesayImage from '../assets/images/students image/Teame Debesay.jpg';
+import yonasMesmerImage from '../assets/images/students image/Yonas Mesmer.jpg';
 
 interface Announcement {
   _id: string;
@@ -40,10 +48,6 @@ const HomePage = () => {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [isQuoteAutoPlaying, setIsQuoteAutoPlaying] = useState(true);
   
-  // Newsletter state
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [newsletterMessage, setNewsletterMessage] = useState('');
   
   // Use React Query for fetching featured courses and bundles from API
   const { data: featuredCourses = [], isLoading: coursesLoading, error: coursesError } = useFeaturedCourses();
@@ -74,30 +78,6 @@ const HomePage = () => {
   ];
 
 
-  // TEMPORARILY HIDDEN - Testimonials data
-  // const testimonials = [
-  //   {
-  //     name: t('home.testimonials.jessica.name'),
-  //     role: t('home.testimonials.jessica.role'),
-  //     content: t('home.testimonials.jessica.content'),
-  //     avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-  //     rating: 5
-  //   },
-  //   {
-  //     name: t('home.testimonials.david.name'),
-  //     role: t('home.testimonials.david.role'),
-  //     content: t('home.testimonials.david.content'),
-  //     avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-  //     rating: 5
-  //   },
-  //   {
-  //     name: t('home.testimonials.maria.name'),
-  //     role: t('home.testimonials.maria.role'),
-  //     content: t('home.testimonials.maria.content'),
-  //     avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-  //     rating: 5
-  //   }
-  // ];
 
 
   // Fetch announcements from API
@@ -184,10 +164,10 @@ const HomePage = () => {
       );
     }
     
-    // Rendering featured course cards
+    // Rendering featured course cards (max 3)
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {featuredCourses.map((c) => {
+        {featuredCourses.slice(0, 3).map((c) => {
           // Using the centralized parseDurationToSeconds utility
           const totalSeconds = (c.videos || []).reduce((acc, v) => acc + parseDurationToSeconds(v.duration), 0);
           return (
@@ -203,6 +183,7 @@ const HomePage = () => {
             lessons={(c.videos || []).length}
             instructor={t('brand.name')}
             tags={c.tags || []}
+            isPurchased={c.isPurchased || false}
           />
         );})}
       </div>
@@ -223,8 +204,9 @@ const HomePage = () => {
             alt="Hero" 
             className="w-full h-full object-cover object-right md:object-center"
           />
-          {/* Dark overlay for better text readability */}
+          {/* Dark overlay for better text readability - darker on right side for purple text */}
           <div className="absolute inset-0 bg-black/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/30"></div>
         </div>
 
         {/* Content Overlay */}
@@ -234,10 +216,11 @@ const HomePage = () => {
             <h1 
               className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight xs:leading-tight sm:leading-tight pt-8 xs:pt-10 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24 pb-2 xs:pb-3 sm:pb-4"
               style={{
-                background: 'linear-gradient(to right, #00BFFF 0%, #00BFFF 40%, #9370DB 60%, #9370DB 100%)',
+                background: 'linear-gradient(to right, #00BFFF 0%, #00BFFF 40%, #BA55D3 60%, #BA55D3 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
+                filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9)) drop-shadow(0 4px 16px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 24px rgba(186, 85, 211, 0.5))',
               }}
             >
               {t('home.hero_main_title')}
@@ -287,40 +270,47 @@ const HomePage = () => {
               </p>
               <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 p-1.5 xs:p-2 sm:p-3">
                 <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
-                  aria-label="Facebook"
-                >
-                  <FaFacebook className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white" />
-                </a>
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
-                  aria-label="Instagram"
-                >
-                  <FaInstagram className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white" />
-                </a>
-                <a
                   href="https://twitter.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
-                  aria-label="Twitter"
+                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  aria-label="X (Twitter)"
                 >
-                  <FaTwitter className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white" />
+                  <svg 
+                    className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" 
+                    viewBox="0 0 24 24" 
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  aria-label="YouTube"
+                >
+                  <FaYoutube className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
                 <a
                   href="https://tiktok.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
+                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
                   aria-label="TikTok"
                 >
-                  <FaTiktok className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white" />
+                  <FaTiktok className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
+                </a>
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  aria-label="Facebook"
+                >
+                  <FaFacebook className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
               </div>
             </div>
@@ -330,9 +320,8 @@ const HomePage = () => {
 
       {/* Announcements Section with Slideshow */}
       <section 
-        className="relative w-full overflow-hidden py-8 xs:py-10 sm:py-12 md:py-16 lg:py-20"
+        className="relative w-full overflow-hidden py-8 xs:py-10 sm:py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-black"
         style={{
-          background: 'rgba(0, 0, 0, 1)',
           marginTop: '-1px', // Overlap by 1px to eliminate border line
         }}
         onMouseEnter={() => setIsAnnouncementAutoPlaying(false)}
@@ -359,7 +348,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 relative z-10">
           {announcementsLoading ? (
             <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center">
-              <div className="text-white/60 text-lg">{t('home.announcements.loading', 'Loading announcements...')}</div>
+              <div className="text-gray-600 dark:text-white/60 text-lg">{t('home.announcements.loading', 'Loading announcements...')}</div>
             </div>
           ) : announcements.length === 0 ? (
             <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center overflow-hidden">
@@ -386,7 +375,7 @@ const HomePage = () => {
                 <h3 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
                   {t('home.announcements.no_announcements', 'No announcements available')}
                 </h3>
-                <p className="text-white/50 text-sm xs:text-base max-w-md">
+                <p className="text-gray-600 dark:text-white/50 text-sm xs:text-base max-w-md">
                   {t('home.announcements.no_announcements_subtitle', 'Check back soon for exciting updates and news!')}
                 </p>
                 
@@ -422,9 +411,9 @@ const HomePage = () => {
                     <div className="w-full space-y-3 xs:space-y-3.5 sm:space-y-4 md:space-y-5 lg:space-y-6">
                       {/* Date */}
                       <div 
-                        className="text-white/60 text-xs xs:text-sm sm:text-base md:text-lg font-medium"
+                        className="text-gray-600 dark:text-white/60 text-xs xs:text-sm sm:text-base md:text-lg font-medium"
                         style={{
-                          textShadow: '0 1px 5px rgba(0, 0, 0, 0.5)',
+                          textShadow: '0 1px 5px rgba(0, 0, 0, 0.1)',
                         }}
                       >
                         {announcement.date}
@@ -432,10 +421,10 @@ const HomePage = () => {
                       
                       {/* Announcement Title */}
                       <h2 
-                        className="text-white font-bold leading-tight mb-3 xs:mb-3.5 sm:mb-4 md:mb-5"
+                        className="text-gray-900 dark:text-white font-bold leading-tight mb-3 xs:mb-3.5 sm:mb-4 md:mb-5"
                         style={{
                           fontSize: 'clamp(1.125rem, 3vw + 0.5rem, 2.25rem)',
-                          textShadow: '0 2px 20px rgba(0, 0, 0, 0.5)',
+                          textShadow: '0 2px 20px rgba(0, 0, 0, 0.1)',
                           lineHeight: '1.2',
                         }}
                       >
@@ -444,10 +433,10 @@ const HomePage = () => {
                       
                       {/* Announcement Content */}
                       <p 
-                        className="text-white/90 leading-relaxed max-w-4xl"
+                        className="text-gray-700 dark:text-white/90 leading-relaxed max-w-4xl"
                         style={{
                           fontSize: 'clamp(0.875rem, 2vw + 0.25rem, 1.125rem)',
-                          textShadow: '0 1px 10px rgba(0, 0, 0, 0.5)',
+                          textShadow: '0 1px 10px rgba(0, 0, 0, 0.1)',
                           lineHeight: '1.6',
                         }}
                       >
@@ -471,8 +460,8 @@ const HomePage = () => {
                       }}
                       className={`h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
                         index === currentAnnouncementIndex 
-                          ? 'w-6 xs:w-8 bg-white' 
-                          : 'w-1.5 xs:w-2 bg-white/40 hover:bg-white/60'
+                          ? 'w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
+                          : 'w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
                       }`}
                       aria-label={t('home.announcements.go_to_announcement', 'Go to announcement {{number}}', { number: index + 1 })}
                     />
@@ -486,7 +475,7 @@ const HomePage = () => {
 
       {/* Investing Quotes Slideshow */}
       <section 
-        className="relative w-full overflow-hidden py-8 xs:py-10 sm:py-12 md:py-16"
+        className="relative w-full overflow-hidden py-8 xs:py-10 sm:py-12 md:py-16 bg-gray-50 dark:bg-gray-900"
         onMouseEnter={() => setIsQuoteAutoPlaying(false)}
         onMouseLeave={() => setIsQuoteAutoPlaying(true)}
       >
@@ -502,10 +491,10 @@ const HomePage = () => {
                   willChange: index === currentQuoteIndex ? 'opacity' : 'auto',
                 }}
               >
-                <blockquote className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-white leading-relaxed px-3 xs:px-4 sm:px-6">
+                <blockquote className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-gray-900 dark:text-white leading-relaxed px-3 xs:px-4 sm:px-6">
                   "{quote.en}"
                 </blockquote>
-                <blockquote className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-white/80 leading-relaxed px-3 xs:px-4 sm:px-6 italic">
+                <blockquote className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-gray-700 dark:text-white/80 leading-relaxed px-3 xs:px-4 sm:px-6 italic">
                   "{quote.tg}"
                 </blockquote>
               </div>
@@ -524,8 +513,8 @@ const HomePage = () => {
                 }}
                 className={`h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
                   index === currentQuoteIndex 
-                    ? 'w-6 xs:w-8 bg-white' 
-                    : 'w-1.5 xs:w-2 bg-white/40 hover:bg-white/60'
+                    ? 'w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
+                    : 'w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
                 }`}
                 aria-label={`Go to quote ${index + 1}`}
               />
@@ -535,13 +524,13 @@ const HomePage = () => {
       </section>
 
       {/* Featured Courses */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20">
+      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.courses_title', 'Courses')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
               {t('home.courses_subtitle', 'Explore our collection of courses designed to accelerate your professional development')}
             </p>
           </div>
@@ -573,26 +562,26 @@ const HomePage = () => {
       </section>
 
       {/* Featured Bundles Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-900">
+      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.bundles_title', 'Course Bundles')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
               {t('home.bundles_subtitle', 'Save money with our curated course bundles. Get multiple courses at a discounted price.')}
             </p>
           </div>
           
-          {/* Featured Bundles Grid */}
+          {/* Featured Bundles Grid - Full width for horizontal cards */}
           {bundlesLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-1 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 h-64 sm:h-72 border border-gray-700" />
+                <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 h-48 sm:h-56 border border-gray-200 dark:border-gray-700" />
               ))}
             </div>
           ) : featuredBundles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-1 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
               {featuredBundles.slice(0, 3).map((bundle) => (
                 <BundleCard 
                   key={bundle._id} 
@@ -606,13 +595,17 @@ const HomePage = () => {
                     courseIds: bundle.courseIds.map(c => typeof c === 'object' ? c._id : c),
                     thumbnailURL: bundle.thumbnailURL,
                     category: bundle.category,
-                    featured: bundle.featured
+                    featured: bundle.featured,
+                    maxEnrollments: bundle.maxEnrollments,
+                    totalEnrollments: bundle.totalEnrollments,
+                    hasReachedMaxEnrollments: bundle.hasReachedMaxEnrollments,
+                    isPurchased: bundle.isPurchased || false
                   }} 
                 />
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-gray-600 dark:text-gray-400">
               {t('home.no_bundles_available', 'No featured bundles available at this time.')}
             </div>
           )}
@@ -645,13 +638,13 @@ const HomePage = () => {
       </section>
 
       {/* Benefits / Why Choose Us Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-900">
+      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.why_choose_title', 'Why Choose Us')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
               {t('home.why_choose_subtitle', 'Discover what makes our investment academy the best choice for your financial education journey')}
             </p>
           </div>
@@ -681,7 +674,7 @@ const HomePage = () => {
             ].map((benefit, index) => (
               <div
                 key={index}
-                className="bg-gray-800 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 text-center border border-gray-700/50 hover:border-cyan-500/50"
+                className="bg-white dark:bg-gray-800 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 text-center border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50"
               >
                 <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-5 md:mb-6 transition-all duration-500"
                 style={{
@@ -689,8 +682,8 @@ const HomePage = () => {
                 }}>
                   <benefit.icon className="h-5 w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 transition-colors duration-500" style={{ color: '#00BFFF' }} />
                 </div>
-                <h3 className="text-base xs:text-lg sm:text-xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-400 transition-colors duration-500">{benefit.title}</h3>
-                <p className="text-xs xs:text-sm sm:text-base text-gray-300 leading-relaxed">{benefit.description}</p>
+                <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-500">{benefit.title}</h3>
+                <p className="text-xs xs:text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -698,13 +691,13 @@ const HomePage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-900">
+      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.faq.title', 'Frequently Asked Questions')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
               {t('home.faq.subtitle', 'Find answers to common questions about our courses and platform')}
             </p>
           </div>
@@ -726,13 +719,13 @@ const HomePage = () => {
             ].map((faq, index) => (
               <div 
                 key={index}
-                className="group bg-gray-800 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-700/50 hover:border-cyan-500/50"
+                className="group bg-white dark:bg-gray-800 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50"
               >
-                <h3 className="text-base xs:text-lg sm:text-xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-400 transition-colors duration-500 flex items-start xs:items-center">
+                <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-500 flex items-start xs:items-center">
                   <HelpCircle className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 mr-2 xs:mr-3 mt-0.5 xs:mt-0 flex-shrink-0 transition-colors duration-500" style={{ color: '#00BFFF' }} />
                   <span>{faq.question}</span>
                 </h3>
-                <p className="text-xs xs:text-sm sm:text-base text-gray-300 leading-relaxed pl-6 xs:pl-7 sm:pl-8 md:pl-9 group-hover:text-gray-200 transition-colors duration-500">
+                <p className="text-xs xs:text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed pl-6 xs:pl-7 sm:pl-8 md:pl-9 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-500">
                   {faq.answer}
                 </p>
               </div>
@@ -742,13 +735,13 @@ const HomePage = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-800 overflow-hidden">
+      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 overflow-hidden">
         <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
           <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
               {t('home.success_stories_title', 'Success Stories')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
               {t('home.success_stories_subtitle', 'Hear from our students who have transformed their financial future')}
             </p>
           </div>
@@ -761,24 +754,89 @@ const HomePage = () => {
                   transform: translateX(0);
                 }
                 100% {
-                  transform: translateX(-33.333%);
+                  transform: translateX(calc(-100% / 3));
                 }
               }
               .testimonials-scroll {
-                animation: scroll 15s linear infinite;
+                will-change: transform;
+                width: fit-content;
+                animation: scroll 80s linear infinite;
               }
               @media (min-width: 640px) {
                 .testimonials-scroll {
-                  animation: scroll 25s linear infinite;
+                  animation: scroll 100s linear infinite;
                 }
               }
               @media (min-width: 1024px) {
                 .testimonials-scroll {
-                  animation: scroll 30s linear infinite;
+                  animation: scroll 120s linear infinite;
                 }
               }
               .testimonials-scroll:hover {
                 animation-play-state: paused;
+              }
+              .testimonial-text-truncate-full {
+                display: -webkit-box !important;
+                -webkit-line-clamp: 8;
+                -webkit-box-orient: vertical !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis;
+                word-wrap: break-word;
+                word-break: break-word;
+                line-height: 1.5 !important;
+                max-height: calc(1.5em * 8 * 1.5);
+                overflow-wrap: break-word;
+                box-sizing: border-box;
+                width: 100%;
+                /* Force ellipsis to show */
+                -webkit-box-flex: 0;
+              }
+              @media (min-width: 475px) {
+                .testimonial-text-truncate-full {
+                  -webkit-line-clamp: 9;
+                  max-height: calc(1.5em * 9 * 1.5);
+                }
+              }
+              @media (min-width: 640px) {
+                .testimonial-text-truncate-full {
+                  -webkit-line-clamp: 10;
+                  max-height: calc(1.5em * 10 * 1.5);
+                }
+              }
+              @media (min-width: 1024px) {
+                .testimonial-text-truncate-full {
+                  -webkit-line-clamp: 10;
+                  max-height: calc(1.5em * 10 * 1.5);
+                }
+              }
+              .testimonial-text-truncate-full-tg {
+                display: -webkit-box;
+                -webkit-line-clamp: 8;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                word-wrap: break-word;
+                word-break: break-word;
+                line-height: 1.5;
+                max-height: calc(1.5em * 8);
+              }
+              @media (min-width: 475px) {
+                .testimonial-text-truncate-full-tg {
+                  -webkit-line-clamp: 9;
+                  max-height: calc(1.5em * 9);
+                }
+              }
+              @media (min-width: 640px) {
+                .testimonial-text-truncate-full-tg {
+                  -webkit-line-clamp: 10;
+                  max-height: calc(1.5em * 10);
+                }
+              }
+              @media (min-width: 1024px) {
+                .testimonial-text-truncate-full-tg {
+                  -webkit-line-clamp: 10;
+                  max-height: calc(1.5em * 10);
+                }
               }
             `}</style>
             <div className="flex testimonials-scroll">
@@ -786,21 +844,73 @@ const HomePage = () => {
               {[1, 2, 3].map((setIndex) => (
                 [
                   {
-                    name: t('home.testimonial_1_name', 'Michael Chen'),
-                    role: t('home.testimonial_1_role', 'Professional Trader'),
-                    content: t('home.testimonial_1_content', 'The advanced trading strategies course completely changed my approach to the markets. I\'ve increased my profitability by 300% in just 6 months!'),
+                    name: 'Yonas Mesmer',
+                    image: yonasMesmerImage,
+                    contentEn: '',
+                    contentTg: 'ኣነ ንኤማ ከም ኩሉ ሰብ ኣብ Youtube ን ኣብ Tiktok እየ ዝፈጦ ተከታታሊ ናይ ibyet investing እየ። እዚ ጥራይ ግን ንዓይ እኩል ኮይኑ ኣይ ነበረን ኣብ ወብሳይቱ ንዝበለጸ ትምህርቲ ንዓይ የገድሰኒ እዩ ዝበልክዎ ኮርስ ብዛዕባ stock market ካብ ትጽቢተይ ንላዕሊ ፍልጠት ቀሲመ ። ዝኮነ ሰብ ኣተሓሕዛ ገንዘብ ከምኡ ውን ገንዘብ ብከመይ ይሰርሕ ፡ stock valuation ብኸመይ ትገብሮ ፡ዝብል ቡሉጽ ትምህርቲ ዝኮነ ክወስ ዶ ዘለዎ ናይ stock Market ትምህርቲ ፡ ከምኡ ዉን ከመይ ገርካ ዝበለጸ ብርኪ ብኣፍልጦ ትመርጽ ibyet investing ይኩን ምርጫኩም።',
                     rating: 5
                   },
                   {
-                    name: t('home.testimonial_2_name', 'Sarah Johnson'),
-                    role: t('home.testimonial_2_role', 'Investment Advisor'),
-                    content: t('home.testimonial_2_content', 'The comprehensive curriculum and expert instructors helped me build a solid foundation in investing. Highly recommend to anyone serious about financial growth.'),
+                    name: 'Frezghi Kasa',
+                    image: frezgikasaImage,
+                    contentEn: 'Ema\'s investment course is fantastic, covering everything from beginner to advanced levels. It includes personal finance, stock market strategies, investment psychology, and how markets work. If you\'re just starting, you\'re lucky to find such a great teacher. If you\'re an advanced investor, you\'re lucky to have Emas guidance. Thank you, Ema, for all your teachings. Wishing you all the best in your investment journey!',
+                    contentTg: '',
                     rating: 5
                   },
                   {
-                    name: t('home.testimonial_3_name', 'David Martinez'),
-                    role: t('home.testimonial_3_role', 'Portfolio Manager'),
-                    content: t('home.testimonial_3_content', 'Best investment education platform I\'ve found. The real-world examples and practical exercises made all the difference in my learning journey.'),
+                    name: 'Abraham Tesfay',
+                    image: abrhamtesfayImage,
+                    contentEn: '',
+                    contentTg: 'ሰላም ዝኸበርካ ሓውና ኣማንኤል፡ ብመጀመርታ ንዓና ክትሕግዝ ኣብ መገዲ ዓውት ከተሳሊ፡ኩቡር ግዜካን ጉልበትካን ከይበቀቅካ ንዝነበረካ ፍልጠት ፍልጠት ብምድራዕ ዘዳለኻዮ ትምህርቲ ኣተየ ተማሂረ ኣብዚ ደረጃ ዚ ስለ ዝበጻሕኩ ኣዝየ ከመስግነካ ይደሊ። ብምቅጻል ከኣ በዚ ትምህርቲ ይኣኽለኩም ከይበልካ ዘለና ሕቶታት ተገዲስካ ትምልሳልና ውን ስለዘለካ ኣዝየ የመስግነካ። ቀጻሊ ክኸውን ከኣ ዘለኒ ተስፋ ይገልጸልካ። ብዝተረፈ ጊን አቲ ኮርስ ኣዝዩ መሳጢ ንዝነበረኒ ንኡስ ፍልጠት ኣራቢሑለይ ኣሎ ። ስለዚ ኩሉ ሕብረተሰብና ክመሃር ምስ ህዝቢ ውን ብዝበለጸ ትላለየሉ መድረኽ ክትፈጥር ፡ጽቡቅ ዩ። ኣጆካ ቀጽሎ ብዙሓት ክረብሕሉ ዝኽአል ትምህርቲ ኢኻ ቀሪብካ ዘለኻ።',
+                    rating: 5
+                  },
+                  {
+                    name: 'Haile Tekie',
+                    image: hailetekieImage,
+                    contentEn: 'This course is very clear, well-structured, and detailed. The explanations are easy to understand, and the progression of topics makes learning smooth and effective. Please keep going with this approach.',
+                    contentTg: '',
+                    rating: 5
+                  },
+                  {
+                    name: 'Amanuel Mengsteab',
+                    image: amanuelmengisteabImage,
+                    contentEn: 'This course provides economically transformative knowledge with significant real-world impact. Thank you, EMA, for making this valuable learning accessible.',
+                    contentTg: '',
+                    rating: 5
+                  },
+                  {
+                    name: 'Teame Debesay',
+                    image: teamedebesayImage,
+                    contentEn: 'Thanks for sharing this! The information is very helpful and interesting, and I really appreciate the time and effort you put into providing it.',
+                    contentTg: '',
+                    rating: 5
+                  },
+                  {
+                    name: 'Gilagabr Mengisteab',
+                    image: null,
+                    contentEn: '',
+                    contentTg: 'ብመጀመርታ ንክቡር ሓውና መምህር ኣማኑኤል ነቲ ካብ ዉልቃዊ ተመኩሮኡን ነቲ ከም ፈለግ ዝዉሕዝ ፍልጠቱን ነዓና የሕዋቱ ከካፍለናን ተጠቀምቲ ነቲ ዘሎ ጸጋታት ክንከዉን ብምሉእ ሓይሉ ዝቃለስ ዘሎን እሞ ድማ ባዕሉ ፈቲኑ ዉጺኢታዊ ምካኑ ፈሊጡ ምሳይ ተጠቀሙ ዝብል ኣጆኩም ሓቢርና ንዕበ ዝብል መምህር ልባዊ ምስጋና ከመስግኖ ይፈቱ ።ብምቅጻል ኣነ ተጠቃሚ ወፍሪ Stock Market ክኽውን በቂዓ ኣለኩ። ብዓቢኡ ከኣ ንሱ ጥራሕ ዘይኩንኩ ተማሂረ ብከመይ ገንዘበይ ከምዝዕቅብን ከምዘዋፍርን ስልጡን ዝኮነ ኾርስ ብዘየዳግም ተማሂረ ኣለኩ ።ነቲ ዝተጠቀምኩሉ ይምስክርን ኩሉ ኪጥቀመሉ ድም የተሓሳስብ ። ብመሰረቱ ዉን ንኩሉ ክጥቀመሉ ክፊት ስለ ዝኮነ ንዓና ምካኑ ፈሊጥና ነዚ ኮርስ ክንመሃር ኣለና ። ነዚ ዕብየት ዝብል ናይብሓቂ ናይ ዕብየት ትምህርቲ እዩ ኩላትና ተጠቀምቲ ክንከውን ደጊመ ሓደራ ይብል ።',
+                    rating: 5
+                  },
+                  {
+                    name: 'Mengsteab Gebrezgabiher',
+                    image: null,
+                    contentEn: 'Dear Amanuel (Ibyet) I want to thank you for all you have taught me in Finance( stock market in general and crypto currency from baisci to advance) . The knowlege and wisdom you have imparted upon me will be a great help and support for my future. You have been an excellent friend,teacher,mentor and a great inspiration for me.You have inspired me to pursue my goals with hard work and dedication. You have shown me the value of finance (stock market) in Business. I really appreciate and value everything i have learned from you.It will forever remain a major contributor behind my success and achievements. I highly recommend for new students benefit from your great Mentorship. Sincerely Mengs G/biher',
+                    contentTg: '',
+                    rating: 5
+                  },
+                  {
+                    name: 'Alazar',
+                    image: null,
+                    contentEn: '',
+                    contentTg: 'አብዘን ብተከታታሊ ንሓያሎ ሳምንታት ብተገዳስነት ግዜኻን ፍልጠትካን ወፊኻ ንዝሓብካና ናይ ወፍሪ ስልጠና ብኸመይን መዓስን ነውፍር ? ከምኡውን ነቲ ዝረኸብናዮ/ሰራሕና ዘምጻናዮ ገንዘብ ብከመይ ንቆጻጸሮን ነመሓድሮን ፣ብተወሳኺውን አብ ወፍሪ ንዘነበረና አተሓሳስባ ንክዓቢ ፣ አብ ግዜ ላዕልን ታሕትን ናይ ዕዳጋ ምግምጣል ርጉዕ አዕምሮ ንክንሕልወና ንዝሓብካና ዓሚቕ ፍልጠት ከመስግን ይፈቱ። ሕብረተሰብና ንክምዕብል አብዚ ፍሉይ ዓውዲ ንእትገብሮ ጻዕሪ ከመስግነካ ይፈቱ። ብውሑዳት ዝጀመርካዮ ብዙሓት ክረብሕሉ ዝክእሉ ትምህርቲ ኢኻ ቀሪብካ ዘሎካ እም አጆኻ ቀጽል።',
+                    rating: 5
+                  },
+                  {
+                    name: 'Letekidan Tekle',
+                    image: null,
+                    contentEn: '',
+                    contentTg: 'ሰላም ኣማኒአል መጀምርያ የመስግነካ በቲ አቲህበና ፍልጠትካን ግዘካን ከይበቀቅካ ሕቶታትና ክትምልስ ካብኡ ዝሃለፈ ውን አቲ ትምህርቲ ብኣዝዩ ጥበባውን ርዱኡን ኣቀራርባ ኣሎካ ።ኣነ ብወገነይ ኣዝየ አየ ዕግብቲ በዚ ረኪበዮ ዘለኩ ፍልጠት ንዓይ ሓደ ስጉምቲ ንቅድሚት አዩ ስለዚ ሕጅውን ደጊመ የመስግነካ ዕድመን ፡ጥዕናን፡ሰላምን ይምነየልካ ምስ ስድራካኩቡር ሓዊ።',
                     rating: 5
                   }
                 ].map((testimonial, index) => (
@@ -808,22 +918,39 @@ const HomePage = () => {
                     key={`set-${setIndex}-${index}`}
                     className="flex-shrink-0 w-[90vw] xs:w-[85vw] sm:w-[45vw] md:w-[400px] lg:w-[450px] px-3 xs:px-4"
                   >
-                    <div className="bg-gray-700/50 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-600/50 hover:border-cyan-500/50 h-full">
-                      <div className="flex items-center mb-3 xs:mb-4">
+                    <div className="bg-gray-700 dark:bg-gray-700 p-3 xs:p-3.5 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-600 dark:border-gray-600 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 h-full flex flex-col max-h-[280px] xs:max-h-[300px] sm:max-h-[320px] md:max-h-[340px]">
+                      <div className="flex items-center mb-2 xs:mb-2.5 flex-shrink-0">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-yellow-400 fill-current" />
+                          <Star key={i} className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 text-yellow-400 fill-current" />
                         ))}
                       </div>
-                      <p className="text-xs xs:text-sm sm:text-base text-gray-200 mb-3 xs:mb-4 sm:mb-5 md:mb-6 leading-relaxed italic">
-                        "{testimonial.content}"
-                      </p>
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mr-2 xs:mr-3 sm:mr-4 text-white font-bold text-xs xs:text-sm sm:text-base flex-shrink-0">
-                          {testimonial.name.charAt(0)}
-                        </div>
+                      <div className="mb-2 xs:mb-2.5 space-y-1.5 xs:space-y-2 flex-1 overflow-hidden min-h-0">
+                        {testimonial.contentEn && (
+                          <p className="text-[10px] xs:text-xs sm:text-sm text-gray-200 testimonial-text-truncate-full">
+                            "{testimonial.contentEn}"
+                          </p>
+                        )}
+                        {testimonial.contentTg && (
+                          <p className="text-[10px] xs:text-xs sm:text-sm text-gray-300/80 leading-relaxed italic testimonial-text-truncate-full-tg">
+                            "{testimonial.contentTg}"
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center mt-auto flex-shrink-0">
+                        {testimonial.image ? (
+                          <img 
+                            src={testimonial.image} 
+                            alt={testimonial.name}
+                            className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full object-cover mr-2 xs:mr-2.5 sm:mr-3 flex-shrink-0 border-2 border-cyan-500/30"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mr-2 xs:mr-2.5 sm:mr-3 text-white font-bold text-xs xs:text-sm sm:text-base flex-shrink-0 border-2 border-cyan-500/30">
+                            {testimonial.name.charAt(0)}
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="font-bold text-white text-xs xs:text-sm sm:text-base truncate">{testimonial.name}</div>
-                          <div className="text-gray-400 text-[10px] xs:text-xs sm:text-sm truncate">{testimonial.role}</div>
+                          <div className="text-gray-400 text-[10px] xs:text-xs sm:text-sm truncate">{t('home.student', 'Student')}</div>
                         </div>
                       </div>
                     </div>
@@ -843,10 +970,10 @@ const HomePage = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-purple-600/20"></div>
         <div className="max-w-4xl mx-auto text-center px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 relative z-10">
-          <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 xs:mb-4 sm:mb-5 md:mb-6 pb-2 sm:pb-3 md:pb-4 text-white">
+          <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 xs:mb-4 sm:mb-5 md:mb-6 pb-2 sm:pb-3 md:pb-4 text-gray-900 dark:text-white">
             {t('home.cta_title', 'Ready to Start Your Investment Journey?')}
           </h2>
-          <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl mb-5 xs:mb-6 sm:mb-7 md:mb-8 text-white/90 px-3 xs:px-4">
+          <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl mb-5 xs:mb-6 sm:mb-7 md:mb-8 text-gray-700 dark:text-white/90 px-3 xs:px-4">
             {t('home.cta_subtitle', 'Join thousands of students learning to master the art of investing and trading')}
           </p>
           <div className="flex flex-col xs:flex-row gap-2.5 xs:gap-3 sm:gap-4 justify-center">
@@ -882,125 +1009,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-800 border-t border-gray-700">
-        <div className="max-w-4xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="text-center mb-6 xs:mb-8 sm:mb-10">
-            <div className="inline-flex items-center justify-center w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mb-3 xs:mb-4 sm:mb-5 md:mb-6 mx-auto"
-              style={{
-                background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.2) 0%, rgba(0, 191, 255, 0.1) 100%)',
-              }}
-            >
-              <Mail className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" style={{ color: '#00BFFF' }} />
-            </div>
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
-              {t('home.newsletter_title', 'Stay Updated with Investment Insights')}
-            </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-300 max-w-2xl mx-auto px-3 xs:px-4">
-              {t('home.newsletter_subtitle', 'Subscribe to our newsletter and get the latest investment tips, market analysis, and exclusive course updates delivered to your inbox.')}
-            </p>
-          </div>
-
-          <div className="max-w-lg mx-auto px-2 xs:px-3">
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!newsletterEmail || !newsletterEmail.includes('@')) {
-                  setNewsletterStatus('error');
-                  setNewsletterMessage(t('home.newsletter_invalid_email', 'Please enter a valid email address'));
-                  return;
-                }
-
-                setNewsletterStatus('loading');
-                setNewsletterMessage('');
-
-                try {
-                  const response = await fetch(buildApiUrl('/api/newsletter/subscribe'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: newsletterEmail, source: 'homepage' })
-                  });
-
-                  const result = await response.json();
-
-                  if (response.ok && result.success) {
-                    setNewsletterStatus('success');
-                    setNewsletterMessage(t('home.newsletter_success', 'Thank you for subscribing! Check your email for confirmation.'));
-                    setNewsletterEmail('');
-                    
-                    setTimeout(() => {
-                      setNewsletterStatus('idle');
-                      setNewsletterMessage('');
-                    }, 5000);
-                  } else {
-                    setNewsletterStatus('error');
-                    setNewsletterMessage(result.message || t('home.newsletter_error', 'Something went wrong. Please try again later.'));
-                  }
-                } catch (error) {
-                  console.error('Newsletter subscription error:', error);
-                  setNewsletterStatus('error');
-                  setNewsletterMessage(t('home.newsletter_error', 'Something went wrong. Please try again later.'));
-                }
-              }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-            >
-              <div className="flex-1 relative">
-                <input
-                  type="email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder={t('home.newsletter_placeholder', 'Enter your email address')}
-                  className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-300 backdrop-blur-sm"
-                  disabled={newsletterStatus === 'loading'}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
-                className="px-6 sm:px-8 py-3 sm:py-4 font-semibold text-white rounded-lg transition-all duration-500 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 whitespace-nowrap"
-                style={{
-                  backgroundColor: newsletterStatus === 'success' ? '#10b981' : '#00BFFF',
-                  boxShadow: newsletterStatus === 'success' 
-                    ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' 
-                    : '0 10px 15px -3px rgba(0, 191, 255, 0.3)'
-                }}
-              >
-                {newsletterStatus === 'loading' ? (
-                  <>
-                    <div className="w-4 h-4 xs:w-5 xs:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span className="text-xs xs:text-sm sm:text-base">{t('home.newsletter_subscribing', 'Subscribing...')}</span>
-                  </>
-                ) : newsletterStatus === 'success' ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 xs:w-5 xs:h-5" />
-                    <span className="text-xs xs:text-sm sm:text-base">{t('home.newsletter_subscribed', 'Subscribed!')}</span>
-                  </>
-                ) : (
-                  <>
-                    <Mail className="w-4 h-4 xs:w-5 xs:h-5" />
-                    <span className="text-xs xs:text-sm sm:text-base">{t('home.newsletter_subscribe', 'Subscribe')}</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {newsletterMessage && (
-              <div className={`mt-3 xs:mt-4 text-center text-xs xs:text-sm sm:text-base px-3 xs:px-4 py-2 rounded-lg transition-all duration-300 ${
-                newsletterStatus === 'success' 
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
-                {newsletterMessage}
-              </div>
-            )}
-
-            <p className="text-[10px] xs:text-xs sm:text-sm text-gray-400 text-center mt-3 xs:mt-4 sm:mt-5 md:mt-6 px-2">
-              {t('home.newsletter_privacy', 'We respect your privacy. Unsubscribe at any time.')}
-            </p>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };

@@ -9,7 +9,8 @@ const {
   uploadCourseFile,
   validateFile,
   getSignedUrlForFile,
-  deleteFileFromS3
+  deleteFileFromS3,
+  getThumbnailUrl
 } = require('../utils/s3CourseManager');
 
 /**
@@ -17,7 +18,7 @@ const {
  */
 const createBundle = async (req, res) => {
   try {
-    const { 
+    let { 
       title, 
       description, 
       longDescription,
@@ -32,11 +33,30 @@ const createBundle = async (req, res) => {
     } = req.body;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
 
-    // Validate required fields
-    if (!title || !description || !price || !courseIds || !Array.isArray(courseIds) || courseIds.length === 0) {
+    // Parse bilingual title and description if they come as JSON strings
+    try {
+      if (title && typeof title === 'string' && title.startsWith('{')) {
+        title = JSON.parse(title);
+      }
+      if (description && typeof description === 'string' && description.startsWith('{')) {
+        description = JSON.parse(description);
+      }
+      if (longDescription && typeof longDescription === 'string' && longDescription.startsWith('{')) {
+        longDescription = JSON.parse(longDescription);
+      }
+    } catch (e) {
+      // If parsing fails, treat as regular string (backward compatibility)
+      console.log('[createBundle] Title/description not JSON, using as string');
+    }
+
+    // Validate required fields - check for bilingual format
+    const titleValid = typeof title === 'string' ? title.trim() : (title?.en?.trim() && title?.tg?.trim());
+    const descriptionValid = typeof description === 'string' ? description.trim() : (description?.en?.trim() && description?.tg?.trim());
+    
+    if (!titleValid || !descriptionValid || !price || !courseIds || !Array.isArray(courseIds) || courseIds.length === 0) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Title, description, price, and at least one course ID are required' 
+        message: 'Title (both languages), description (both languages), price, and at least one course ID are required' 
       });
     }
 
@@ -74,7 +94,8 @@ const createBundle = async (req, res) => {
 
     await bundle.save();
 
-    console.log(`✅ Bundle created: ${bundle.title} (ID: ${bundle._id}) by ${adminEmail}`);
+    const bundleTitleDisplay = typeof bundle.title === 'string' ? bundle.title : (bundle.title?.en || bundle.title?.tg || '');
+    console.log(`✅ Bundle created: ${bundleTitleDisplay} (ID: ${bundle._id}) by ${adminEmail}`);
 
     res.status(201).json({
       success: true,
@@ -164,10 +185,16 @@ const uploadThumbnail = async (req, res) => {
       });
     }
 
-    // Ensure we have a public URL
+    // Generate presigned URL for thumbnail (works without public access)
     let thumbnailURL = uploadResult.publicUrl;
     if (!thumbnailURL) {
-      thumbnailURL = getPublicUrl(uploadResult.s3Key);
+      try {
+        thumbnailURL = await getThumbnailUrl(uploadResult.s3Key);
+      } catch (error) {
+        console.error('❌ Error generating presigned URL for uploaded thumbnail:', error);
+        // Fallback to public URL if presigned URL generation fails
+        thumbnailURL = getPublicUrl(uploadResult.s3Key);
+      }
     }
 
     // Update bundle with thumbnail URL
@@ -263,15 +290,79 @@ const getAllBundles = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // Add hasReachedMaxEnrollments flag to each bundle for frontend use
+    const bundlesWithEnrollmentStatus = bundles.map(bundle => {
+      const bundleObj = bundle.toObject();
+      bundleObj.hasReachedMaxEnrollments = bundle.maxEnrollments 
+        ? bundle.totalEnrollments >= bundle.maxEnrollments 
+        : false;
+      return bundleObj;
+    });
+
     console.log(`📚 Found ${bundles.length} bundles from database`);
 
-    // Ensure all bundles have proper public thumbnail URLs
-    const bundlesWithFixedThumbnails = bundles.map(bundle => {
-      if (bundle.thumbnailS3Key && (!bundle.thumbnailURL || !bundle.thumbnailURL.includes('s3.amazonaws.com'))) {
-        bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+    // Get user's purchased bundles to add purchase status (Udemy-style: show all bundles)
+    let purchasedBundleIds = [];
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        if (decoded && decoded.userId) {
+          console.log('🔍 User is logged in, checking purchase status');
+          console.log('🔍 User ID:', decoded.userId);
+          
+          // Get user's purchased bundles
+          const User = require('../models/User');
+          const user = await User.findById(decoded.userId);
+          
+          if (user && user.purchasedBundles && user.purchasedBundles.length > 0) {
+            purchasedBundleIds = user.purchasedBundles.map(id => id.toString());
+            console.log('🔍 User has purchased bundles:', purchasedBundleIds);
+          } else {
+            console.log('🔍 User has no purchased bundles');
+          }
+        }
+      } catch (error) {
+        console.log('🔍 Invalid token, showing all bundles without purchase status');
       }
-      return bundle;
-    });
+    } else {
+      console.log('🔍 No authentication token, showing all bundles without purchase status');
+    }
+
+    // Ensure all bundles have proper thumbnail URLs (use presigned URLs) and add purchase status
+    const bundlesWithFixedThumbnails = await Promise.all(bundlesWithEnrollmentStatus.map(async (bundle) => {
+      console.log(`🔍 [getAllBundles] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
+      console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
+      console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
+      console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+      
+      if (bundle.thumbnailS3Key) {
+        try {
+          console.log(`   - Generating presigned URL for thumbnail...`);
+          // Generate presigned URL for thumbnail (works without public access)
+          bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
+          console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+        } catch (error) {
+          console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
+          // Fallback to public URL if presigned URL generation fails
+          bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+          console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+        }
+      } else {
+        console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
+      }
+      
+      console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+      
+      // Add purchase status (Udemy-style: show all bundles with purchase indicator)
+      const bundleObj = bundle.toObject ? bundle.toObject() : bundle;
+      bundleObj.isPurchased = purchasedBundleIds.includes(bundle._id.toString());
+      
+      return bundleObj;
+    }));
 
     const total = await Bundle.countDocuments(query);
     console.log(`📊 Total bundles in database: ${total}`);
@@ -311,16 +402,81 @@ const getFeaturedBundles = async (req, res) => {
     })
       .populate('courseIds', 'title description thumbnailURL price category level tags totalEnrollments')
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(3);
 
-    // Ensure all bundles have proper public thumbnail URLs
-    const bundlesWithFixedThumbnails = bundles.map(bundle => {
-      if (bundle.thumbnailS3Key && (!bundle.thumbnailURL || !bundle.thumbnailURL.includes('s3.amazonaws.com'))) {
-        bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
-      }
-      return bundle;
+    // Add hasReachedMaxEnrollments flag to each bundle
+    const bundlesWithEnrollmentStatus = bundles.map(bundle => {
+      const bundleObj = bundle.toObject();
+      bundleObj.hasReachedMaxEnrollments = bundle.maxEnrollments 
+        ? bundle.totalEnrollments >= bundle.maxEnrollments 
+        : false;
+      return bundleObj;
     });
 
+    // Get user's purchased bundles to add purchase status (Udemy-style: show all bundles)
+    let purchasedBundleIds = [];
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        if (decoded && decoded.userId) {
+          console.log('🔍 [getFeaturedBundles] User is logged in, checking purchase status');
+          console.log('🔍 [getFeaturedBundles] User ID:', decoded.userId);
+          
+          // Get user's purchased bundles
+          const User = require('../models/User');
+          const user = await User.findById(decoded.userId);
+          
+          if (user && user.purchasedBundles && user.purchasedBundles.length > 0) {
+            purchasedBundleIds = user.purchasedBundles.map(id => id.toString());
+            console.log('🔍 [getFeaturedBundles] User has purchased bundles:', purchasedBundleIds);
+          } else {
+            console.log('🔍 [getFeaturedBundles] User has no purchased bundles');
+          }
+        }
+      } catch (error) {
+        console.log('🔍 [getFeaturedBundles] Invalid token, showing all bundles without purchase status');
+      }
+    } else {
+      console.log('🔍 [getFeaturedBundles] No authentication token, showing all bundles without purchase status');
+    }
+
+    // Ensure all bundles have proper thumbnail URLs (use presigned URLs) and add purchase status
+    const bundlesWithFixedThumbnails = await Promise.all(bundlesWithEnrollmentStatus.map(async (bundle) => {
+      console.log(`🔍 [getFeaturedBundles] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
+      console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
+      console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
+      console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+      
+      if (bundle.thumbnailS3Key) {
+        try {
+          console.log(`   - Generating presigned URL for thumbnail...`);
+          // Generate presigned URL for thumbnail (works without public access)
+          bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
+          console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+        } catch (error) {
+          console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
+          // Fallback to public URL if presigned URL generation fails
+          bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+          console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+        }
+      } else {
+        console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
+      }
+      
+      console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+      
+      // Add purchase status (Udemy-style: show all bundles with purchase indicator)
+      const bundleObj = bundle.toObject ? bundle.toObject() : bundle;
+      bundleObj.isPurchased = purchasedBundleIds.includes(bundle._id.toString());
+      
+      return bundleObj;
+    }));
+
+    console.log(`✅ [getFeaturedBundles] Returning ${bundlesWithFixedThumbnails.length} bundles with thumbnails`);
     res.json({
       success: true,
       data: {
@@ -361,6 +517,7 @@ const getBundleById = async (req, res) => {
     // Check if bundle is accessible (active or user has purchased it)
     const authHeader = req.headers.authorization;
     let userHasPurchased = false;
+    let isPurchased = false;
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
@@ -369,8 +526,17 @@ const getBundleById = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         if (decoded && decoded.userId) {
+          const User = require('../models/User');
+          const user = await User.findById(decoded.userId);
+          
+          if (user && user.purchasedBundles && user.purchasedBundles.length > 0) {
+            const purchasedBundleIds = user.purchasedBundles.map(id => id.toString());
+            isPurchased = purchasedBundleIds.includes(bundle._id.toString());
+          }
+          
+          // Also check enrollment for backward compatibility
           const enrollment = bundle.getStudentEnrollment(decoded.userId);
-          userHasPurchased = !!enrollment;
+          userHasPurchased = !!enrollment || isPurchased;
         }
       } catch (error) {
         // Invalid token, continue without user info
@@ -380,16 +546,41 @@ const getBundleById = async (req, res) => {
     // Populate course details
     await bundle.populate('courseIds', 'title description thumbnailURL price category level tags totalEnrollments videos');
 
-    // Fix thumbnail URL if needed
-    if (bundle.thumbnailS3Key && (!bundle.thumbnailURL || !bundle.thumbnailURL.includes('s3.amazonaws.com'))) {
-      bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+    console.log(`🔍 [getBundleById] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
+    console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
+    console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
+    console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+
+    // Generate presigned URL for thumbnail if S3 key exists
+    if (bundle.thumbnailS3Key) {
+      try {
+        console.log(`   - Generating presigned URL for thumbnail...`);
+        // Generate presigned URL for thumbnail (works without public access)
+        bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
+        console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+      } catch (error) {
+        console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
+        console.error(`   - Error details:`, error.message, error.stack);
+        // Fallback to public URL if presigned URL generation fails
+        bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+        console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+      }
+    } else {
+      console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
     }
+    
+    console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+
+    // Add purchase status to bundle object (Udemy-style)
+    const bundleObj = bundle.toObject ? bundle.toObject() : bundle;
+    bundleObj.isPurchased = isPurchased;
 
     res.json({
       success: true,
       data: {
-        bundle,
-        userHasPurchased
+        bundle: bundleObj,
+        userHasPurchased,
+        isPurchased
       }
     });
 
@@ -524,6 +715,16 @@ const deleteBundle = async (req, res) => {
         console.error('⚠️  Failed to delete bundle thumbnail:', deleteError);
       }
     }
+
+    // IMPORTANT: Remove bundle reference from all users' purchasedBundles arrays
+    // This prevents orphaned references, but students KEEP access to courses
+    // because they're enrolled in courses directly (not just through the bundle)
+    const updateResult = await User.updateMany(
+      { purchasedBundles: { $in: [id] } },
+      { $pull: { purchasedBundles: id } }
+    );
+    console.log(`✅ Removed bundle reference from ${updateResult.modifiedCount} users' purchased bundles`);
+    console.log(`   - Note: Students still have access to courses (enrolled directly in courses)`);
 
     // Delete the bundle
     await Bundle.findByIdAndDelete(id);
@@ -688,13 +889,33 @@ const getUserPurchasedBundles = async (req, res) => {
 
     console.log(`📚 Found ${purchasedBundles.length} purchased bundles from database`);
 
-    // Ensure all bundles have proper public thumbnail URLs
-    const bundlesWithFixedThumbnails = purchasedBundles.map(bundle => {
-      if (bundle.thumbnailS3Key && (!bundle.thumbnailURL || !bundle.thumbnailURL.includes('s3.amazonaws.com'))) {
-        bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+    // Ensure all bundles have proper thumbnail URLs (use presigned URLs)
+    const bundlesWithFixedThumbnails = await Promise.all(purchasedBundles.map(async (bundle) => {
+      console.log(`🔍 [getUserPurchasedBundles] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
+      console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
+      console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
+      console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
+      
+      if (bundle.thumbnailS3Key) {
+        try {
+          console.log(`   - Generating presigned URL for thumbnail...`);
+          // Generate presigned URL for thumbnail (works without public access)
+          bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
+          console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+        } catch (error) {
+          console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
+          console.error(`   - Error details:`, error.message, error.stack);
+          // Fallback to public URL if presigned URL generation fails
+          bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
+          console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
+        }
+      } else {
+        console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
       }
+      
+      console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
       return bundle;
-    });
+    }));
 
     const total = await Bundle.countDocuments({
       _id: { $in: user.purchasedBundles }

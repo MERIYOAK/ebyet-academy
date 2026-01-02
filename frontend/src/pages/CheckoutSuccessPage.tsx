@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildApiUrl } from '../config/environment';
+import { getLocalizedText } from '../utils/bilingualHelper';
 
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Play, Download, BookOpen, ArrowRight, Loader, AlertCircle } from 'lucide-react';
 
 interface CourseInfo {
   _id: string;
-  title: string;
+  title: string | { en: string; tg: string };
   price: number;
-  description: string;
+  description: string | { en: string; tg: string };
   thumbnailURL?: string;
 }
 
@@ -25,9 +26,10 @@ interface ReceiptInfo {
 }
 
 const CheckoutSuccessPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const [courseInfo, setCourseInfo] = useState<CourseInfo | null>(null);
+  const [bundleInfo, setBundleInfo] = useState<any | null>(null);
   const [receiptInfo, setReceiptInfo] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,8 @@ const CheckoutSuccessPage = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(true);
 
   const courseId = searchParams.get('courseId');
+  const bundleId = searchParams.get('bundleId');
+  const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   
   // Debug logging for courseId
   console.log('🔍 CheckoutSuccessPage - courseId from URL:', courseId);
@@ -85,7 +89,7 @@ const CheckoutSuccessPage = () => {
             const courseData = await courseResponse.json();
             const course = courseData.data?.course || courseData;
             setActualAmountPaid(course.price);
-            setCorrectCourseTitle(course.title);
+            setCorrectCourseTitle(getLocalizedText(course.title, currentLanguage));
             // Only set as wrong course if it's different from the current course
             if (purchasedCourseId !== effectiveCourseId) {
             setIsWrongCourse(true);
@@ -99,11 +103,11 @@ const CheckoutSuccessPage = () => {
             const mostRecentCourseId = purchasedCourses[purchasedCourses.length - 1];
             const courseResponse = await fetch(buildApiUrl(`/api/courses/${mostRecentCourseId}`));
             if (courseResponse.ok) {
-              const courseData = await courseResponse.json();
-              const course = courseData.data?.course || courseData;
-              setActualAmountPaid(course.price);
-              setCorrectCourseTitle(course.title);
-              setIsWrongCourse(true);
+            const courseData = await courseResponse.json();
+            const course = courseData.data?.course || courseData;
+            setActualAmountPaid(course.price);
+            setCorrectCourseTitle(getLocalizedText(course.title, currentLanguage));
+            setIsWrongCourse(true);
               console.log(`✅ Most recent purchase amount: $${course.price}`);
             }
           }
@@ -116,8 +120,10 @@ const CheckoutSuccessPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!effectiveCourseId) {
-        console.log('❌ No courseId found in URL parameters or sessionStorage');
+      const effectiveId = bundleId || effectiveCourseId;
+      
+      if (!effectiveId) {
+        console.log('❌ No courseId or bundleId found in URL parameters or sessionStorage');
         console.log('   - Available search params:', searchParams.toString());
         console.log('   - All search params:');
         for (const [key, value] of searchParams.entries()) {
@@ -127,40 +133,54 @@ const CheckoutSuccessPage = () => {
         return;
       }
 
-      console.log('🔧 Using courseId:', effectiveCourseId);
+      console.log('🔧 Using ID:', effectiveId);
+      console.log('🔧 Type:', bundleId ? 'bundle' : 'course');
 
       try {
-        console.log('🔧 Fetching course and payment info for success page...');
-        console.log(`   - Course ID: ${effectiveCourseId}`);
+        console.log('🔧 Fetching item and payment info for success page...');
+        console.log(`   - ID: ${effectiveId}`);
 
-        // Fetch course information
-        const courseResponse = await fetch(buildApiUrl(`/api/courses/${effectiveCourseId}`));
+        // Fetch course or bundle information
+        let itemResponse;
+        if (bundleId) {
+          itemResponse = await fetch(buildApiUrl(`/api/bundles/${bundleId}`));
+        } else {
+          itemResponse = await fetch(buildApiUrl(`/api/courses/${effectiveCourseId}`));
+        }
         
-        if (!courseResponse.ok) {
+        if (!itemResponse.ok) {
           throw new Error(t('checkout_success.failed_to_fetch_course'));
         }
 
-        const courseData = await courseResponse.json();
-        // Handle nested course data structure
-        const course = courseData.data?.course || courseData;
-        setCourseInfo(course);
-        console.log('✅ Course info fetched:', course);
+        const itemData = await itemResponse.json();
+        // Handle nested data structure
+        const item = itemData.data?.course || itemData.data?.bundle || itemData;
+        
+        if (bundleId) {
+          setBundleInfo(item);
+          console.log('✅ Bundle info fetched:', item);
+        } else {
+          setCourseInfo(item);
+          console.log('✅ Course info fetched:', item);
+        }
 
-        // Get the first video ID for the watch link
-        const videos = course.videos || course.currentVersion?.videos || [];
-        if (videos.length > 0) {
-          const firstVideo = videos[0];
-          const videoId = firstVideo._id || firstVideo.id;
-          setFirstVideoId(videoId);
-          console.log('✅ First video ID:', videoId);
+        // Get the first video ID for the watch link (only for courses)
+        if (!bundleId && item) {
+          const videos = item.videos || item.currentVersion?.videos || [];
+          if (videos.length > 0) {
+            const firstVideo = videos[0];
+            const videoId = firstVideo._id || firstVideo.id;
+            setFirstVideoId(videoId);
+            console.log('✅ First video ID:', videoId);
+          }
         }
 
         // Fetch receipt information
         const token = localStorage.getItem('token');
-        if (token && effectiveCourseId) {
+        if (token && effectiveId) {
           try {
-            console.log(`🔧 Fetching receipt for courseId: ${effectiveCourseId}`);
-            const receiptUrl = buildApiUrl(`/api/payment/receipt/${effectiveCourseId}`);
+            console.log(`🔧 Fetching receipt for ${bundleId ? 'bundleId' : 'courseId'}: ${effectiveId}`);
+            const receiptUrl = buildApiUrl(`/api/payment/receipt/${effectiveId}`);
             console.log(`🔧 Receipt URL: ${receiptUrl}`);
             
             const receiptResponse = await fetch(receiptUrl, {
@@ -182,12 +202,12 @@ const CheckoutSuccessPage = () => {
               console.log(`⚠️  Receipt not available yet (status: ${receiptResponse.status})`);
               console.log(`⚠️  Error response: ${errorText}`);
               
-              // Set fallback receipt data using course info
-              if (course) {
+              // Set fallback receipt data using item info
+              if (item) {
                 setReceiptInfo({
                   orderId: `#YTA-${Date.now().toString().slice(-6)}`,
-                  courseTitle: course.title,
-                  amount: course.price,
+                  courseTitle: getLocalizedText(item.title, currentLanguage),
+                  amount: item.price,
                   currency: 'USD',
                   paymentDate: new Date().toISOString(),
                   paymentMethod: 'Credit Card',
@@ -199,12 +219,12 @@ const CheckoutSuccessPage = () => {
           } catch (receiptError) {
             console.error('❌ Error fetching receipt:', receiptError);
             console.log('⚠️  Could not fetch receipt info (this is normal for development mode)');
-            // Set fallback receipt data using course info
-            if (course) {
+            // Set fallback receipt data using item info
+            if (item) {
               setReceiptInfo({
                 orderId: `#YTA-${Date.now().toString().slice(-6)}`,
-                courseTitle: course.title,
-                amount: course.price,
+                courseTitle: getLocalizedText(item.title, currentLanguage),
+                amount: item.price,
                 currency: 'USD',
                 paymentDate: new Date().toISOString(),
                 paymentMethod: 'Credit Card',
@@ -214,16 +234,16 @@ const CheckoutSuccessPage = () => {
             }
           }
                   } else {
-            console.log('⚠️  No authentication token or courseId found');
+            console.log('⚠️  No authentication token or ID found');
             console.log(`   - Token: ${token ? 'Present' : 'Missing'}`);
-            console.log(`   - CourseId: ${effectiveCourseId || 'Missing'}`);
+            console.log(`   - ID: ${effectiveId || 'Missing'}`);
           
-          // Set fallback receipt data using course info
-          if (course) {
+          // Set fallback receipt data using item info
+          if (item) {
             setReceiptInfo({
               orderId: `#YTA-${Date.now().toString().slice(-6)}`,
-              courseTitle: course.title,
-              amount: course.price,
+              courseTitle: getLocalizedText(item.title, currentLanguage),
+              amount: item.price,
               currency: 'USD',
               paymentDate: new Date().toISOString(),
               paymentMethod: 'Credit Card',
@@ -233,8 +253,10 @@ const CheckoutSuccessPage = () => {
           }
         }
 
-        // Always fetch fallback data for course info
-            await fetchActualAmountPaid();
+        // Always fetch fallback data for course info (only for courses)
+        if (!bundleId) {
+          await fetchActualAmountPaid();
+        }
 
       } catch (error) {
         console.error('❌ Error fetching data:', error);
@@ -248,14 +270,15 @@ const CheckoutSuccessPage = () => {
 
     // Retry mechanism to check if payment has been processed
     const retryInterval = setInterval(async () => {
-      if (!effectiveCourseId) return;
+      const effectiveId = bundleId || effectiveCourseId;
+      if (!effectiveId) return;
 
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        // Check if user has purchased the course
-        const purchaseResponse = await fetch(buildApiUrl(`/api/payment/check-purchase/${effectiveCourseId}`), {
+        // Check if user has purchased the course or bundle
+        const purchaseResponse = await fetch(buildApiUrl(`/api/payment/check-purchase/${effectiveId}`), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -264,13 +287,13 @@ const CheckoutSuccessPage = () => {
         if (purchaseResponse.ok) {
           const purchaseData = await purchaseResponse.json();
           if (purchaseData.data.hasPurchased) {
-            console.log('✅ Payment has been processed - course is now purchased');
+            console.log(`✅ Payment has been processed - ${bundleId ? 'bundle' : 'course'} is now purchased`);
             setPaymentProcessing(false);
             clearInterval(retryInterval);
             
             // Try to fetch receipt again
             try {
-              const receiptResponse = await fetch(buildApiUrl(`/api/payment/receipt/${effectiveCourseId}`), {
+              const receiptResponse = await fetch(buildApiUrl(`/api/payment/receipt/${effectiveId}`), {
                 headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
@@ -286,8 +309,10 @@ const CheckoutSuccessPage = () => {
               console.log('⚠️  Still could not fetch receipt info');
             }
             
-            // Also fetch actual amount paid
-            await fetchActualAmountPaid();
+            // Also fetch actual amount paid (only for courses)
+            if (!bundleId) {
+              await fetchActualAmountPaid();
+            }
           }
         }
       } catch (error) {
@@ -304,7 +329,7 @@ const CheckoutSuccessPage = () => {
     return () => {
       clearInterval(retryInterval);
     };
-  }, [effectiveCourseId]);
+  }, [effectiveCourseId, bundleId, currentLanguage]);
 
   useEffect(() => {
     // Track successful purchase
@@ -316,7 +341,8 @@ const CheckoutSuccessPage = () => {
   }, [effectiveCourseId]);
 
   const handleDownloadReceipt = async () => {
-    if (!effectiveCourseId) return;
+    const effectiveId = bundleId || effectiveCourseId;
+    if (!effectiveId) return;
 
     setDownloadingReceipt(true);
     try {
@@ -325,7 +351,7 @@ const CheckoutSuccessPage = () => {
         throw new Error(t('checkout_success.authentication_required'));
       }
 
-      const response = await fetch(buildApiUrl(`/api/payment/download-receipt/${effectiveCourseId}`), {
+      const response = await fetch(buildApiUrl(`/api/payment/download-receipt/${effectiveId}`), {
         headers: {
           'Authorization': `Bearer ${token}`,
         }
@@ -377,10 +403,10 @@ const CheckoutSuccessPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="h-16 w-16 text-cyan-400 animate-spin mx-auto mb-6" />
-          <p className="text-gray-300 text-lg font-medium">{t('checkout_success.loading_purchase_details')}</p>
+          <Loader className="h-16 w-16 text-cyan-600 dark:text-cyan-400 animate-spin mx-auto mb-6" />
+          <p className="text-gray-700 dark:text-gray-300 text-lg font-medium">{t('checkout_success.loading_purchase_details')}</p>
         </div>
       </div>
     );
@@ -388,13 +414,13 @@ const CheckoutSuccessPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="text-red-400 mb-6">
+          <div className="text-red-600 dark:text-red-400 mb-6">
             <AlertCircle className="h-20 w-20 mx-auto" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-4">{t('checkout_success.payment_successful')}</h2>
-          <p className="text-gray-300 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('checkout_success.payment_successful')}</h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-8">
             {t('checkout_success.payment_processed_successfully')}
           </p>
           <Link
@@ -409,9 +435,9 @@ const CheckoutSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 pt-24 pb-12">
+    <div className="min-h-screen bg-white dark:bg-gray-900 pt-24 pb-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-2xl shadow-2xl border border-blue-200 dark:border-gray-700 overflow-hidden">
           {/* Success Header */}
           <div className="bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-12 text-center">
             <div className="bg-white bg-opacity-20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -427,11 +453,11 @@ const CheckoutSuccessPage = () => {
 
           <div className="p-8">
             {/* Warning for wrong course */}
-            {isWrongCourse && correctCourseTitle && courseInfo?.title && correctCourseTitle !== courseInfo.title && (
-              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
+            {isWrongCourse && correctCourseTitle && courseInfo && correctCourseTitle !== getLocalizedText(courseInfo.title, currentLanguage) && (
+              <div className="bg-yellow-500/20 dark:bg-yellow-500/20 border border-yellow-500/30 dark:border-yellow-500/30 rounded-lg p-4 mb-6">
                 <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2" />
-                  <p className="text-yellow-300 text-sm">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                  <p className="text-yellow-700 dark:text-yellow-300 text-sm">
                     <strong>{t('checkout_success.note_wrong_course', { courseTitle: correctCourseTitle, amount: actualAmountPaid })}</strong>
                   </p>
                 </div>
@@ -439,44 +465,46 @@ const CheckoutSuccessPage = () => {
             )}
 
             {/* Order Details */}
-            <div className="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
-              <h2 className="text-2xl font-bold text-white mb-4">{t('checkout_success.order_confirmation')}</h2>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 mb-8 border border-blue-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('checkout_success.order_confirmation')}</h2>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">{t('checkout_success.order_id')}</span>
-                  <span className="font-semibold text-white">
+                  <span className="text-gray-600 dark:text-gray-400">{t('checkout_success.order_id')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
                     {receiptInfo?.orderId || `#YTA-${Date.now().toString().slice(-6)}`}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">{t('checkout_success.course')}</span>
-                  <span className="font-semibold text-white">
-                    {correctCourseTitle || courseInfo?.title || t('checkout_success.course_purchase')}
+                  <span className="text-gray-600 dark:text-gray-400">{bundleId ? t('checkout_success.bundle') : t('checkout_success.course')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {correctCourseTitle || 
+                     (bundleId ? getLocalizedText(bundleInfo?.title, currentLanguage) : getLocalizedText(courseInfo?.title, currentLanguage)) || 
+                     (bundleId ? t('checkout_success.bundle_purchase') : t('checkout_success.course_purchase'))}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">{t('checkout_success.amount_paid')}</span>
-                  <span className="font-semibold text-green-400">
-                    ${actualAmountPaid || receiptInfo?.amount || courseInfo?.price || t('checkout_success.processing')}
+                  <span className="text-gray-600 dark:text-gray-400">{t('checkout_success.amount_paid')}</span>
+                  <span className="font-semibold text-green-600 dark:text-green-400">
+                    ${actualAmountPaid || receiptInfo?.amount || (bundleId ? bundleInfo?.price : courseInfo?.price) || t('checkout_success.processing')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">{t('checkout_success.payment_method')}</span>
-                  <span className="font-semibold text-white">
+                  <span className="text-gray-600 dark:text-gray-400">{t('checkout_success.payment_method')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
                     {receiptInfo?.paymentMethod || '••••4242'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">{t('checkout_success.status')}</span>
-                  <span className="font-semibold text-green-400 flex items-center">
+                  <span className="text-gray-600 dark:text-gray-400">{t('checkout_success.status')}</span>
+                  <span className="font-semibold text-green-600 dark:text-green-400 flex items-center">
                     <CheckCircle className="h-4 w-4 mr-1" />
                     {receiptInfo?.status || t('checkout_success.completed')}
                   </span>
                 </div>
                 {receiptInfo?.paymentDate && (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">{t('checkout_success.payment_date')}</span>
-                    <span className="font-semibold text-white">
+                    <span className="text-gray-600 dark:text-gray-400">{t('checkout_success.payment_date')}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
                       {new Date(receiptInfo.paymentDate).toLocaleDateString()}
                     </span>
                   </div>
@@ -486,36 +514,46 @@ const CheckoutSuccessPage = () => {
 
             {/* Next Steps */}
             <div className="space-y-6 mb-8">
-              <h3 className="text-2xl font-bold text-white">{t('checkout_success.whats_next')}</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{t('checkout_success.whats_next')}</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-blue-200 dark:border-gray-700">
                   <div className="flex items-center mb-4">
-                    <div className="bg-cyan-500/20 p-3 rounded-full mr-4">
-                      <Play className="h-6 w-6 text-cyan-400" />
+                    <div className="bg-cyan-500/20 dark:bg-cyan-500/20 p-3 rounded-full mr-4">
+                      <Play className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
                     </div>
-                    <h4 className="text-lg font-semibold text-white">{t('checkout_success.start_learning')}</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{t('checkout_success.start_learning')}</h4>
                   </div>
-                  <p className="text-gray-300 mb-4">
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
                     {t('checkout_success.access_course_immediately')}
                   </p>
-                  <Link
-                    to={firstVideoId ? `/course/${courseId}/watch/${firstVideoId}` : `/course/${courseId}`}
-                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
-                  >
-                    <span>{t('checkout_success.start_course')}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  {bundleId ? (
+                    <Link
+                      to={`/bundles/${bundleId}`}
+                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                    >
+                      <span>{t('checkout_success.view_bundle')}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/course/${courseId}`}
+                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                    >
+                      <span>{t('checkout_success.start_course')}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
                 </div>
 
-                <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-blue-200 dark:border-gray-700">
                   <div className="flex items-center mb-4">
-                    <div className="bg-blue-500/20 p-3 rounded-full mr-4">
-                      <BookOpen className="h-6 w-6 text-blue-400" />
+                    <div className="bg-blue-500/20 dark:bg-blue-500/20 p-3 rounded-full mr-4">
+                      <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <h4 className="text-lg font-semibold text-white">{t('checkout_success.view_dashboard')}</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{t('checkout_success.view_dashboard')}</h4>
                   </div>
-                  <p className="text-gray-300 mb-4">
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
                     {t('checkout_success.track_progress')}
                   </p>
                   <Link
@@ -530,19 +568,19 @@ const CheckoutSuccessPage = () => {
             </div>
 
             {/* Receipt Information */}
-            <div className="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 mb-8 border border-blue-200 dark:border-gray-700">
               <div className="flex items-center mb-4">
-                <Download className="h-5 w-5 text-cyan-400 mr-2" />
-                <h4 className="text-lg font-semibold text-white">{t('checkout_success.download_receipt')}</h4>
+                <Download className="h-5 w-5 text-cyan-600 dark:text-cyan-400 mr-2" />
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{t('checkout_success.download_receipt')}</h4>
               </div>
-              <p className="text-gray-300 mb-4">
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
                 {t('checkout_success.download_receipt_description')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button 
                   onClick={handleDownloadReceipt}
                   disabled={downloadingReceipt}
-                  className="flex items-center justify-center space-x-2 border border-gray-600 hover:border-cyan-500 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center space-x-2 border border-blue-300 dark:border-gray-600 hover:border-cyan-500 dark:hover:border-cyan-500 text-gray-700 dark:text-gray-300 hover:text-white bg-white dark:bg-gray-800 hover:bg-cyan-600 dark:hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {downloadingReceipt ? (
                     <Loader className="h-4 w-4 animate-spin" />
@@ -555,21 +593,21 @@ const CheckoutSuccessPage = () => {
             </div>
 
             {/* Support */}
-            <div className="text-center bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700">
-              <h4 className="text-lg font-semibold text-white mb-2">{t('checkout_success.need_help')}</h4>
-              <p className="text-gray-300 mb-4">
+            <div className="text-center bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 border border-blue-200 dark:border-gray-700">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('checkout_success.need_help')}</h4>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
                 {t('checkout_success.support_team_help')}
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-3">
                 <Link
                   to="/contact"
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-gray-600"
+                  className="bg-blue-600 dark:bg-gray-700 hover:bg-blue-700 dark:hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-blue-500 dark:border-gray-600"
                 >
                   {t('checkout_success.contact_support')}
                 </Link>
                 <Link
                   to="/help"
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-gray-600"
+                  className="bg-blue-600 dark:bg-gray-700 hover:bg-blue-700 dark:hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-blue-500 dark:border-gray-600"
                 >
                   {t('checkout_success.help_center')}
                 </Link>

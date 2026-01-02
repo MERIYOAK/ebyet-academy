@@ -77,9 +77,9 @@ const PaymentFailurePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 pt-24 pb-12">
+    <div className="min-h-screen bg-white dark:bg-gray-900 pt-24 pb-12">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-2xl shadow-2xl border border-blue-200 dark:border-gray-700 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-orange-600 to-red-600 px-8 py-12 text-center">
             <div className="bg-white bg-opacity-20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -95,15 +95,15 @@ const PaymentFailurePage = () => {
 
           <div className="p-8">
             {/* Status Message */}
-            <div className="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
-              <h2 className="text-2xl font-bold text-white mb-4">{t('payment_failure.whats_happening')}</h2>
-              <p className="text-gray-300 mb-4">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 mb-8 border border-blue-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('payment_failure.whats_happening')}</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
                 {t('payment_failure.description')}
               </p>
               
               {checkResult && (
-                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4 mb-4">
-                  <p className="text-blue-300">{checkResult}</p>
+                <div className="bg-blue-500/20 dark:bg-blue-500/20 border border-blue-500/30 dark:border-blue-500/30 rounded-lg p-4 mb-4">
+                  <p className="text-blue-700 dark:text-blue-300">{checkResult}</p>
                 </div>
               )}
             </div>
@@ -140,12 +140,12 @@ const PaymentFailurePage = () => {
             </div>
 
             {/* Help Section */}
-            <div className="mt-8 bg-yellow-500/20 rounded-lg p-6 border border-yellow-500/30">
-              <h3 className="text-lg font-semibold text-white mb-2">{t('payment_failure.need_help')}</h3>
-              <p className="text-gray-300 text-sm mb-4">
+            <div className="mt-8 bg-yellow-500/20 dark:bg-yellow-500/20 rounded-lg p-6 border border-yellow-500/30 dark:border-yellow-500/30">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('payment_failure.need_help')}</h3>
+              <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">
                 {t('payment_failure.help_description')}
               </p>
-              <ul className="text-gray-300 text-sm space-y-1">
+              <ul className="text-gray-700 dark:text-gray-300 text-sm space-y-1">
                 <li>• {t('payment_failure.check_email')}</li>
                 <li>• {t('payment_failure.contact_support')}</li>
                 <li>• {t('payment_failure.try_again')}</li>
