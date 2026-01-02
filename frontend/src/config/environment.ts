@@ -11,11 +11,11 @@ export const config = {
   APP_DESCRIPTION: import.meta.env.VITE_APP_DESCRIPTION || 'Professional Skills Development',
   
   // Contact Information
-  SUPPORT_EMAIL: import.meta.env.VITE_SUPPORT_EMAIL || 'philiweb123@gmail.com',
+  SUPPORT_EMAIL: import.meta.env.VITE_SUPPORT_EMAIL || 'support@ibyet.com',
   SUPPORT_WHATSAPP: import.meta.env.VITE_SUPPORT_WHATSAPP || '+15551234567',
-  SUPPORT_PHONE: import.meta.env.VITE_SUPPORT_PHONE || '+1 (555) 123-4567',
+  SUPPORT_PHONE: import.meta.env.VITE_SUPPORT_PHONE || '+1 (234) 567-890',
   SUPPORT_TELEGRAM: import.meta.env.VITE_SUPPORT_TELEGRAM || 'username',
-  SUPPORT_ADDRESS: import.meta.env.VITE_SUPPORT_ADDRESS || '123 Creator Street, New York, NY 10001',
+  SUPPORT_ADDRESS: import.meta.env.VITE_SUPPORT_ADDRESS || 'Address',
   SUPPORT_ADDRESS_SHORT: import.meta.env.VITE_SUPPORT_ADDRESS_SHORT || 'Ontario, Canada',
   BUSINESS_HOURS_WEEKDAY: import.meta.env.VITE_BUSINESS_HOURS_WEEKDAY || 'Monday - Friday: 9AM - 6PM EST',
   BUSINESS_HOURS_SATURDAY: import.meta.env.VITE_BUSINESS_HOURS_SATURDAY || 'Saturday: 10AM - 4PM EST',

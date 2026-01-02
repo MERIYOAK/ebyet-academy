@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FaFacebook, FaYoutube, FaTiktok, FaLinkedin } from 'react-icons/fa';
 import { Mail, Phone, MapPin, Shield, FileText, HelpCircle } from 'lucide-react';
+import { config } from '../config/environment';
 
 interface FooterProps {
   className?: string;
@@ -13,6 +14,14 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
   const { t } = useTranslation();
   
   const currentYear = new Date().getFullYear();
+  
+  // Get contact info from environment config
+  const supportEmail = config.SUPPORT_EMAIL;
+  const supportPhone = config.SUPPORT_PHONE;
+  const supportAddress = config.SUPPORT_ADDRESS;
+  
+  // Format phone number for tel: link (remove spaces, parentheses, and dashes)
+  const phoneLink = supportPhone.replace(/[\s()\-]/g, '');
   
   return (
     <footer className={`bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 ${className}`}>
@@ -161,20 +170,20 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
                 <Mail className="w-4 h-4 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                <a href="mailto:support@ibyet.com" className="text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300 text-sm">
-                  support@ibyet.com
+                <a href={`mailto:${supportEmail}`} className="text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300 text-sm">
+                  {supportEmail}
                 </a>
               </li>
               <li className="flex items-start gap-2">
                 <Phone className="w-4 h-4 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                <a href="tel:+1234567890" className="text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300 text-sm">
-                  +1 (234) 567-890
+                <a href={`tel:${phoneLink}`} className="text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300 text-sm">
+                  {supportPhone}
                 </a>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
                 <span className="text-gray-600 dark:text-gray-400 text-sm">
-                  {t('footer.address', '123 Investment Street, Financial District, NY 10001')}
+                  {supportAddress}
                 </span>
               </li>
             </ul>
@@ -185,14 +194,14 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
       {/* Bottom Bar */}
       <div className="border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-gray-600 dark:text-gray-400 text-sm text-center sm:text-left">
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
+            <div className="text-gray-600 dark:text-gray-400 text-sm">
               <p>
                 © {currentYear} {t('brand.name')}. {t('footer.copyright')}
               </p>
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
-              <span className="hidden sm:inline">{t('footer.developed_by', 'Developed by')}</span>
+              <span>{t('footer.developed_by', 'This website is made by')}</span>
               <a
                 href="https://www.meronvault.com"
                 target="_blank"
