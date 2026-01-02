@@ -83,8 +83,7 @@ class CDNSecurityConfig {
         process.env.FRONTEND_URL || 'http://localhost:5173',
         process.env.CLIENT_URL || 'http://localhost:5173',
         'https://www.qendiel.com',
-        'https://qendiel.com',
-        'https://persi-academy.vercel.app'
+        'https://qendiel.com'
       ].filter(Boolean),
       credentials: true,
       optionsSuccessStatus: 200,

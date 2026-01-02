@@ -675,6 +675,38 @@ app.listen(PORT, () => {
     console.log('   SMTP_USER=your-email@gmail.com');
     console.log('   SMTP_PASSWORD=your-app-password');
   }
+
+  // Check Stripe configuration on startup
+  console.log('\n💳 Checking Stripe configuration...');
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  if (stripeSecretKey) {
+    if (stripeSecretKey.startsWith('sk_test_')) {
+      console.log('✅ Stripe TEST MODE configured - payments will use Stripe Checkout (test mode)');
+      console.log('   - Payments will redirect to Stripe\'s hosted payment page');
+      console.log('   - Use test cards: 4242 4242 4242 4242');
+    } else if (stripeSecretKey.startsWith('sk_live_')) {
+      console.log('⚠️  Stripe LIVE MODE configured - REAL payments will be processed!');
+      console.log('   - Payments will redirect to Stripe\'s hosted payment page');
+    } else {
+      console.log('⚠️  Stripe key format unrecognized');
+    }
+    
+    if (!stripeWebhookSecret) {
+      console.log('⚠️  STRIPE_WEBHOOK_SECRET not set - webhooks may not work');
+      console.log('💡 For local development, run: npm run stripe:listen');
+      console.log('💡 For production, add webhook secret from Stripe Dashboard');
+    } else {
+      console.log('✅ Stripe webhook secret configured');
+    }
+  } else {
+    console.log('⚠️  Stripe not configured - using development mode (no real payments)');
+    console.log('💡 To enable Stripe Checkout, add to your .env file:');
+    console.log('   STRIPE_SECRET_KEY=sk_test_your_test_key_here');
+    console.log('   STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here');
+    console.log('💡 Get your keys from: https://dashboard.stripe.com/test/apikeys');
+  }
 });
 
 // Graceful shutdown

@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { resolve, dirname, join } from 'path'
 import { copyFileSync, existsSync } from 'fs'
-import { join } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Plugin to replace environment variables in HTML
 const htmlEnvPlugin = () => {
@@ -10,7 +12,7 @@ const htmlEnvPlugin = () => {
     name: 'html-env-replace',
     transformIndexHtml(html: string) {
       return html.replace(/%VITE_([^%]+)%/g, (match, envVar) => {
-        const value = import.meta.env[`VITE_${envVar}`]
+        const value = process.env[`VITE_${envVar}`]
         return value || match
       })
     }

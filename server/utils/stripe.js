@@ -3,7 +3,18 @@ const { getEnglishText } = require('./bilingualHelper');
 
 if (process.env.STRIPE_SECRET_KEY) {
   const Stripe = require('stripe');
-  stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  
+  // Validate and log Stripe key type
+  if (secretKey.startsWith('sk_test_')) {
+    console.log('✅ Stripe configured in TEST MODE');
+  } else if (secretKey.startsWith('sk_live_')) {
+    console.log('⚠️  Stripe configured in LIVE MODE - Real charges will occur!');
+  } else {
+    console.log('⚠️  Stripe key format unrecognized - please verify your key');
+  }
+  
+  stripe = Stripe(secretKey);
 
   createCheckoutSession = async ({ user, course, bundle, successUrl, cancelUrl }) => {
     try {

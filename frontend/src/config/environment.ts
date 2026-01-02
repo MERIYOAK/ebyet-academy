@@ -32,9 +32,9 @@ export const config = {
   SOCIAL_TWITTER: import.meta.env.VITE_SOCIAL_TWITTER || 'ibyetacademy',
   
   // S3 Configuration
-  S3_BUCKET_URL: import.meta.env.VITE_S3_BUCKET_URL || 'https://persi-edu-platform.s3.us-east-1.amazonaws.com',
-  S3_IMAGE_PATH: import.meta.env.VITE_S3_IMAGE_PATH || 'https://persi-educational-storage.s3.ca-central-1.amazonaws.com/persi-academy/Ig-images/ig-image.jpeg',
-  S3_BUCKET_URL_DOMAIN: import.meta.env.VITE_S3_BUCKET_URL_DOMAIN || 'persi-edu-platform.s3.us-east-1.amazonaws.com',
+  S3_BUCKET_URL: import.meta.env.VITE_S3_BUCKET_URL || '',
+  S3_IMAGE_PATH: import.meta.env.VITE_S3_IMAGE_PATH || '/logo.png',
+  S3_BUCKET_URL_DOMAIN: import.meta.env.VITE_S3_BUCKET_URL_DOMAIN || '',
   
   // Third Party Services
   STRIPE_PUBLISHABLE_KEY: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '',
