@@ -55,8 +55,8 @@ async function updateProfilePhotoKeys() {
     for (const user of users) {
       try {
         const oldKey = user.profilePhotoKey;
-        const fileName = oldKey.replace('persi-academy/', '');
-        const newKey = `persi-academy/profile-pictures/${fileName}`;
+        const fileName = oldKey.replace('ibyet-investing-folder/', '');
+        const newKey = `ibyet-investing-folder/profile-pictures/${fileName}`;
 
         console.log(`🔄 Updating ${user.name}:`);
         console.log(`   Old: ${oldKey}`);

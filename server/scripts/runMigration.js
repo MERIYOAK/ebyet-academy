@@ -6,7 +6,7 @@ const Course = require('../models/Course');
 const CourseVersion = require('../models/CourseVersion');
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/persi-academy', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ibyet-investing', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });

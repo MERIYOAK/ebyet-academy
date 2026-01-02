@@ -81,9 +81,7 @@ class CDNSecurityConfig {
     return {
       origin: [
         process.env.FRONTEND_URL || 'http://localhost:5173',
-        process.env.CLIENT_URL || 'http://localhost:5173',
-        'https://www.qendiel.com',
-        'https://qendiel.com'
+        process.env.CLIENT_URL || 'http://localhost:5173'
       ].filter(Boolean),
       credentials: true,
       optionsSuccessStatus: 200,

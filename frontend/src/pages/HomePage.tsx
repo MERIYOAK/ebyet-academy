@@ -645,7 +645,7 @@ const HomePage = () => {
               {t('home.why_choose_title', 'Why Choose Us')}
             </h2>
             <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
-              {t('home.why_choose_subtitle', 'Discover what makes our investment academy the best choice for your financial education journey')}
+              {t('home.why_choose_subtitle', 'Discover what makes Ibyet Investing the best choice for your financial education journey')}
             </p>
           </div>
           

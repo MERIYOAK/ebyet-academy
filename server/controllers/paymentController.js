@@ -810,7 +810,7 @@ async function generateReceiptPDF(doc, payment, user) {
   // Header
   doc.fontSize(24)
      .fillColor('#00BFFF')
-     .text('Ibyet Academy', 50, 50, { align: 'center' });
+     .text('Ibyet Investing', 50, 50, { align: 'center' });
   
   doc.fontSize(12)
      .fillColor('#666666')

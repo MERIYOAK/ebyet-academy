@@ -545,7 +545,7 @@ const optionalEnvVars = [
 // Set fallback values for development
 if (process.env.NODE_ENV !== 'production') {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
-  process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/persi-academy';
+  process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ibyet-investing';
   process.env.AWS_REGION = process.env.AWS_REGION || 'us-east-1';
   process.env.FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
   process.env.BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
@@ -566,7 +566,7 @@ if (missingRequiredVars.length > 0) {
   if (process.env.NODE_ENV !== 'production') {
     console.log('🔄 Setting default values for development...');
     if (!process.env.MONGODB_URI) {
-      process.env.MONGODB_URI = 'mongodb://localhost:27017/persi-academy';
+      process.env.MONGODB_URI = 'mongodb://localhost:27017/ibyet-investing';
       console.log('   MONGODB_URI set to default');
     }
     if (!process.env.JWT_SECRET) {

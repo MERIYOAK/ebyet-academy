@@ -19,7 +19,7 @@ export const CacheInspector = {
   // Check localStorage cache
   getLocalStorageCache: () => {
     try {
-      const cacheData = localStorage.getItem('ibyet-cache') || localStorage.getItem('ebyet-cache') || localStorage.getItem('qendiel-cache'); // Legacy support
+      const cacheData = localStorage.getItem('ibyet-cache') || localStorage.getItem('ebyet-cache'); // Legacy support
       if (!cacheData) return null;
 
       const parsed = JSON.parse(cacheData);
@@ -81,7 +81,6 @@ export const CacheInspector = {
     queryClient.clear();
     localStorage.removeItem('ibyet-cache');
     localStorage.removeItem('ebyet-cache'); // Legacy support
-    localStorage.removeItem('qendiel-cache'); // Legacy support
     console.log('All cache cleared');
   }
 };

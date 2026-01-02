@@ -329,7 +329,7 @@ exports.verifyCertificate = async (req, res) => {
     
     // Replace old branding with new branding for instructor name
     let instructorName = certificate.instructorName;
-    if (instructorName === 'QENDIEL Academy' || instructorName === 'QENDIEL' || !instructorName) {
+    if (instructorName === 'Ibyet Investing' || instructorName === 'IBYET' || !instructorName) {
       // Use course instructor name if available, otherwise use IBYET-INVESTING
       instructorName = course?.instructorName || 'IBYET-INVESTING';
     }
@@ -571,7 +571,7 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     });
     
     // Subtitle
-    const subtitle = 'Financial Education Academy';
+    const subtitle = 'Financial Education Platform';
     const subtitleSize = 11;
     const subtitleWidth = getTextWidth(subtitle, subtitleSize, serifFont);
     page.drawText(subtitle, {

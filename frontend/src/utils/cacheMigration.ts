@@ -7,12 +7,7 @@ export class CacheMigration {
     try {
       // List of old cache keys to remove
       const oldCacheKeys = [
-        'kandel-academy-cache-queries',
-        'kandel-academy-cache-user-profile',
-        'kandel-academy-cache-user-dashboard',
-        'kandel-academy-cache-certificates',
-        'kandel-academy-cache-progress-',
-        'kandel-academy-cache'
+        // Legacy cache keys removed
       ];
 
       // Get all localStorage keys
@@ -51,7 +46,6 @@ export class CacheMigration {
       const validCacheKeys = [
         'ibyet-cache-',
         'ebyet-cache-', // Legacy support
-        'qendiel-cache-', // Legacy support
         'videoUrlCache',
         'i18nextLng',
         'theme',
@@ -66,7 +60,7 @@ export class CacheMigration {
           key.startsWith(validKey) || key === validKey
         );
         
-        if (!isValid && (key.includes('cache') || key.includes('kandel'))) {
+        if (!isValid && key.includes('cache')) {
           orphanedKeys.push(key);
         }
       });
@@ -91,8 +85,8 @@ export class CacheMigration {
   } {
     try {
       const allKeys = Object.keys(localStorage);
-      const cacheKeys = allKeys.filter(key => key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache')); // Include legacy
-      const otherKeys = allKeys.filter(key => !key.startsWith('ibyet-cache') && !key.startsWith('ebyet-cache') && !key.startsWith('qendiel-cache'));
+      const cacheKeys = allKeys.filter(key => key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache')); // Include legacy
+      const otherKeys = allKeys.filter(key => !key.startsWith('ibyet-cache') && !key.startsWith('ebyet-cache'));
       
       // Calculate approximate cache size
       let cacheSize = 0;
@@ -126,7 +120,7 @@ export class CacheMigration {
       // Clear all cache (both new and legacy)
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
-        if (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache')) {
+        if (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache')) {
           localStorage.removeItem(key);
         }
       });

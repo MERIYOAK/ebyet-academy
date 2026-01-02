@@ -37,9 +37,9 @@ export class UserCacheVerifier {
 
       // Check localStorage cache
       const localStorageData = {
-        userProfile: !!(localStorage.getItem('ibyet-cache-user-profile') || localStorage.getItem('ebyet-cache-user-profile') || localStorage.getItem('qendiel-cache-user-profile')), // Legacy support
-        userDashboard: !!(localStorage.getItem('ibyet-cache-user-dashboard') || localStorage.getItem('ebyet-cache-user-dashboard') || localStorage.getItem('qendiel-cache-user-dashboard')), // Legacy support
-        certificates: !!(localStorage.getItem('ibyet-cache-certificates') || localStorage.getItem('ebyet-cache-certificates') || localStorage.getItem('qendiel-cache-certificates')), // Legacy support
+        userProfile: !!(localStorage.getItem('ibyet-cache-user-profile') || localStorage.getItem('ebyet-cache-user-profile')), // Legacy support
+        userDashboard: !!(localStorage.getItem('ibyet-cache-user-dashboard') || localStorage.getItem('ebyet-cache-user-dashboard')), // Legacy support
+        certificates: !!(localStorage.getItem('ibyet-cache-certificates') || localStorage.getItem('ebyet-cache-certificates')), // Legacy support
       };
 
       // Generate recommendations
@@ -165,7 +165,7 @@ export class UserCacheVerifier {
       );
 
       const localStorageKeys = Object.keys(localStorage).filter(key => 
-        (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache')) && ( // Legacy support
+        (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache')) && ( // Legacy support
           key.includes('user') || 
           key.includes('certificates') || 
           key.includes('progress')
@@ -242,7 +242,7 @@ export class UserCacheVerifier {
       
       // Clear localStorage cache
       const userCacheKeys = Object.keys(localStorage).filter(key => 
-        (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache') || key.startsWith('qendiel-cache')) && ( // Legacy support
+        (key.startsWith('ibyet-cache') || key.startsWith('ebyet-cache')) && ( // Legacy support
           key.includes('user') || 
           key.includes('certificates') || 
           key.includes('progress')

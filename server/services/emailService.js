@@ -56,18 +56,18 @@ class EmailService {
       const mailOptions = {
         from: process.env.FROM_EMAIL || process.env.SMTP_USER,
         to: email,
-        subject: 'Verify Your Email - QENDIEL Academy',
+        subject: 'Verify Your Email - Ibyet Investing',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
-              <h1 style="margin: 0;">QENDIEL Academy</h1>
+              <h1 style="margin: 0;">Ibyet Investing</h1>
             </div>
             
             <div style="padding: 30px; background-color: #f9fafb;">
               <h2 style="color: #374151; margin-bottom: 20px;">Welcome, ${name}!</h2>
               
               <p style="color: #6b7280; line-height: 1.6; margin-bottom: 25px;">
-                Thank you for registering with QENDIEL Academy. To complete your registration, 
+                Thank you for registering with Ibyet Investing. To complete your registration, 
                 please verify your email address by clicking the button below.
               </p>
               
@@ -96,16 +96,16 @@ class EmailService {
             </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; text-align: center; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} QENDIEL Academy. All rights reserved.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.</p>
             </div>
           </div>
         `,
         text: `
-          Welcome to QENDIEL Academy!
+          Welcome to Ibyet Investing!
           
           Hi ${name},
           
-          Thank you for registering with QENDIEL Academy. To complete your registration, 
+          Thank you for registering with Ibyet Investing. To complete your registration, 
           please verify your email address by clicking the link below:
           
           ${verificationUrl}
@@ -115,7 +115,7 @@ class EmailService {
           If you didn't create an account, you can safely ignore this email.
           
           Best regards,
-          The QENDIEL Academy Team
+          The Ibyet Investing Team
         `
       };
 
@@ -148,11 +148,11 @@ class EmailService {
       const mailOptions = {
         from: process.env.FROM_EMAIL || process.env.SMTP_USER,
         to: email,
-        subject: 'Reset Your Password - QENDIEL Academy',
+        subject: 'Reset Your Password - Ibyet Investing',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
-              <h1 style="margin: 0;">QENDIEL Academy</h1>
+              <h1 style="margin: 0;">Ibyet Investing</h1>
             </div>
             
             <div style="padding: 30px; background-color: #f9fafb;">
@@ -188,12 +188,12 @@ class EmailService {
             </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; text-align: center; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} QENDIEL Academy. All rights reserved.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.</p>
             </div>
           </div>
         `,
         text: `
-          Password Reset Request - QENDIEL Academy
+          Password Reset Request - Ibyet Investing
           
           Hi ${name},
           
@@ -206,7 +206,7 @@ class EmailService {
           If you didn't request a password reset, you can safely ignore this email.
           
           Best regards,
-          The QENDIEL Academy Team
+          The Ibyet Investing Team
         `
       };
 
@@ -236,18 +236,18 @@ class EmailService {
       const mailOptions = {
         from: process.env.FROM_EMAIL || process.env.SMTP_USER,
         to: email,
-        subject: 'Welcome to QENDIEL Academy!',
+        subject: 'Welcome to Ibyet Investing!',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
-              <h1 style="margin: 0;">QENDIEL Academy</h1>
+              <h1 style="margin: 0;">Ibyet Investing</h1>
             </div>
             
             <div style="padding: 30px; background-color: #f9fafb;">
-              <h2 style="color: #374151; margin-bottom: 20px;">Welcome to QENDIEL Academy!</h2>
+              <h2 style="color: #374151; margin-bottom: 20px;">Welcome to Ibyet Investing!</h2>
               
               <p style="color: #6b7280; line-height: 1.6; margin-bottom: 25px;">
-                Hi ${name}, welcome to QENDIEL Academy! Your account has been successfully 
+                Hi ${name}, welcome to Ibyet Investing! Your account has been successfully 
                 created and verified. You can now start exploring our courses and learning resources.
               </p>
               
@@ -266,16 +266,16 @@ class EmailService {
             </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; text-align: center; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} QENDIEL Academy. All rights reserved.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.</p>
             </div>
           </div>
         `,
         text: `
-          Welcome to QENDIEL Academy!
+          Welcome to Ibyet Investing!
           
           Hi ${name},
           
-          Welcome to QENDIEL Academy! Your account has been successfully created and verified. 
+          Welcome to Ibyet Investing! Your account has been successfully created and verified. 
           You can now start exploring our courses and learning resources.
           
           Visit our platform: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/courses
@@ -283,7 +283,7 @@ class EmailService {
           If you have any questions or need assistance, feel free to contact our support team.
           
           Best regards,
-          The QENDIEL Academy Team
+          The Ibyet Investing Team
         `
       };
 
@@ -324,7 +324,7 @@ class EmailService {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
-              <h1 style="margin: 0;">QENDIEL Academy - Contact Form</h1>
+              <h1 style="margin: 0;">Ibyet Investing - Contact Form</h1>
             </div>
             
             <div style="padding: 30px; background-color: #f9fafb;">
@@ -352,17 +352,17 @@ class EmailService {
               </div>
               
               <p style="color: #6b7280; line-height: 1.6; margin-top: 25px; font-size: 14px;">
-                This email was sent from the QENDIEL Academy contact form. You can reply directly to this email to respond to ${name}.
+                This email was sent from the Ibyet Investing contact form. You can reply directly to this email to respond to ${name}.
               </p>
             </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; text-align: center; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} QENDIEL Academy. All rights reserved.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.</p>
             </div>
           </div>
         `,
         text: `
-          QENDIEL Academy - Contact Form Submission
+          Ibyet Investing - Contact Form Submission
           
           New contact form submission received:
           
@@ -376,7 +376,7 @@ class EmailService {
           You can reply directly to this email to respond to ${name}.
           
           Best regards,
-          QENDIEL Academy Contact System
+          Ibyet Investing Contact System
         `
       };
 

@@ -9,15 +9,11 @@ export const CacheClearer = {
     // Clear localStorage cache
     localStorage.removeItem('ibyet-cache');
     localStorage.removeItem('ebyet-cache'); // Legacy support
-    localStorage.removeItem('qendiel-cache'); // Legacy support
-    
     // Clear any other cache-related items
     localStorage.removeItem('ibyet-cache-version');
     localStorage.removeItem('ibyet-cache-timestamp');
     localStorage.removeItem('ebyet-cache-version'); // Legacy support
     localStorage.removeItem('ebyet-cache-timestamp'); // Legacy support
-    localStorage.removeItem('qendiel-cache-version'); // Legacy support
-    localStorage.removeItem('qendiel-cache-timestamp'); // Legacy support
     
     console.log('🧹 All cache cleared successfully');
   },
@@ -56,7 +52,7 @@ export const CacheClearer = {
   // Get cache status
   getCacheStatus: () => {
     const reactQueryCache = queryClient.getQueryCache().getAll();
-    const localStorageCache = localStorage.getItem('ibyet-cache') || localStorage.getItem('ebyet-cache') || localStorage.getItem('qendiel-cache'); // Legacy support
+    const localStorageCache = localStorage.getItem('ibyet-cache') || localStorage.getItem('ebyet-cache'); // Legacy support
     
     return {
       reactQueryEntries: reactQueryCache.length,
