@@ -106,7 +106,7 @@ const ContactPage = () => {
       title: t('contact.quick_actions.faq', 'FAQ'),
       description: t('contact.quick_actions.faq_desc', 'Find answers to common questions'),
       gradient: 'from-blue-500 to-purple-500',
-      link: '/help'
+      link: '/help-center'
     },
     {
       icon: Zap,
@@ -142,7 +142,7 @@ const ContactPage = () => {
               <a
                 key={index}
                 href={action.link || '#'}
-                className={`group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
+                className={`group bg-white dark:bg-gradient-to-br dark:from-cyan-950/90 dark:via-blue-950/90 dark:to-purple-950/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className={`bg-gradient-to-br ${action.gradient} p-3 rounded-xl w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
@@ -162,7 +162,7 @@ const ContactPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
             {/* Contact Info */}
             <div className={`space-y-6 transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform -translate-x-8'}`}>
-              <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700/50 shadow-2xl">
+              <div className="bg-white dark:bg-gradient-to-br dark:from-cyan-950/90 dark:via-blue-950/90 dark:to-purple-950/90 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-200 dark:border-cyan-500/20 dark:shadow-cyan-500/10 shadow-2xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-12 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-full"></div>
                   <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -179,7 +179,7 @@ const ContactPage = () => {
                       key={index}
                       href={info.action || undefined}
                       onClick={!info.action ? (e) => e.preventDefault() : undefined}
-                      className={`group block bg-gray-100 dark:bg-gray-900/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
+                      className={`group block bg-gray-100 dark:bg-cyan-950/40 dark:border-cyan-500/10 rounded-2xl p-5 border border-gray-200 dark:border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 ${isVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-8'}`}
                       style={{ transitionDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-start gap-4">
@@ -205,7 +205,7 @@ const ContactPage = () => {
 
             {/* Contact Form */}
             <div className={`transition-all duration-700 ease-out ${isVisible ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform translate-x-8'}`}>
-              <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700/50 shadow-2xl">
+              <div className="bg-white dark:bg-gradient-to-br dark:from-cyan-950/90 dark:via-blue-950/90 dark:to-purple-950/90 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-gray-200 dark:border-cyan-500/20 dark:shadow-cyan-500/10 shadow-2xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-12 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full"></div>
                   <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent pb-2 sm:pb-3">

@@ -168,7 +168,7 @@ const CheckoutCancelPage = () => {
                   {t('checkout_cancel.contact_support')}
                 </Link>
                 <Link
-                  to="/help"
+                  to="/help-center"
                   className="bg-blue-600 dark:bg-gray-700 hover:bg-blue-700 dark:hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-blue-500 dark:border-gray-600"
                 >
                   {t('checkout_cancel.help_center')}

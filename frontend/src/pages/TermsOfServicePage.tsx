@@ -7,7 +7,7 @@ const TermsOfServicePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
+      <div className="bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4">Terms of Service</h1>
