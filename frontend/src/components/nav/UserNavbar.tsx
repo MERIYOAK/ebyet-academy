@@ -131,7 +131,7 @@ const UserNavbar: React.FC = () => {
     <>
       {/* Navbar - Transparent with Hero Image Background */}
       <nav 
-        className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300 bg-white/30 dark:bg-[rgba(40,40,61,0.3)] backdrop-blur-md"
+        className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300 bg-white/80 dark:bg-[rgba(40,40,61,0.3)] backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/30"
       >
         <div className="max-w-7xl mx-auto px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 xs:h-16 sm:h-16 md:h-20 min-h-[56px]">
@@ -164,13 +164,13 @@ const UserNavbar: React.FC = () => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="flex items-center justify-center w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 dark:bg-white/10 hover:bg-white/20 dark:hover:bg-white/20 backdrop-blur-sm border border-white/20 dark:border-white/20 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 transition-all duration-300 hover:scale-110"
+                className="flex items-center justify-center w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 backdrop-blur-sm border border-gray-300 dark:border-white/20 hover:border-cyan-500 dark:hover:border-cyan-500/50 transition-all duration-300 hover:scale-110"
                 aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                   {theme === 'dark' ? (
-                  <Moon className="w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
+                  <Moon className="w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5 text-gray-700 dark:text-white" />
                 ) : (
-                  <Sun className="w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5 text-gray-900 dark:text-white" />
+                  <Sun className="w-4 h-4 xs:w-4.5 xs:h-4.5 sm:w-5 sm:h-5 text-gray-700 dark:text-white" />
                 )}
               </button>
 
@@ -181,12 +181,12 @@ const UserNavbar: React.FC = () => {
                     e.stopPropagation();
                     setIsLangMenuOpen(!isLangMenuOpen);
                   }}
-                  className="flex items-center space-x-0.5 xs:space-x-1 px-1.5 xs:px-2 sm:px-2.5 md:px-3 py-1 xs:py-1.5 sm:py-2 text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-900 dark:text-white hover:text-cyan-500 dark:hover:text-cyan-300 hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-sm rounded-full transition-all border border-gray-300/50 dark:border-white/20 min-w-[28px] xs:min-w-[32px] sm:min-w-[auto] justify-center"
+                  className="flex items-center space-x-0.5 xs:space-x-1 px-1.5 xs:px-2 sm:px-2.5 md:px-3 py-1 xs:py-1.5 sm:py-2 text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-700 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-300 hover:bg-gray-100 dark:hover:bg-white/10 backdrop-blur-sm rounded-full transition-all border border-gray-300 dark:border-white/20 hover:border-cyan-500 dark:hover:border-cyan-500/50 min-w-[28px] xs:min-w-[32px] sm:min-w-[auto] justify-center"
                   aria-label="Toggle language"
                 >
-                  <Globe className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <Globe className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-gray-700 dark:text-white" />
                   <span className="hidden xs:inline">{(i18n.language || getCurrentLanguage()) === 'en' ? 'EN' : 'ትግ'}</span>
-                  <ChevronDown className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 transition-transform duration-200 flex-shrink-0 ${isLangMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 transition-transform duration-200 flex-shrink-0 text-gray-700 dark:text-white ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                
                 {/* Language Dropdown */}
@@ -254,7 +254,7 @@ const UserNavbar: React.FC = () => {
               {/* Hamburger Menu Button - Mobile */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="sm:hidden p-1.5 xs:p-2 text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                className="sm:hidden p-1.5 xs:p-2 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
                 aria-label="Toggle menu"
               >
                 {isMenuOpen ? (
@@ -327,9 +327,6 @@ const UserNavbar: React.FC = () => {
           {/* Mobile User Menu */}
           {isAuthenticated && (
             <div className="mt-6 xs:mt-8 space-y-3 xs:space-y-4">
-              <div className="flex items-center gap-3 xs:gap-4 mb-4 xs:mb-6">
-                <AvatarMenu variant="user" profileImageUrl={profileImageUrl} />
-              </div>
               <Link
                 to="/dashboard"
                 onClick={handleLinkClick}

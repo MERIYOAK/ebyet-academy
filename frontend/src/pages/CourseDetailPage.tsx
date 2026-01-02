@@ -1774,11 +1774,11 @@ const CourseDetailPage = () => {
   const totalVideos = course.videos?.length || 0;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 pt-14">
+    <div className="min-h-screen bg-white dark:bg-gray-900 pt-12 tiny:pt-14">
       {/* Top Navigation Bar - Removed playlist toggle */}
-      <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 border-b border-blue-200 dark:border-gray-700 sticky top-14 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-3">
+      <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 border-b border-blue-200 dark:border-gray-700 sticky top-12 tiny:top-14 z-40">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-3 xxs:px-4 sm:px-6 lg:px-8">
+          <div className="py-2 tiny:py-2.5 xxs:py-3">
             {/* Navigation bar - empty for now */}
           </div>
         </div>
@@ -1786,16 +1786,16 @@ const CourseDetailPage = () => {
 
       {/* Course Header Banner */}
       <div className="bg-gradient-to-br from-blue-100 via-cyan-100 to-purple-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border-b border-blue-300 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 tiny:py-6 xxs:py-8 sm:py-12">
+          <div className="flex flex-col lg:flex-row gap-4 tiny:gap-5 xxs:gap-6 lg:gap-8 items-start">
             {/* Course Thumbnail */}
             <div className="w-full lg:w-80 flex-shrink-0">
               {course.thumbnailURL ? (
-                <div className="relative group rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-xl">
+                <div className="relative group rounded-lg tiny:rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-xl">
                   <img
                     src={course.thumbnailURL}
                     alt={getLocalizedText(course.title, currentLanguage)}
-                    className="w-full h-48 lg:h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-40 tiny:h-44 xxs:h-48 sm:h-56 lg:h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 right-4">
@@ -1822,33 +1822,33 @@ const CourseDetailPage = () => {
 
             {/* Course Header Info */}
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 pb-2 sm:pb-3 md:pb-4 leading-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+              <h1 className="text-lg tiny:text-xl xxs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 tiny:mb-3 xxs:mb-4 pb-1.5 tiny:pb-2 xxs:pb-2 sm:pb-3 md:pb-4 leading-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                 {getLocalizedText(course.title, currentLanguage)}
               </h1>
               
-              <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+              <p className="text-xs tiny:text-sm xxs:text-base sm:text-lg text-gray-700 dark:text-gray-300 mb-3 tiny:mb-4 xxs:mb-6 leading-relaxed">
                 {getLocalizedText(course.description, currentLanguage)}
               </p>
 
               {/* Quick Stats Row */}
-              <div className="flex flex-wrap gap-4 mb-6">
-                <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
-                  <Clock className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                  <span className="text-sm text-gray-800 dark:text-gray-300">{totalDuration}</span>
+              <div className="flex flex-wrap gap-2 tiny:gap-3 xxs:gap-4 mb-3 tiny:mb-4 xxs:mb-6">
+                <div className="flex items-center space-x-1.5 tiny:space-x-2 bg-white dark:bg-gray-800 px-2.5 tiny:px-3 xxs:px-4 py-1.5 tiny:py-2 rounded-md tiny:rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+                  <Clock className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                  <span className="text-xs tiny:text-sm text-gray-800 dark:text-gray-300">{totalDuration}</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
-                  <BookOpen className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                  <span className="text-sm text-gray-800 dark:text-gray-300">{totalVideos} {t('course_detail.lessons')}</span>
+                <div className="flex items-center space-x-1.5 tiny:space-x-2 bg-white dark:bg-gray-800 px-2.5 tiny:px-3 xxs:px-4 py-1.5 tiny:py-2 rounded-md tiny:rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+                  <BookOpen className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                  <span className="text-xs tiny:text-sm text-gray-800 dark:text-gray-300">{totalVideos} {t('course_detail.lessons')}</span>
                 </div>
               </div>
 
               {/* Tags */}
               {course.tags && course.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-1.5 tiny:gap-2 mb-3 tiny:mb-4 xxs:mb-6">
                   {course.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-400 px-3 py-1 rounded-lg text-xs font-medium border border-gray-200 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-200 shadow-sm dark:shadow-none"
+                      className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-400 px-2 tiny:px-2.5 xxs:px-3 py-0.5 tiny:py-1 rounded-md tiny:rounded-lg text-[10px] tiny:text-xs font-medium border border-gray-200 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-200 shadow-sm dark:shadow-none"
                     >
                       #{tag}
                     </span>
@@ -1868,30 +1868,30 @@ const CourseDetailPage = () => {
 
               {/* Buy Button */}
               {!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4 border-t border-blue-300 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 tiny:gap-4 pt-3 tiny:pt-4 border-t border-blue-300 dark:border-gray-700">
                   <div className="flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+                    <div className="flex items-baseline gap-1.5 tiny:gap-2">
+                      <span className="text-xl tiny:text-2xl xxs:text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
                         ${course.price?.toFixed(2) || '0.00'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mt-0.5 tiny:mt-1">
                       {t('course_detail.lifetime_access', 'Lifetime access')}
                     </p>
                   </div>
                   <button
                     onClick={handlePurchase}
                     disabled={isPurchasing}
-                    className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-4 tiny:px-6 xxs:px-8 py-2 tiny:py-2.5 xxs:py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-lg tiny:rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-1.5 tiny:gap-2 text-xs tiny:text-sm xxs:text-base"
                   >
                     {isPurchasing ? (
                       <>
-                        <Loader className="h-5 w-5 animate-spin" />
+                        <Loader className="h-4 w-4 tiny:h-5 tiny:w-5 animate-spin" />
                         <span>{t('checkout_success.processing', 'Processing...')}</span>
                       </>
                     ) : (
                       <>
-                        <ShoppingCart className="h-5 w-5" />
+                        <ShoppingCart className="h-4 w-4 tiny:h-5 tiny:w-5" />
                         <span>{t('course_detail.purchase_course')}</span>
                       </>
                     )}
@@ -1904,24 +1904,24 @@ const CourseDetailPage = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-7xl mx-auto px-2 tiny:px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 tiny:py-6 xxs:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 tiny:gap-6 xxs:gap-8">
           {/* Left Column - Video Player */}
-          <div className="lg:col-span-8 space-y-8">
+          <div className="lg:col-span-8 space-y-4 tiny:space-y-6 xxs:space-y-8">
             {/* Video Player Section */}
             {(!courseData || courseData.videos.length === 0) ? (
-              <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-xl p-8 text-center border border-blue-200 dark:border-gray-700 shadow-lg dark:shadow-none">
+              <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-lg tiny:rounded-xl p-4 tiny:p-6 xxs:p-8 text-center border border-blue-200 dark:border-gray-700 shadow-lg dark:shadow-none">
                 <div className="text-gray-600 dark:text-gray-400">
-                  <BookOpen className="w-16 h-16 mx-auto mb-4" />
-                  <p className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-300">{t('course_detail.loading_course_content')}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('course_detail.please_wait_loading_videos')}</p>
+                  <BookOpen className="w-12 h-12 tiny:w-14 tiny:h-14 xxs:w-16 xxs:h-16 mx-auto mb-3 tiny:mb-4" />
+                  <p className="text-sm tiny:text-base xxs:text-lg font-semibold mb-1.5 tiny:mb-2 text-gray-800 dark:text-gray-300">{t('course_detail.loading_course_content')}</p>
+                  <p className="text-xs tiny:text-sm text-gray-600 dark:text-gray-400">{t('course_detail.please_wait_loading_videos')}</p>
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl">
+              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl">
                 {/* Video Player */}
-                <div className="relative w-full" style={{ aspectRatio: '16/9', minHeight: '400px' }}>
-                  <div className="w-full h-full bg-black">
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', minHeight: '200px', maxHeight: 'calc(100vh - 200px)' }}>
+                  <div className="w-full h-full bg-black overflow-hidden">
                     {currentVideo?.hasAccess &&
                      !currentVideo?.locked &&
                      currentVideo?.videoUrl &&
@@ -2041,28 +2041,28 @@ const CourseDetailPage = () => {
                         )}
                       </>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-600 dark:text-gray-400">
+                      <div className="w-full h-full flex items-center justify-center text-gray-600 dark:text-gray-400 overflow-hidden">
                         {currentVideo?.locked ? (
-                          <div className="space-y-4 text-center px-4">
-                            <Lock className="w-16 h-16 mx-auto mb-4 text-gray-600 dark:text-gray-400" />
-                            <p className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-300">{t('course_detail.video_locked')}</p>
-                            <p className="text-sm mb-4 text-gray-700 dark:text-gray-400">
+                          <div className="space-y-2 tiny:space-y-3 xxs:space-y-4 text-center px-2 tiny:px-3 xxs:px-4 py-2 tiny:py-3 xxs:py-4 max-w-full">
+                            <Lock className="w-8 h-8 tiny:w-10 tiny:h-10 xxs:w-12 xxs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-2 tiny:mb-3 xxs:mb-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                            <p className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold mb-1 tiny:mb-1.5 xxs:mb-2 text-gray-900 dark:text-gray-300 px-2 break-words">{t('course_detail.video_locked')}</p>
+                            <p className="text-[10px] tiny:text-xs xxs:text-sm mb-2 tiny:mb-3 xxs:mb-4 text-gray-700 dark:text-gray-400 px-2 break-words">
                               {!userToken 
                                 ? t('course_detail.sign_in_or_purchase')
                                 : t('course_detail.purchase_to_access')
                               }
                             </p>
                             {!userToken ? (
-                              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                              <div className="flex flex-col sm:flex-row gap-2 tiny:gap-2.5 xxs:gap-3 justify-center px-2">
                                 <button
                                   onClick={() => navigate('/login')}
-                                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
                                 >
                                   {t('course_detail.sign_in')}
                                 </button>
                                 <button
                                   onClick={handlePurchase}
-                                  className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold"
+                                  className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base whitespace-nowrap"
                                 >
                                   {t('course_detail.purchase_course')}
                                 </button>
@@ -2070,27 +2070,27 @@ const CourseDetailPage = () => {
                             ) : (
                               <button
                                 onClick={handlePurchase}
-                                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
                               >
                                 {t('course_detail.purchase_course')}
                               </button>
                             )}
                           </div>
                         ) : videoError ? (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <div className="space-y-4 text-center px-4">
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden">
+                            <div className="space-y-2 tiny:space-y-3 xxs:space-y-4 text-center px-2 tiny:px-3 xxs:px-4 py-2 tiny:py-3 xxs:py-4 max-w-full">
                               <div className="text-red-400">
-                                <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-8 h-8 tiny:w-10 tiny:h-10 xxs:w-12 xxs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-2 tiny:mb-3 xxs:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                 </svg>
-                                <p className="text-lg font-semibold mb-2">Video Error</p>
-                                <p className="text-sm">{videoError}</p>
+                                <p className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold mb-1 tiny:mb-1.5 xxs:mb-2 break-words">Video Error</p>
+                                <p className="text-[10px] tiny:text-xs xxs:text-sm break-words px-2">{videoError}</p>
                               </div>
                               
                               {retryCount < 3 && !isRetrying && (
                                 <button
                                   onClick={retryVideoLoad}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold"
+                                  className="bg-red-600 hover:bg-red-700 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base whitespace-nowrap"
                                 >
                                   Try Again
                                 </button>
@@ -2098,17 +2098,17 @@ const CourseDetailPage = () => {
                               
                               {isRetrying && (
                                 <div className="flex items-center justify-center space-x-2">
-                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500"></div>
-                                  <span>Retrying...</span>
+                                  <div className="animate-spin rounded-full h-4 w-4 tiny:h-5 tiny:w-5 xxs:h-6 xxs:w-6 border-b-2 border-cyan-500"></div>
+                                  <span className="text-[10px] tiny:text-xs xxs:text-sm">Retrying...</span>
                                 </div>
                               )}
                               
                               {retryCount >= 3 && (
-                                <div className="space-y-2">
-                                  <p className="text-sm text-gray-500">All retry attempts failed</p>
+                                <div className="space-y-1 tiny:space-y-2">
+                                  <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-500 break-words">All retry attempts failed</p>
                                   <button
                                     onClick={() => window.location.reload()}
-                                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm"
+                                    className="bg-gray-600 hover:bg-gray-700 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-colors duration-200 text-[10px] tiny:text-xs xxs:text-sm sm:text-base whitespace-nowrap"
                                   >
                                     Refresh Page
                                   </button>
@@ -2117,24 +2117,24 @@ const CourseDetailPage = () => {
                             </div>
                           </div>
                         ) : (
-                          <div className="text-center px-4">
+                          <div className="text-center px-2 tiny:px-3 xxs:px-4 py-2 tiny:py-3 xxs:py-4 max-w-full overflow-hidden">
                             {courseData.videos.every(v => v.locked) && !userToken ? (
-                              <div className="space-y-4">
-                                <Lock className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-500 dark:text-gray-400" />
-                                <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-300">{t('course_detail.course_preview')}</p>
-                                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-500 mb-4">
+                              <div className="space-y-2 tiny:space-y-3 xxs:space-y-4">
+                                <Lock className="w-8 h-8 tiny:w-10 tiny:h-10 xxs:w-12 xxs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                                <p className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-300 break-words px-2">{t('course_detail.course_preview')}</p>
+                                <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-500 mb-2 tiny:mb-3 xxs:mb-4 break-words px-2">
                                   {t('course_detail.no_free_preview')}
                                 </p>
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                <div className="flex flex-col sm:flex-row gap-2 tiny:gap-2.5 xxs:gap-3 justify-center px-2">
                                   <button
                                     onClick={() => navigate('/login')}
-                                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
+                                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
                                   >
                                     {t('course_detail.sign_in')}
                                   </button>
                                   <button
                                     onClick={handlePurchase}
-                                    className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-sm sm:text-base"
+                                    className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base whitespace-nowrap"
                                   >
                                     {t('course_detail.purchase_course')}
                                   </button>
@@ -2142,9 +2142,9 @@ const CourseDetailPage = () => {
                               </div>
                             ) : (
                               <div>
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 dark:border-cyan-500 mx-auto mb-4"></div>
-                                <p className="text-gray-700 dark:text-gray-300">{t('course_detail.loading_video')}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                <div className="animate-spin rounded-full h-8 w-8 tiny:h-10 tiny:w-10 xxs:h-12 xxs:w-12 border-b-2 border-cyan-600 dark:border-cyan-500 mx-auto mb-2 tiny:mb-3 xxs:mb-4"></div>
+                                <p className="text-[10px] tiny:text-xs xxs:text-sm sm:text-base text-gray-700 dark:text-gray-300 break-words px-2">{t('course_detail.loading_video')}</p>
+                                <p className="text-[9px] tiny:text-[10px] xxs:text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 tiny:mt-1.5 xxs:mt-2 break-words px-2">
                                   {!currentVideo?.videoUrl || currentVideo.videoUrl === 'undefined' 
                                     ? t('course_detail.refreshing_video_link')
                                     : t('course_detail.this_may_take_moments')
@@ -2160,21 +2160,21 @@ const CourseDetailPage = () => {
                 </div>
 
                 {/* Current Video Info */}
-                <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-900 dark:via-gray-800/95 dark:to-gray-900 px-4 sm:px-6 py-4 border-t border-blue-200 dark:border-gray-700">
-                  <div className="flex items-start justify-between gap-4">
+                <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-900 dark:via-gray-800/95 dark:to-gray-900 px-2 tiny:px-3 xxs:px-4 sm:px-6 py-2 tiny:py-2.5 xxs:py-3 sm:py-4 border-t border-blue-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-gray-900 dark:text-white font-semibold text-base sm:text-lg mb-2 line-clamp-2">
+                      <h2 className="text-gray-900 dark:text-white font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base md:text-lg mb-1 tiny:mb-1.5 xxs:mb-2 leading-tight line-clamp-2">
                         {currentVideo?.title ? getLocalizedText(currentVideo.title, currentLanguage) : t('course_detail.select_a_video')}
                       </h2>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1 tiny:gap-1.5 xxs:gap-2 flex-wrap mt-1 tiny:mt-1.5">
                         {currentVideo?.isFreePreview && !currentVideo?.locked && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-600 text-white">
+                          <span className="inline-flex items-center px-1 tiny:px-1.5 xxs:px-2 py-0.5 rounded text-[9px] tiny:text-[10px] xxs:text-xs font-medium bg-green-600 text-white">
                             🔓 {t('course_detail.free_preview')}
                           </span>
                         )}
                         {currentVideo?.completed && (
-                          <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 text-xs sm:text-sm">
-                            <CheckCircle className="h-4 w-4" />
+                          <div className="flex items-center space-x-0.5 tiny:space-x-1 text-green-600 dark:text-green-400 text-[9px] tiny:text-[10px] xxs:text-xs sm:text-sm">
+                            <CheckCircle className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 xxs:h-3.5 xxs:w-3.5 flex-shrink-0" />
                             <span>{t('course_detail.completed')}</span>
                           </div>
                         )}
@@ -2182,10 +2182,11 @@ const CourseDetailPage = () => {
                     </div>
                     <button
                       onClick={() => setShowPlaylist(!showPlaylist)}
-                      className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-800 flex-shrink-0"
+                      className="flex items-center space-x-1 tiny:space-x-1.5 xxs:space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 px-1.5 tiny:px-2 xxs:px-3 py-1 tiny:py-1.5 xxs:py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-800 flex-shrink-0"
                     >
-                      <BookOpen className="h-5 w-5" />
-                      <span className="text-sm">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
+                      <BookOpen className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 xxs:h-5 xxs:w-5" />
+                      <span className="text-[10px] tiny:text-xs xxs:text-sm hidden xs:inline">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
+                      <span className="text-[10px] tiny:text-xs xxs:text-sm xs:hidden">{showPlaylist ? t('course_detail.hide', 'Hide') : t('course_detail.show', 'Show')}</span>
                     </button>
                   </div>
                 </div>
@@ -2193,18 +2194,18 @@ const CourseDetailPage = () => {
             )}
 
             {/* Course Curriculum Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl">
-              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('course_detail.course_curriculum', 'Course Curriculum')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl">
+              <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
+                <h2 className="text-base tiny:text-lg xxs:text-xl font-bold text-gray-900 dark:text-white">{t('course_detail.course_curriculum', 'Course Curriculum')}</h2>
+                <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mt-0.5 tiny:mt-1">
                   {courseData?.videos.length || 0} {t('course_detail.lessons', 'lessons')} • {totalDuration} {t('course_detail.total', 'total')}
                 </p>
               </div>
               
               {(!courseData || courseData.videos.length === 0) ? (
-                <div className="p-8 text-center">
-                  <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-                  <p className="text-gray-600 dark:text-gray-400">{t('course_detail.loading_course_content', 'Loading course content...')}</p>
+                <div className="p-4 tiny:p-6 xxs:p-8 text-center">
+                  <BookOpen className="w-12 h-12 tiny:w-14 tiny:h-14 xxs:w-16 xxs:h-16 mx-auto mb-3 tiny:mb-4 text-gray-400 dark:text-gray-500" />
+                  <p className="text-xs tiny:text-sm xxs:text-base text-gray-600 dark:text-gray-400">{t('course_detail.loading_course_content', 'Loading course content...')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -2216,7 +2217,7 @@ const CourseDetailPage = () => {
                     return (
                       <div
                         key={video.id}
-                        className={`p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
+                        className={`p-3 tiny:p-4 xxs:p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
                           isLocked && !hasAccess ? 'opacity-60' : 'cursor-pointer'
                         }`}
                         onClick={() => {
@@ -2225,51 +2226,51 @@ const CourseDetailPage = () => {
                           }
                         }}
                       >
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-2 tiny:gap-3 xxs:gap-4">
                           <div className="flex-shrink-0">
                             {isLocked && !hasAccess ? (
-                              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                <Lock className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                              <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-gray-500 dark:text-gray-400" />
                               </div>
                             ) : isCompleted ? (
-                              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                <CheckCircle className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-green-600 dark:text-green-400" />
                               </div>
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                                <Play className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                              <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                                <Play className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-cyan-600 dark:text-cyan-400" />
                               </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                <h3 className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 tiny:mb-1.5 xxs:mb-2">
                                   {idx + 1}. {getLocalizedText(video.title, currentLanguage)}
                                 </h3>
                                 {video.description && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                  <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mb-2 tiny:mb-2.5 xxs:mb-3 line-clamp-2">
                                     {getLocalizedText(video.description, currentLanguage)}
                                   </p>
                                 )}
-                                <div className="flex items-center gap-3 flex-wrap">
-                                  <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                                    <Clock className="h-4 w-4" />
+                                <div className="flex items-center gap-2 tiny:gap-2.5 xxs:gap-3 flex-wrap">
+                                  <div className="flex items-center gap-1 text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
+                                    <Clock className="h-3 w-3 tiny:h-3.5 tiny:w-3.5 xxs:h-4 xxs:w-4 flex-shrink-0" />
                                     <span>{video.duration}</span>
                                   </div>
                                   {video.isFreePreview && !isLocked && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-600 text-white">
+                                    <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-green-600 text-white">
                                       🔓 {t('course_detail.free_preview', 'Free Preview')}
                                     </span>
                                   )}
                                   {isLocked && !hasAccess && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-600 text-white">
-                                      <Lock className="h-3 w-3 mr-1" />
+                                    <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-gray-600 text-white">
+                                      <Lock className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 mr-0.5 tiny:mr-1 flex-shrink-0" />
                                       {t('course_detail.locked', 'Locked')}
                                     </span>
                                   )}
                                   {video.progress && video.progress.watchedPercentage > 0 && (
-                                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="flex items-center gap-1 text-[10px] tiny:text-xs text-gray-500 dark:text-gray-400">
                                       <span>{Math.round(video.progress.watchedPercentage)}% {t('course_detail.watched', 'watched')}</span>
                                     </div>
                                   )}
@@ -2287,19 +2288,19 @@ const CourseDetailPage = () => {
 
             {/* Course Materials Section - Below Curriculum */}
             {loadingMaterials ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl mt-6 p-8 text-center">
-                <Loader className="h-8 w-8 animate-spin text-cyan-600 dark:text-cyan-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">{t('course_detail.loading_materials', 'Loading materials...')}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl mt-4 tiny:mt-5 xxs:mt-6 p-4 tiny:p-6 xxs:p-8 text-center">
+                <Loader className="h-6 w-6 tiny:h-7 tiny:w-7 xxs:h-8 xxs:w-8 animate-spin text-cyan-600 dark:text-cyan-400 mx-auto mb-1.5 tiny:mb-2" />
+                <p className="text-xs tiny:text-sm text-gray-600 dark:text-gray-400">{t('course_detail.loading_materials', 'Loading materials...')}</p>
               </div>
             ) : materials.length > 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden mt-6">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.course_materials', 'Course Materials')}</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden mt-4 tiny:mt-5 xxs:mt-6">
+                <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
+                  <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.course_materials', 'Course Materials')}</h3>
                 </div>
-                <div className="p-4 sm:p-6">
-                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                    <Lock className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-sm font-medium">
+                <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6">
+                  <div className="flex items-center gap-1.5 tiny:gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 tiny:p-2.5 xxs:p-3">
+                    <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
+                    <span className="text-xs tiny:text-sm font-medium">
                       Purchase this course to access the course materials
                     </span>
                   </div>
@@ -2309,57 +2310,57 @@ const CourseDetailPage = () => {
 
             {/* Certificate Section - Show only when course is completed */}
             {isCourseCompleted && (purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
-              <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-xl overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-xl mt-6">
-                <div className="p-6 sm:p-8">
-                  <div className="flex items-start justify-between gap-4">
+              <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-lg tiny:rounded-xl overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-xl mt-4 tiny:mt-5 xxs:mt-6">
+                <div className="p-3 tiny:p-4 xxs:p-5 sm:p-6 md:p-8">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-3 tiny:gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                          <Award className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      <div className="flex items-center gap-2 tiny:gap-3 mb-2 tiny:mb-3">
+                        <div className="w-10 h-10 tiny:w-11 tiny:h-11 xxs:w-12 xxs:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                          <Award className="h-5 w-5 tiny:h-5.5 tiny:w-5.5 xxs:h-6 xxs:w-6 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          <h2 className="text-base tiny:text-lg xxs:text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             {t('course_detail.certificate_ready', 'Certificate Ready!')}
                           </h2>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mt-0.5 tiny:mt-1">
                             {t('course_detail.certificate_description', 'Congratulations! You have completed this course. Generate your certificate of completion.')}
                           </p>
                         </div>
                       </div>
                       
                       {showCertificateSuccess && (
-                        <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
-                          <div className="flex items-center space-x-2 text-green-800 dark:text-green-300">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="text-sm font-medium">{t('course_detail.certificate_generated', 'Certificate Generated Successfully!')}</span>
+                        <div className="mt-3 tiny:mt-4 p-2 tiny:p-2.5 xxs:p-3 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
+                          <div className="flex items-center space-x-1.5 tiny:space-x-2 text-green-800 dark:text-green-300">
+                            <CheckCircle className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
+                            <span className="text-xs tiny:text-sm font-medium">{t('course_detail.certificate_generated', 'Certificate Generated Successfully!')}</span>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 w-full sm:w-auto">
                       {certificateExists ? (
                         <button
                           onClick={viewCertificate}
-                          className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 transform font-semibold"
+                          className="flex items-center justify-center space-x-1.5 tiny:space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 tiny:px-5 xxs:px-6 py-2 tiny:py-2.5 xxs:py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 transform font-semibold text-xs tiny:text-sm xxs:text-base w-full sm:w-auto"
                         >
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5" />
                           <span>{t('course_detail.view_certificate', 'View Certificate')}</span>
                         </button>
                       ) : (
                         <button
                           onClick={generateCertificate}
                           disabled={generatingCertificate}
-                          className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 transform disabled:hover:scale-100 disabled:cursor-not-allowed font-semibold"
+                          className="flex items-center justify-center space-x-1.5 tiny:space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 tiny:px-5 xxs:px-6 py-2 tiny:py-2.5 xxs:py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 transform disabled:hover:scale-100 disabled:cursor-not-allowed font-semibold text-xs tiny:text-sm xxs:text-base w-full sm:w-auto"
                         >
                           {generatingCertificate ? (
                             <>
-                              <Loader className="h-5 w-5 animate-spin" />
+                              <Loader className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 animate-spin" />
                               <span>{t('course_detail.generating', 'Generating...')}</span>
                             </>
                           ) : (
                             <>
-                              <Sparkles className="h-5 w-5" />
+                              <Sparkles className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5" />
                               <span>{t('course_detail.generate_certificate', 'Generate Certificate')}</span>
                             </>
                           )}
@@ -2373,9 +2374,50 @@ const CourseDetailPage = () => {
 
           </div>
 
+          {/* Mobile Playlist Overlay - Shows on top of video player on mobile */}
+          {courseData && courseData.videos.length > 0 && showPlaylist && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+                onClick={() => setShowPlaylist(false)}
+              />
+              {/* Playlist Overlay */}
+              <div className="lg:hidden fixed inset-x-0 top-0 z-50 bg-gray-900 shadow-2xl" style={{ maxHeight: '70vh', height: '70vh' }}>
+                <div className="h-full flex flex-col">
+                  {/* Playlist Header with Close Button */}
+                  <div className="flex items-center justify-between p-3 xxs:p-4 border-b border-gray-700 bg-gray-800">
+                    <h3 className="font-bold text-sm xxs:text-base text-white">{t('course_detail.course_content', 'Course Content')}</h3>
+                    <button
+                      onClick={() => setShowPlaylist(false)}
+                      className="text-gray-400 hover:text-white transition-colors p-1 rounded"
+                      aria-label="Close playlist"
+                    >
+                      <svg className="w-5 h-5 xxs:w-6 xxs:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Playlist Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    <VideoPlaylist
+                      videos={courseData.videos}
+                      currentVideoId={currentVideoId}
+                      onVideoSelect={(videoId) => {
+                        handleVideoSelect(videoId);
+                        setShowPlaylist(false); // Close playlist after selecting video
+                      }}
+                      courseProgress={courseData.overallProgress}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Right Column - Playlist Sidebar */}
           <div className="hidden lg:block lg:col-span-4">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 space-y-4 tiny:space-y-6">
               {courseData && courseData.videos.length > 0 && showPlaylist && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
                   <div className="max-h-[calc(100vh-150px)] overflow-y-auto">
@@ -2390,40 +2432,40 @@ const CourseDetailPage = () => {
               )}
 
               {/* What's Included Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.whats_included', "What's Included")}</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+                <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
+                  <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.whats_included', "What's Included")}</h3>
                 </div>
-                <div className="p-4 sm:p-6">
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> 
-                      <span>{t('course_detail.lifetime_access', 'Lifetime access')}</span>
+                <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6">
+                  <ul className="space-y-2 tiny:space-y-2.5 xxs:space-y-3">
+                    <li className="flex items-center gap-1.5 tiny:gap-2 text-gray-700 dark:text-gray-300">
+                      <CheckCircle className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> 
+                      <span className="text-xs tiny:text-sm xxs:text-base">{t('course_detail.lifetime_access', 'Lifetime access')}</span>
                     </li>
-                    <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <Award className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> 
-                      <span>{t('course_detail.certificate_of_completion', 'Certificate of completion')}</span>
+                    <li className="flex items-center gap-1.5 tiny:gap-2 text-gray-700 dark:text-gray-300">
+                      <Award className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> 
+                      <span className="text-xs tiny:text-sm xxs:text-base">{t('course_detail.certificate_of_completion', 'Certificate of completion')}</span>
                     </li>
-                    <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <BookOpen className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> 
-                      <span>{t('course_detail.regular_course_updates', 'Regular course updates')}</span>
+                    <li className="flex items-center gap-1.5 tiny:gap-2 text-gray-700 dark:text-gray-300">
+                      <BookOpen className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> 
+                      <span className="text-xs tiny:text-sm xxs:text-base">{t('course_detail.regular_course_updates', 'Regular course updates')}</span>
                     </li>
                   </ul>
                 </div>
               </div>
 
               {/* WhatsApp Group Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.community', 'Community')}</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+                <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
+                  <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.community', 'Community')}</h3>
                 </div>
-                <div className="p-4 sm:p-6">
+                <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6">
                   {course.hasWhatsappGroup ? (
                     <>
                       {!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
-                        <div className="mb-4 flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                          <Lock className="h-5 w-5 flex-shrink-0" />
-                          <span className="text-sm font-medium">
+                        <div className="mb-3 tiny:mb-4 flex items-center gap-1.5 tiny:gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 tiny:p-2.5 xxs:p-3">
+                          <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
+                          <span className="text-xs tiny:text-sm font-medium">
                             {t('course_detail.whatsapp_locked', 'Purchase this course to access the WhatsApp community group')}
                           </span>
                         </div>
@@ -2436,9 +2478,9 @@ const CourseDetailPage = () => {
                       />
                     </>
                   ) : (
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                      <MessageCircle className="h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm">
+                    <div className="flex items-center gap-1.5 tiny:gap-2 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 tiny:p-3.5 xxs:p-4">
+                      <MessageCircle className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
+                      <span className="text-xs tiny:text-sm">
                         {t('course_detail.no_whatsapp_access', 'This course does not have WhatsApp access')}
                       </span>
                     </div>

@@ -136,9 +136,9 @@ const HomePage = () => {
             message={t('home.loading_featured_courses', 'Loading featured courses, please wait...')}
             className="mb-8"
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 tiny:gap-4 xs:gap-6 sm:gap-8">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="animate-pulse bg-white rounded-2xl shadow p-6 h-64 sm:h-72" />
+              <div key={i} className="animate-pulse bg-white rounded-2xl shadow p-4 tiny:p-5 xs:p-6 h-56 tiny:h-64 sm:h-72" />
             ))}
           </div>
         </div>
@@ -166,7 +166,7 @@ const HomePage = () => {
     
     // Rendering featured course cards (max 3)
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 tiny:gap-4 xs:gap-6 sm:gap-8">
         {featuredCourses.slice(0, 3).map((c) => {
           // Using the centralized parseDurationToSeconds utility
           const totalSeconds = (c.videos || []).reduce((acc, v) => acc + parseDurationToSeconds(v.duration), 0);
@@ -195,7 +195,7 @@ const HomePage = () => {
     <div>
       {/* Hero Section - Full Width Image with Overlay Text */}
       <section 
-        className="relative min-h-screen flex items-center overflow-hidden w-full"
+        className="relative h-screen flex items-center overflow-hidden w-full"
       >
         {/* Full Width Hero Image Background */}
         <div className="absolute inset-0 w-full h-full">
@@ -210,11 +210,11 @@ const HomePage = () => {
         </div>
 
         {/* Content Overlay */}
-        <div className="relative z-10 container mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-12 2xl:px-16 w-full">
-          <div className="flex flex-col justify-center space-y-2.5 xs:space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 max-w-2xl lg:max-w-3xl xl:max-w-4xl pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 xl:pt-16 pb-12 xs:pb-16 sm:pb-20 md:pb-24">
+        <div className="relative z-10 container mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-12 2xl:px-16 w-full">
+          <div className="flex flex-col justify-center space-y-2 tiny:space-y-2.5 xs:space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 max-w-2xl lg:max-w-3xl xl:max-w-4xl pt-3 tiny:pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 xl:pt-16 pb-8 tiny:pb-12 xs:pb-16 sm:pb-20 md:pb-24">
             {/* Big Title with Gradient */}
             <h1 
-              className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight xs:leading-tight sm:leading-tight pt-8 xs:pt-10 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24 pb-2 xs:pb-3 sm:pb-4"
+              className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight pt-6 tiny:pt-8 xs:pt-10 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24 pb-1.5 tiny:pb-2 xs:pb-3 sm:pb-4"
               style={{
                 background: 'linear-gradient(to right, #00BFFF 0%, #00BFFF 40%, #BA55D3 60%, #BA55D3 100%)',
                 WebkitBackgroundClip: 'text',
@@ -227,18 +227,18 @@ const HomePage = () => {
             </h1>
 
             {/* Bullet Points */}
-            <div className="space-y-1.5 xs:space-y-2 sm:space-y-2.5 md:space-y-3">
+            <div className="space-y-1 tiny:space-y-1.5 xs:space-y-2 sm:space-y-2.5 md:space-y-3">
               {[
                 t('home.hero_bullet_1'),
                 t('home.hero_bullet_2'),
                 t('home.hero_bullet_3'),
               ].map((text, index) => (
-                <div key={index} className="flex items-start gap-2 xs:gap-2.5 sm:gap-3">
+                <div key={index} className="flex items-start gap-1.5 tiny:gap-2 xs:gap-2.5 sm:gap-3">
                   <div
-                    className="w-1.5 h-1.5 xs:w-2 xs:h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 mt-1.5 xs:mt-2"
+                    className="w-1 h-1 tiny:w-1.5 tiny:h-1.5 xs:w-2 xs:h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 mt-1 tiny:mt-1.5 xs:mt-2"
                     style={{ backgroundColor: '#00BFFF' }}
                   />
-                  <p className="text-white/90 text-xs xs:text-sm sm:text-base md:text-lg leading-relaxed drop-shadow-lg">
+                  <p className="text-white/90 text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg leading-relaxed drop-shadow-lg">
                     {text}
                   </p>
                 </div>
@@ -246,17 +246,17 @@ const HomePage = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col xs:flex-row gap-2.5 xs:gap-3 sm:gap-4 pt-1 xs:pt-2">
+            <div className="flex flex-col xs:flex-row gap-2 tiny:gap-2.5 xs:gap-3 sm:gap-4 pt-1 tiny:pt-1.5 xs:pt-2">
               <Link
                 to="/courses"
-                className="px-4 xs:px-5 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 md:py-4 text-xs xs:text-sm sm:text-base font-semibold text-white rounded-lg text-center transition-all hover:opacity-90 hover:scale-105 active:scale-95 whitespace-nowrap shadow-lg"
+                className="px-3 tiny:px-4 xs:px-5 sm:px-6 md:px-8 py-2 tiny:py-2.5 xs:py-3 sm:py-3.5 md:py-4 text-[10px] tiny:text-xs xs:text-sm sm:text-base font-semibold text-white rounded-lg text-center transition-all hover:opacity-90 hover:scale-105 active:scale-95 whitespace-nowrap shadow-lg"
                 style={{ backgroundColor: '#00BFFF' }}
               >
                 {t('home.view_all_courses', 'Explore Courses')}
               </Link>
               <Link
                 to="/contact"
-                className="px-4 xs:px-5 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 md:py-4 text-xs xs:text-sm sm:text-base font-semibold rounded-lg text-center border-2 transition-all hover:bg-cyan-400/10 hover:scale-105 active:scale-95 whitespace-nowrap shadow-lg backdrop-blur-sm"
+                className="px-3 tiny:px-4 xs:px-5 sm:px-6 md:px-8 py-2 tiny:py-2.5 xs:py-3 sm:py-3.5 md:py-4 text-[10px] tiny:text-xs xs:text-sm sm:text-base font-semibold rounded-lg text-center border-2 transition-all hover:bg-cyan-400/10 hover:scale-105 active:scale-95 whitespace-nowrap shadow-lg backdrop-blur-sm"
                 style={{ borderColor: '#00BFFF', color: '#00BFFF' }}
               >
                 {t('home.contact_us', 'Get in Touch')}
@@ -264,20 +264,20 @@ const HomePage = () => {
             </div>
 
             {/* Social Proof */}
-            <div className="pt-1.5 xs:pt-2 sm:pt-3">
-              <p className="text-white/70 text-[10px] xs:text-xs sm:text-sm mb-1.5 xs:mb-2 drop-shadow-md">
+            <div className="pt-1 tiny:pt-1.5 xs:pt-2 sm:pt-3">
+              <p className="text-white/70 text-[9px] tiny:text-[10px] xs:text-xs sm:text-sm mb-1 tiny:mb-1.5 xs:mb-2 drop-shadow-md">
                 {t('home.hero_social_proof', 'Follow us here...')}
               </p>
-              <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 p-1.5 xs:p-2 sm:p-3">
+              <div className="flex items-center gap-1 tiny:gap-1.5 xs:gap-2 sm:gap-3 p-1 tiny:p-1.5 xs:p-2 sm:p-3">
                 <a
                   href="https://twitter.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
                   aria-label="X (Twitter)"
                 >
                   <svg 
-                    className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" 
+                    className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" 
                     viewBox="0 0 24 24" 
                     fill="currentColor"
                     aria-hidden="true"
@@ -289,28 +289,28 @@ const HomePage = () => {
                   href="https://youtube.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
                   aria-label="YouTube"
                 >
-                  <FaYoutube className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
+                  <FaYoutube className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
                 <a
                   href="https://tiktok.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
                   aria-label="TikTok"
                 >
-                  <FaTiktok className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
+                  <FaTiktok className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
                 <a
                   href="https://facebook.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                  className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
                   aria-label="Facebook"
                 >
-                  <FaFacebook className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
+                  <FaFacebook className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
               </div>
             </div>
@@ -320,7 +320,7 @@ const HomePage = () => {
 
       {/* Announcements Section with Slideshow */}
       <section 
-        className="relative w-full overflow-hidden py-8 xs:py-10 sm:py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-black"
+        className="relative w-full overflow-hidden py-6 tiny:py-8 xs:py-10 sm:py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-black"
         style={{
           marginTop: '-1px', // Overlap by 1px to eliminate border line
         }}
@@ -345,25 +345,25 @@ const HomePage = () => {
           ))}
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 relative z-10">
           {announcementsLoading ? (
-            <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center">
-              <div className="text-gray-600 dark:text-white/60 text-lg">{t('home.announcements.loading', 'Loading announcements...')}</div>
+            <div className="relative min-h-[150px] tiny:min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center">
+              <div className="text-gray-600 dark:text-white/60 text-sm tiny:text-base xs:text-lg">{t('home.announcements.loading', 'Loading announcements...')}</div>
             </div>
           ) : announcements.length === 0 ? (
-            <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center overflow-hidden">
+            <div className="relative min-h-[150px] tiny:min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center justify-center overflow-hidden">
               
               {/* Main content */}
-              <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
+              <div className="relative z-10 flex flex-col items-center justify-center text-center px-2 tiny:px-4">
                 {/* Animated icon with glow effect */}
-                <div className="relative mb-6">
+                <div className="relative mb-4 tiny:mb-6">
                   {/* Outer glow rings */}
                   <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-2xl animate-pulse"></div>
                   <div className="absolute -inset-4 bg-cyan-500/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
                   
                   {/* Icon container */}
-                  <div className="relative bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full p-6 xs:p-8 sm:p-10 border-2 border-cyan-500/30 backdrop-blur-sm">
-                    <Megaphone className="w-12 h-12 xs:w-16 xs:h-16 sm:w-20 sm:h-20 text-cyan-400 animate-bounce" style={{ animationDuration: '2s' }} />
+                  <div className="relative bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full p-4 tiny:p-6 xs:p-8 sm:p-10 border-2 border-cyan-500/30 backdrop-blur-sm">
+                    <Megaphone className="w-8 h-8 tiny:w-12 tiny:h-12 xs:w-16 xs:h-16 sm:w-20 sm:h-20 text-cyan-400 animate-bounce" style={{ animationDuration: '2s' }} />
                   </div>
                   
                   {/* Rotating rings */}
@@ -372,10 +372,10 @@ const HomePage = () => {
                 </div>
                 
                 {/* Text with gradient animation */}
-                <h3 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
+                <h3 className="text-base tiny:text-xl xs:text-2xl sm:text-3xl font-bold mb-2 tiny:mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
                   {t('home.announcements.no_announcements', 'No announcements available')}
                 </h3>
-                <p className="text-gray-600 dark:text-white/50 text-sm xs:text-base max-w-md">
+                <p className="text-gray-600 dark:text-white/50 text-xs tiny:text-sm xs:text-base max-w-md">
                   {t('home.announcements.no_announcements_subtitle', 'Check back soon for exciting updates and news!')}
                 </p>
                 
@@ -396,7 +396,7 @@ const HomePage = () => {
             </div>
           ) : (
             <>
-              <div className="relative min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center">
+              <div className="relative min-h-[150px] tiny:min-h-[200px] xs:min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex items-center">
                 {/* Announcements Slideshow */}
                 {announcements.map((announcement, index) => (
                   <div
@@ -408,10 +408,10 @@ const HomePage = () => {
                       willChange: index === currentAnnouncementIndex ? 'opacity' : 'auto',
                     }}
                   >
-                    <div className="w-full space-y-3 xs:space-y-3.5 sm:space-y-4 md:space-y-5 lg:space-y-6">
+                    <div className="w-full space-y-2 tiny:space-y-3 xs:space-y-3.5 sm:space-y-4 md:space-y-5 lg:space-y-6">
                       {/* Date */}
                       <div 
-                        className="text-gray-600 dark:text-white/60 text-xs xs:text-sm sm:text-base md:text-lg font-medium"
+                        className="text-gray-600 dark:text-white/60 text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg font-medium"
                         style={{
                           textShadow: '0 1px 5px rgba(0, 0, 0, 0.1)',
                         }}
@@ -421,9 +421,9 @@ const HomePage = () => {
                       
                       {/* Announcement Title */}
                       <h2 
-                        className="text-gray-900 dark:text-white font-bold leading-tight mb-3 xs:mb-3.5 sm:mb-4 md:mb-5"
+                        className="text-gray-900 dark:text-white font-bold leading-tight mb-2 tiny:mb-3 xs:mb-3.5 sm:mb-4 md:mb-5"
                         style={{
-                          fontSize: 'clamp(1.125rem, 3vw + 0.5rem, 2.25rem)',
+                          fontSize: 'clamp(0.875rem, 3vw + 0.5rem, 2.25rem)',
                           textShadow: '0 2px 20px rgba(0, 0, 0, 0.1)',
                           lineHeight: '1.2',
                         }}
@@ -433,11 +433,15 @@ const HomePage = () => {
                       
                       {/* Announcement Content */}
                       <p 
-                        className="text-gray-700 dark:text-white/90 leading-relaxed max-w-4xl"
+                        className="text-gray-700 dark:text-white/90 leading-relaxed max-w-4xl line-clamp-3 tiny:line-clamp-4 xs:line-clamp-5 sm:line-clamp-6"
                         style={{
-                          fontSize: 'clamp(0.875rem, 2vw + 0.25rem, 1.125rem)',
+                          fontSize: 'clamp(0.75rem, 2vw + 0.25rem, 1.125rem)',
                           textShadow: '0 1px 10px rgba(0, 0, 0, 0.1)',
                           lineHeight: '1.6',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
                         {i18n.language === 'tg' ? announcement.content.tg : announcement.content.en}
@@ -449,7 +453,7 @@ const HomePage = () => {
               
               {/* Announcement indicators */}
               {announcements.length > 1 && (
-                <div className="flex justify-center gap-2 mt-6 xs:mt-7 sm:mt-8 md:mt-10">
+                <div className="flex justify-center gap-1.5 tiny:gap-2 mt-4 tiny:mt-6 xs:mt-7 sm:mt-8 md:mt-10">
                   {announcements.map((announcement, index) => (
                     <button
                       key={announcement._id}
@@ -458,10 +462,10 @@ const HomePage = () => {
                         setIsAnnouncementAutoPlaying(false);
                         setTimeout(() => setIsAnnouncementAutoPlaying(true), 8000);
                       }}
-                      className={`h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
+                      className={`h-1 tiny:h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
                         index === currentAnnouncementIndex 
-                          ? 'w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
-                          : 'w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
+                          ? 'w-5 tiny:w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
+                          : 'w-1 tiny:w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
                       }`}
                       aria-label={t('home.announcements.go_to_announcement', 'Go to announcement {{number}}', { number: index + 1 })}
                     />
@@ -475,26 +479,26 @@ const HomePage = () => {
 
       {/* Investing Quotes Slideshow */}
       <section 
-        className="relative w-full overflow-hidden py-8 xs:py-10 sm:py-12 md:py-16 bg-gray-50 dark:bg-gray-900"
+        className="relative w-full overflow-hidden py-6 tiny:py-8 xs:py-10 sm:py-12 md:py-16 bg-gray-50 dark:bg-gray-900"
         onMouseEnter={() => setIsQuoteAutoPlaying(false)}
         onMouseLeave={() => setIsQuoteAutoPlaying(true)}
       >
-        <div className="max-w-4xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="relative min-h-[100px] xs:min-h-[120px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[200px]">
+        <div className="max-w-4xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+          <div className="relative min-h-[80px] tiny:min-h-[100px] xs:min-h-[120px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[200px]">
             {investingQuotes.map((quote, index) => (
               <div
                 key={index}
-                className={`text-center transition-opacity duration-1000 ease-in-out absolute inset-0 flex flex-col items-center justify-center gap-3 xs:gap-4 sm:gap-5 md:gap-6 ${
+                className={`text-center transition-opacity duration-1000 ease-in-out absolute inset-0 flex flex-col items-center justify-center gap-2 tiny:gap-3 xs:gap-4 sm:gap-5 md:gap-6 ${
                   index === currentQuoteIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
                 style={{
                   willChange: index === currentQuoteIndex ? 'opacity' : 'auto',
                 }}
               >
-                <blockquote className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-gray-900 dark:text-white leading-relaxed px-3 xs:px-4 sm:px-6">
+                <blockquote className="text-sm tiny:text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-gray-900 dark:text-white leading-relaxed px-2 tiny:px-3 xs:px-4 sm:px-6">
                   "{quote.en}"
                 </blockquote>
-                <blockquote className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-gray-700 dark:text-white/80 leading-relaxed px-3 xs:px-4 sm:px-6 italic">
+                <blockquote className="text-xs tiny:text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-gray-700 dark:text-white/80 leading-relaxed px-2 tiny:px-3 xs:px-4 sm:px-6 italic">
                   "{quote.tg}"
                 </blockquote>
               </div>
@@ -502,7 +506,7 @@ const HomePage = () => {
           </div>
           
           {/* Quote indicators */}
-          <div className="flex justify-center gap-2 mt-4 xs:mt-5 sm:mt-6 md:mt-8">
+          <div className="flex justify-center gap-1.5 tiny:gap-2 mt-3 tiny:mt-4 xs:mt-5 sm:mt-6 md:mt-8">
             {investingQuotes.map((_, index) => (
               <button
                 key={index}
@@ -511,10 +515,10 @@ const HomePage = () => {
                   setIsQuoteAutoPlaying(false);
                   setTimeout(() => setIsQuoteAutoPlaying(true), 8000);
                 }}
-                className={`h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
+                className={`h-1 tiny:h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
                   index === currentQuoteIndex 
-                    ? 'w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
-                    : 'w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
+                    ? 'w-5 tiny:w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
+                    : 'w-1 tiny:w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
                 }`}
                 aria-label={`Go to quote ${index + 1}`}
               />
@@ -524,21 +528,21 @@ const HomePage = () => {
       </section>
 
       {/* Featured Courses */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+      <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+          <div className="text-center mb-6 tiny:mb-8 xs:mb-10 sm:mb-12 md:mb-16">
+            <h2 className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 pb-0.5 tiny:pb-1 sm:pb-2">
               {t('home.courses_title', 'Courses')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-2 tiny:px-3 xs:px-4">
               {t('home.courses_subtitle', 'Explore our collection of courses designed to accelerate your professional development')}
             </p>
           </div>
           {featuredGrid}
-          <div className="text-center mt-6 xs:mt-8 sm:mt-10 md:mt-12">
+          <div className="text-center mt-4 tiny:mt-6 xs:mt-8 sm:mt-10 md:mt-12">
             <Link
               to="/courses"
-              className="group relative inline-flex items-center space-x-1 xs:space-x-2 bg-white text-blue-600 px-4 xs:px-5 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl font-bold text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 hover:scale-110 hover:shadow-2xl overflow-hidden"
+              className="group relative inline-flex items-center space-x-1 tiny:space-x-1.5 xs:space-x-2 bg-white text-blue-600 px-3 tiny:px-4 xs:px-5 sm:px-6 md:px-8 py-2 tiny:py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl font-bold text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 hover:scale-110 hover:shadow-2xl overflow-hidden"
               style={{
                 boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
               }}
@@ -562,26 +566,26 @@ const HomePage = () => {
       </section>
 
       {/* Featured Bundles Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+      <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+          <div className="text-center mb-6 tiny:mb-8 xs:mb-10 sm:mb-12 md:mb-16">
+            <h2 className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 pb-0.5 tiny:pb-1 sm:pb-2">
               {t('home.bundles_title', 'Course Bundles')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-2 tiny:px-3 xs:px-4">
               {t('home.bundles_subtitle', 'Save money with our curated course bundles. Get multiple courses at a discounted price.')}
             </p>
           </div>
           
           {/* Featured Bundles Grid - Full width for horizontal cards */}
           {bundlesLoading ? (
-            <div className="grid grid-cols-1 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-1 gap-3 tiny:gap-4 xs:gap-5 sm:gap-6 md:gap-8">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 h-48 sm:h-56 border border-gray-200 dark:border-gray-700" />
+                <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 tiny:p-4 sm:p-6 h-40 tiny:h-48 sm:h-56 border border-gray-200 dark:border-gray-700" />
               ))}
             </div>
           ) : featuredBundles.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-1 gap-3 tiny:gap-4 xs:gap-5 sm:gap-6 md:gap-8">
               {featuredBundles.slice(0, 3).map((bundle) => (
                 <BundleCard 
                   key={bundle._id} 
@@ -611,10 +615,10 @@ const HomePage = () => {
           )}
           
           {/* View All Bundles Button */}
-          <div className="text-center mt-6 xs:mt-8 sm:mt-10 md:mt-12">
+          <div className="text-center mt-4 tiny:mt-6 xs:mt-8 sm:mt-10 md:mt-12">
             <Link
               to="/bundles"
-              className="group relative inline-flex items-center space-x-1 xs:space-x-2 bg-white text-blue-600 px-4 xs:px-5 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl font-bold text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 hover:scale-110 hover:shadow-2xl overflow-hidden"
+              className="group relative inline-flex items-center space-x-1 tiny:space-x-1.5 xs:space-x-2 bg-white text-blue-600 px-3 tiny:px-4 xs:px-5 sm:px-6 md:px-8 py-2 tiny:py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl font-bold text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 hover:scale-110 hover:shadow-2xl overflow-hidden"
               style={{
                 boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(59, 130, 246, 0.2)'
               }}
@@ -638,18 +642,18 @@ const HomePage = () => {
       </section>
 
       {/* Benefits / Why Choose Us Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+      <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+          <div className="text-center mb-6 tiny:mb-8 xs:mb-10 sm:mb-12 md:mb-16">
+            <h2 className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 pb-0.5 tiny:pb-1 sm:pb-2">
               {t('home.why_choose_title', 'Why Choose Us')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-2 tiny:px-3 xs:px-4">
               {t('home.why_choose_subtitle', 'Discover what makes Ibyet Investing the best choice for your financial education journey')}
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 tiny:gap-4 xs:gap-5 sm:gap-6 md:gap-8">
             {[
               {
                 icon: BookOpen,
@@ -674,16 +678,16 @@ const HomePage = () => {
             ].map((benefit, index) => (
               <div
                 key={index}
-                className="bg-white dark:bg-gray-800 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 text-center border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50"
+                className="bg-white dark:bg-gray-800 p-3 tiny:p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 text-center border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50"
               >
-                <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 xs:mb-4 sm:mb-5 md:mb-6 transition-all duration-500"
+                <div className="w-8 h-8 tiny:w-10 tiny:h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-2 tiny:mb-3 xs:mb-4 sm:mb-5 md:mb-6 transition-all duration-500"
                 style={{
                   background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.2) 0%, rgba(0, 191, 255, 0.1) 100%)',
                 }}>
-                  <benefit.icon className="h-5 w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 transition-colors duration-500" style={{ color: '#00BFFF' }} />
+                  <benefit.icon className="h-4 w-4 tiny:h-5 tiny:w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 transition-colors duration-500" style={{ color: '#00BFFF' }} />
                 </div>
-                <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-500">{benefit.title}</h3>
-                <p className="text-xs xs:text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{benefit.description}</p>
+                <h3 className="text-sm tiny:text-base xs:text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-500">{benefit.title}</h3>
+                <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -691,18 +695,18 @@ const HomePage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+      <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-4xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+          <div className="text-center mb-6 tiny:mb-8 xs:mb-10 sm:mb-12 md:mb-16">
+            <h2 className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 pb-0.5 tiny:pb-1 sm:pb-2">
               {t('home.faq.title', 'Frequently Asked Questions')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-2 tiny:px-3 xs:px-4">
               {t('home.faq.subtitle', 'Find answers to common questions about our courses and platform')}
             </p>
           </div>
           
-          <div className="space-y-4 xs:space-y-5 sm:space-y-6 md:space-y-8">
+          <div className="space-y-3 tiny:space-y-4 xs:space-y-5 sm:space-y-6 md:space-y-8">
             {[
               {
                 question: t('home.faq.questions.get_started.question', 'How do I get started?'),
@@ -719,13 +723,13 @@ const HomePage = () => {
             ].map((faq, index) => (
               <div 
                 key={index}
-                className="group bg-white dark:bg-gray-800 p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50"
+                className="group bg-white dark:bg-gray-800 p-3 tiny:p-4 xs:p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50"
               >
-                <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-500 flex items-start xs:items-center">
-                  <HelpCircle className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 mr-2 xs:mr-3 mt-0.5 xs:mt-0 flex-shrink-0 transition-colors duration-500" style={{ color: '#00BFFF' }} />
+                <h3 className="text-sm tiny:text-base xs:text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-500 flex items-start xs:items-center">
+                  <HelpCircle className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 mr-1.5 tiny:mr-2 xs:mr-3 mt-0.5 xs:mt-0 flex-shrink-0 transition-colors duration-500" style={{ color: '#00BFFF' }} />
                   <span>{faq.question}</span>
                 </h3>
-                <p className="text-xs xs:text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed pl-6 xs:pl-7 sm:pl-8 md:pl-9 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-500">
+                <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed pl-5 tiny:pl-6 xs:pl-7 sm:pl-8 md:pl-9 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-500">
                   {faq.answer}
                 </p>
               </div>
@@ -735,13 +739,13 @@ const HomePage = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="text-center mb-8 xs:mb-10 sm:mb-12 md:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 xs:mb-3 sm:mb-4 pb-1 sm:pb-2">
+      <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+          <div className="text-center mb-6 tiny:mb-8 xs:mb-10 sm:mb-12 md:mb-16">
+            <h2 className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1.5 tiny:mb-2 xs:mb-3 sm:mb-4 pb-0.5 tiny:pb-1 sm:pb-2">
               {t('home.success_stories_title', 'Success Stories')}
             </h2>
-            <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-3 xs:px-4">
+            <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-white/80 max-w-2xl mx-auto px-2 tiny:px-3 xs:px-4">
               {t('home.success_stories_subtitle', 'Hear from our students who have transformed their financial future')}
             </p>
           </div>
@@ -916,22 +920,22 @@ const HomePage = () => {
                 ].map((testimonial, index) => (
                   <div
                     key={`set-${setIndex}-${index}`}
-                    className="flex-shrink-0 w-[90vw] xs:w-[85vw] sm:w-[45vw] md:w-[400px] lg:w-[450px] px-3 xs:px-4"
+                    className="flex-shrink-0 w-[95vw] tiny:w-[90vw] xs:w-[85vw] sm:w-[45vw] md:w-[400px] lg:w-[450px] px-2 tiny:px-3 xs:px-4"
                   >
-                    <div className="bg-gray-700 dark:bg-gray-700 p-3 xs:p-3.5 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-600 dark:border-gray-600 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 h-full flex flex-col max-h-[280px] xs:max-h-[300px] sm:max-h-[320px] md:max-h-[340px]">
-                      <div className="flex items-center mb-2 xs:mb-2.5 flex-shrink-0">
+                    <div className="bg-gray-700 dark:bg-gray-700 p-2.5 tiny:p-3 xs:p-3.5 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 border border-gray-600 dark:border-gray-600 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 h-full flex flex-col max-h-[240px] tiny:max-h-[280px] xs:max-h-[300px] sm:max-h-[320px] md:max-h-[340px]">
+                      <div className="flex items-center mb-1.5 tiny:mb-2 xs:mb-2.5 flex-shrink-0">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 text-yellow-400 fill-current" />
+                          <Star key={i} className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 text-yellow-400 fill-current" />
                         ))}
                       </div>
-                      <div className="mb-2 xs:mb-2.5 space-y-1.5 xs:space-y-2 flex-1 overflow-hidden min-h-0">
+                      <div className="mb-1.5 tiny:mb-2 xs:mb-2.5 space-y-1 tiny:space-y-1.5 xs:space-y-2 flex-1 overflow-hidden min-h-0">
                         {testimonial.contentEn && (
-                          <p className="text-[10px] xs:text-xs sm:text-sm text-gray-200 testimonial-text-truncate-full">
+                          <p className="text-[9px] tiny:text-[10px] xs:text-xs sm:text-sm text-gray-200 testimonial-text-truncate-full">
                             "{testimonial.contentEn}"
                           </p>
                         )}
                         {testimonial.contentTg && (
-                          <p className="text-[10px] xs:text-xs sm:text-sm text-gray-300/80 leading-relaxed italic testimonial-text-truncate-full-tg">
+                          <p className="text-[9px] tiny:text-[10px] xs:text-xs sm:text-sm text-gray-300/80 leading-relaxed italic testimonial-text-truncate-full-tg">
                             "{testimonial.contentTg}"
                           </p>
                         )}
@@ -941,16 +945,16 @@ const HomePage = () => {
                           <img 
                             src={testimonial.image} 
                             alt={testimonial.name}
-                            className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full object-cover mr-2 xs:mr-2.5 sm:mr-3 flex-shrink-0 border-2 border-cyan-500/30"
+                            className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full object-cover mr-1.5 tiny:mr-2 xs:mr-2.5 sm:mr-3 flex-shrink-0 border-2 border-cyan-500/30"
                           />
                         ) : (
-                          <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mr-2 xs:mr-2.5 sm:mr-3 text-white font-bold text-xs xs:text-sm sm:text-base flex-shrink-0 border-2 border-cyan-500/30">
+                          <div className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mr-1.5 tiny:mr-2 xs:mr-2.5 sm:mr-3 text-white font-bold text-[10px] tiny:text-xs xs:text-sm sm:text-base flex-shrink-0 border-2 border-cyan-500/30">
                             {testimonial.name.charAt(0)}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="font-bold text-white text-xs xs:text-sm sm:text-base truncate">{testimonial.name}</div>
-                          <div className="text-gray-400 text-[10px] xs:text-xs sm:text-sm truncate">{t('home.student', 'Student')}</div>
+                          <div className="font-bold text-white text-[10px] tiny:text-xs xs:text-sm sm:text-base truncate">{testimonial.name}</div>
+                          <div className="text-gray-400 text-[9px] tiny:text-[10px] xs:text-xs sm:text-sm truncate">{t('home.student', 'Student')}</div>
                         </div>
                       </div>
                     </div>
@@ -963,23 +967,23 @@ const HomePage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-10 xs:py-12 sm:py-16 md:py-20 relative overflow-hidden"
+      <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(147, 112, 219, 0.1) 100%)',
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-purple-600/20"></div>
-        <div className="max-w-4xl mx-auto text-center px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 relative z-10">
-          <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 xs:mb-4 sm:mb-5 md:mb-6 pb-2 sm:pb-3 md:pb-4 text-gray-900 dark:text-white">
+        <div className="max-w-4xl mx-auto text-center px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 relative z-10">
+          <h2 className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 tiny:mb-3 xs:mb-4 sm:mb-5 md:mb-6 pb-1 tiny:pb-2 sm:pb-3 md:pb-4 text-gray-900 dark:text-white">
             {t('home.cta_title', 'Ready to Start Your Investment Journey?')}
           </h2>
-          <p className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl mb-5 xs:mb-6 sm:mb-7 md:mb-8 text-gray-700 dark:text-white/90 px-3 xs:px-4">
+          <p className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl mb-4 tiny:mb-5 xs:mb-6 sm:mb-7 md:mb-8 text-gray-700 dark:text-white/90 px-2 tiny:px-3 xs:px-4">
             {t('home.cta_subtitle', 'Join thousands of students learning to master the art of investing and trading')}
           </p>
-          <div className="flex flex-col xs:flex-row gap-2.5 xs:gap-3 sm:gap-4 justify-center">
+          <div className="flex flex-col xs:flex-row gap-2 tiny:gap-2.5 xs:gap-3 sm:gap-4 justify-center">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center px-5 xs:px-6 sm:px-7 md:px-8 py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-full font-bold text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 ease-in-out transform hover:scale-110 shadow-xl hover:shadow-2xl text-white border-2 whitespace-nowrap"
+              className="inline-flex items-center justify-center px-4 tiny:px-5 xs:px-6 sm:px-7 md:px-8 py-2 tiny:py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-full font-bold text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 ease-in-out transform hover:scale-110 shadow-xl hover:shadow-2xl text-white border-2 whitespace-nowrap"
               style={{
                 backgroundColor: '#00BFFF',
                 borderColor: '#00BFFF',
@@ -998,7 +1002,7 @@ const HomePage = () => {
             </Link>
             <Link
               to="/courses"
-              className="inline-flex items-center justify-center px-5 xs:px-6 sm:px-7 md:px-8 py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-full font-bold text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 ease-in-out transform hover:scale-110 border-2 text-white hover:bg-white/10 backdrop-blur-sm whitespace-nowrap"
+              className="inline-flex items-center justify-center px-4 tiny:px-5 xs:px-6 sm:px-7 md:px-8 py-2 tiny:py-2.5 xs:py-3 sm:py-3.5 md:py-4 rounded-full font-bold text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg transition-all duration-500 ease-in-out transform hover:scale-110 border-2 text-white hover:bg-white/10 backdrop-blur-sm whitespace-nowrap"
               style={{
                 borderColor: '#00BFFF',
               }}

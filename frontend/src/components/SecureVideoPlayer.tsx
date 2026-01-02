@@ -1054,7 +1054,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     <>
       <div 
         ref={containerRef}
-        className={`secure-video-player relative bg-black ${className}`}
+        className={`secure-video-player relative bg-black w-full h-full ${className}`}
         onContextMenu={handleContextMenu}
         onDragStart={handleDragStart}
         onMouseMove={handleMouseMove}
@@ -1065,6 +1065,9 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           WebkitUserSelect: 'none',
           MozUserSelect: 'none',
           msUserSelect: 'none',
+          width: '100%',
+          height: '100%',
+          minHeight: '200px',
         }}
       >
       {/* Security Warning Overlay */}
@@ -1200,13 +1203,13 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             }`}
             disabled={isBlocked}
           >
-            <div className="bg-black bg-opacity-60 rounded-full p-4 group-hover:bg-opacity-80 transition-all duration-300">
+            <div className="bg-black bg-opacity-60 rounded-full p-2 sm:p-3 md:p-4 group-hover:bg-opacity-80 transition-all duration-300">
               {isBlocked ? (
-                <AlertTriangle className="w-16 h-16 text-red-400" />
+                <AlertTriangle className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-red-400" />
               ) : isPlaying ? (
-                <Pause className="w-16 h-16 text-white" />
+                <Pause className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-white" />
               ) : (
-                <Play className="w-16 h-16 text-white ml-1" />
+                <Play className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-white ml-0.5 sm:ml-1" />
               )}
             </div>
           </button>
@@ -1241,45 +1244,45 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
       {/* Custom Controls */}
       {controlsVisible && showControls && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 z-20">
-          <div className="flex items-center space-x-4 text-white">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2 sm:p-3 md:p-4 z-20">
+          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4 text-white">
             {/* Play/Pause Button */}
             <button
               onClick={isBlocked ? () => {
                 console.warn('🚫 Playback blocked due to security violation');
                 setShowSecurityWarning(true);
               } : (isPlaying ? handlePause : handlePlay)}
-              className={`transition-colors ${isBlocked ? 'text-red-400 cursor-not-allowed' : 'text-white hover:text-gray-300'}`}
+              className={`transition-colors flex-shrink-0 ${isBlocked ? 'text-red-400 cursor-not-allowed' : 'text-white hover:text-gray-300'}`}
               disabled={isBlocked}
             >
-              {isBlocked ? <AlertTriangle className="w-6 h-6" /> : (isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />)}
+              {isBlocked ? <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" /> : (isPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />)}
             </button>
 
             {/* Time Display */}
-            <div className="text-sm font-mono">
+            <div className="text-[10px] sm:text-xs md:text-sm font-mono flex-shrink-0">
               {formatDuration(currentTime)} / {formatDuration(duration)}
             </div>
 
             {/* Progress Bar */}
-            <div className="flex-1 bg-gray-600 rounded-full h-2 cursor-pointer" onClick={(e) => {
+            <div className="flex-1 bg-gray-600 rounded-full h-1.5 sm:h-2 cursor-pointer min-w-0" onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const clickX = e.clientX - rect.left;
               const newTime = (clickX / rect.width) * duration;
               handleSeek(newTime);
             }}>
               <div 
-                className="bg-gradient-to-r from-cyan-600 to-blue-600 h-2 rounded-full transition-all duration-200"
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-200"
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
               />
             </div>
 
-            {/* Volume Control */}
-            <div className="flex items-center space-x-2">
+            {/* Volume Control - Hidden on very small screens */}
+            <div className="hidden sm:flex items-center space-x-1 md:space-x-2 flex-shrink-0">
               <button
                 onClick={toggleMute}
                 className="text-white hover:text-gray-300 transition-colors"
               >
-                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                {isMuted ? <VolumeX className="w-4 h-4 md:w-5 md:h-5" /> : <Volume2 className="w-4 h-4 md:w-5 md:h-5" />}
               </button>
               <input
                 type="range"
@@ -1288,12 +1291,12 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 step="0.1"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                className="w-12 md:w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
             </div>
 
-            {/* Playback Rate */}
-            <div className="relative">
+            {/* Playback Rate - Hidden on very small screens */}
+            <div className="hidden md:block relative flex-shrink-0">
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="text-white hover:text-gray-300 transition-colors"
@@ -1324,9 +1327,9 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             {/* Fullscreen Button */}
             <button
               onClick={toggleFullscreen}
-              className="text-white hover:text-gray-300 transition-colors"
+              className="text-white hover:text-gray-300 transition-colors flex-shrink-0"
             >
-              <Maximize className="w-5 h-5" />
+              <Maximize className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5" />
             </button>
           </div>
         </div>

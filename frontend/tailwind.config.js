@@ -9,6 +9,7 @@ export default {
         'sans': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
       },
       screens: {
+        'tiny': '250px',
         'xxs': '350px',
         'xs': '390px',
         'sm': '640px',
