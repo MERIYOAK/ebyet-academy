@@ -843,7 +843,7 @@
   },
   "certificate_verification": {
     "page_title": "Certificate Verification",
-    "page_subtitle": "Verify the authenticity of certificates issued by our platform with advanced blockchain technology",
+    "page_subtitle": "Verify the authenticity of certificates issued by our platform using secure cryptographic verification",
     "verify_certificate": "Verify Certificate",
     "enter_certificate_id": "Please enter a certificate ID",
     "certificate_id_label": "Certificate ID",
@@ -881,7 +881,7 @@
     "step_4_desc": "Reach out if you have questions about verification",
     "try_again": "Try again",
     "get_help": "Get help",
-    "blockchain_verification": "Certificate verification powered by secure blockchain technology and cryptographic signatures",
+    "blockchain_verification": "Certificate verification powered by secure cryptographic hashing and digital signatures",
     "network_error": "Network error. Please check your connection and try again.",
     "searched_id": "Searched ID",
     "check_typos": "Please check for typos and try again.",
