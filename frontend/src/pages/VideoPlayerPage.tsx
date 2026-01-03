@@ -86,7 +86,7 @@ const VideoPlayerPage = () => {
   const pendingProgressRequest = useRef<AbortController | null>(null);
   const progressUpdateTimeout = useRef<number | null>(null);
   const lastProgressUpdate = useRef(0);
-  const PROGRESS_UPDATE_INTERVAL = 30000; // 30 seconds minimum between updates
+  const PROGRESS_UPDATE_INTERVAL = 5000; // 5 seconds minimum between updates (reduced for testing)
   
   // Note: videoRef is no longer needed as EnhancedVideoPlayer handles video element internally
 
@@ -318,6 +318,10 @@ const VideoPlayerPage = () => {
           cacheVideoUrl(videoId, videoData.videoUrl);
           setIsRefreshingUrl(false);
           return videoData.videoUrl;
+        } else if (responseData?.data?.isLocked) {
+          console.log('🔒 [VideoPlayer] Server confirmed video is locked, no URL provided');
+          setIsRefreshingUrl(false);
+          return null;
         } else {
           console.error('❌ [VideoPlayer] No video data found for URL refresh:', {
             hasResponseData: !!responseData,
@@ -329,6 +333,10 @@ const VideoPlayerPage = () => {
           setIsRefreshingUrl(false);
           return null;
         }
+      } else if (response.status === 403) {
+        console.log('🔒 [VideoPlayer] Access denied by server (403), video may be locked');
+        setIsRefreshingUrl(false);
+        return null;
       } else {
         console.error('❌ [VideoPlayer] Failed to refresh presigned URL:', response.status);
         setIsRefreshingUrl(false);
@@ -432,9 +440,13 @@ const VideoPlayerPage = () => {
                 )
               };
             });
+            // Also update currentVideo immediately
+            if (currentVideo) {
+              setCurrentVideo({ ...currentVideo, videoUrl: freshUrl });
+            }
           } else {
-            console.error('❌ [VideoPlayer] Failed to refresh URL after 403 error');
-            setVideoError('Failed to refresh video link. Please try refreshing the page.');
+            console.error('❌ [VideoPlayer] Failed to refresh URL after 403 error - video may be locked');
+            setVideoError('Access denied. This video may be locked or require course purchase.');
           }
         }).catch(error => {
           console.error('❌ [VideoPlayer] Error during URL refresh:', error);
@@ -1703,14 +1715,15 @@ const VideoPlayerPage = () => {
                 {/* Enhanced Video Player */}
       <div className="flex-1" style={{ minHeight: '400px', height: '60vh' }}>
         {currentVideo?.hasAccess &&
-         !videoError &&
-         !isRefreshingUrl ? (
+         !videoError ? (
           <>
-            {isDecryptingUrl ? (
+            {isDecryptingUrl || isRefreshingUrl ? (
               <div className="w-full h-full bg-black flex items-center justify-center">
                 <div className="text-white text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                  <p className="text-lg">Decrypting video...</p>
+                  <p className="text-lg">
+                    {isDecryptingUrl ? 'Decrypting video...' : 'Refreshing video link...'}
+                  </p>
                 </div>
               </div>
             ) : currentVideo.videoUrl ? (

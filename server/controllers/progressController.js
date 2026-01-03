@@ -5,7 +5,7 @@ const { getThumbnailUrl, getPublicUrl } = require('../utils/s3CourseManager');
 
 // Udemy-style progress tracking: Request deduplication and batching
 const pendingProgressUpdates = new Map(); // Track pending requests per user-video
-const PROGRESS_UPDATE_INTERVAL = 30000; // 30 seconds minimum between updates
+const PROGRESS_UPDATE_INTERVAL = 5000; // 5 seconds minimum between updates (reduced for testing)
 const lastUpdateTimes = new Map(); // Track last update time per user-video
 
 /**
@@ -486,6 +486,7 @@ exports.getDashboardProgress = async (req, res) => {
         return {
           _id: course._id,
           title: course.title,
+          description: course.description,
           thumbnail: thumbnailUrl,
           duration: course.videos ? `${course.videos.length} lessons` : '0 lessons',
           totalLessons: course.videos ? course.videos.length : 0,

@@ -271,7 +271,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 hover:scale-[1.01] overflow-hidden group flex flex-col w-full max-w-[85%] sm:max-w-[80%] ${className} shadow-gray-900/40 dark:shadow-gray-900/40 hover:shadow-cyan-500/20 border border-gray-200 dark:border-gray-700/50 hover:border-cyan-500/50 ring-1 ring-gray-200 dark:ring-gray-700/50 hover:ring-cyan-500/50 relative will-change-transform ${
+    <div className={`bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 hover:scale-[1.01] overflow-hidden group flex flex-col w-full ${className} shadow-gray-900/40 hover:shadow-cyan-500/20 border border-gray-700/50 hover:border-cyan-500/50 ring-1 ring-gray-700/50 hover:ring-cyan-500/50 relative will-change-transform ${
       courseCompleted && isPurchased
         ? 'ring-2 ring-green-500 ring-opacity-50'
         : ''
@@ -298,8 +298,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
       
       <div className="relative overflow-hidden h-36 xxs:h-40 sm:h-44 shadow-inner">
         {imgLoading && (
-          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-            <div className="text-gray-500 dark:text-gray-400 text-sm xxs:text-base">{t('course_card.loading')}</div>
+          <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+            <div className="text-gray-400 text-sm xxs:text-base">{t('course_card.loading')}</div>
           </div>
         )}
         <img
@@ -367,28 +367,21 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </div>
       </div>
 
-             <div className="p-3 xxs:p-4 pb-2 xxs:pb-3 flex flex-col flex-grow bg-white dark:bg-gray-800 sm:bg-gradient-to-b sm:from-white sm:to-gray-50 dark:sm:from-gray-800 dark:sm:to-gray-900/30">
-                 <h3 className="text-sm xxs:text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5 line-clamp-2 h-10 xxs:h-12 sm:h-14 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-all duration-700 ease-in-out drop-shadow-sm group-hover:drop-shadow-md group-hover:translate-x-1">
+             <div className="p-3 xxs:p-4 pb-2 xxs:pb-3 flex flex-col flex-grow bg-gray-800 sm:bg-gradient-to-b sm:from-gray-800 sm:to-gray-900/30">
+                 <h3 className="text-sm xxs:text-base sm:text-lg font-bold text-white mb-1.5 line-clamp-2 h-10 xxs:h-12 sm:h-14 group-hover:text-cyan-400 transition-all duration-700 ease-in-out drop-shadow-sm group-hover:drop-shadow-md group-hover:translate-x-1">
            {localizedTitle}
          </h3>
 
-        <p className="text-gray-600 dark:text-gray-300 text-xs mb-2 xxs:mb-2.5 line-clamp-3 flex-grow min-h-[2.5rem] xxs:min-h-[3rem]">
+        <p className="text-gray-300 text-xs mb-3 xxs:mb-3.5 line-clamp-3 flex-grow min-h-[2.5rem] xxs:min-h-[3rem]">
           {localizedDescription}
         </p>
-
-        {/* Course Price */}
-        <div className="mb-3 xxs:mb-3.5">
-          <span className="text-lg xxs:text-xl font-bold text-cyan-400">
-            ${price.toFixed(2)}
-          </span>
-        </div>
 
         {/* Course Tags (for unpurchased) or Progress Condition Text (for purchased) */}
         {isPurchased ? (
           // Show progress condition text for purchased courses (in tags location, styled like tags)
           condition && (
             <div className="flex flex-wrap gap-1 xxs:gap-2 mb-3 xxs:mb-3.5">
-              <span className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-500/30 dark:hover:bg-blue-500/30 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-blue-500/30 line-clamp-1 truncate max-w-full">
+              <span className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-blue-500/30 line-clamp-1 truncate max-w-full">
                 {condition.text}
               </span>
             </div>
@@ -400,13 +393,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
               {tags.slice(0, 3).map((tag, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-500/30 dark:hover:bg-blue-500/30 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-blue-500/30"
+                  className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-blue-500/30"
                 >
                   {tag}
                 </span>
               ))}
               {tags.length > 3 && (
-                <span className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 border border-gray-300 dark:border-gray-600">
+                <span className="inline-flex items-center px-2 xxs:px-2.5 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 border border-gray-600">
                   +{tags.length - 3} {t('course_card.more_tags')}
                 </span>
               )}
@@ -416,11 +409,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
         {/* Regular info for all courses */}
         <div className="flex items-center justify-between mb-2 xxs:mb-2.5 mt-auto">
-          <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 text-xs xxs:text-sm">
+          <div className="flex items-center space-x-1 text-gray-400 text-xs xxs:text-sm">
             <Clock className="h-3 w-3 xxs:h-4 xxs:w-4" />
             <span>{isPurchased ? totalLessons : lessons} {t('course_card.lessons')}</span>
           </div>
-          <span className="text-xs xxs:text-sm text-gray-500 dark:text-gray-400">{formattedDuration}</span>
+          <span className="text-xs xxs:text-sm text-gray-400">{formattedDuration}</span>
         </div>
         
       </div>

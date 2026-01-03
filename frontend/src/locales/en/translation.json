@@ -616,6 +616,8 @@
     "generating": "Generating...",
     "generate_certificate": "Generate Certificate",
     "course_content": "Course Content",
+    "download": "Download",
+    "no_file": "No File",
     "done": "done",
     "free": "Free"
   },

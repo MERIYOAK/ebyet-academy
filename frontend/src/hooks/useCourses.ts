@@ -14,6 +14,12 @@ export interface ApiCourse {
   tags?: string[];
   videos?: Array<{ _id: string; duration?: string }>;
   isPurchased?: boolean;
+  // Progress fields for enrolled students
+  progress?: number;
+  totalLessons?: number;
+  completedLessons?: number;
+  lastWatched?: string | null;
+  isCompleted?: boolean;
 }
 
 export interface CoursesResponse {

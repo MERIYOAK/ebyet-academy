@@ -1415,12 +1415,13 @@ const getFeaturedCourses = async (req, res) => {
 
     // Get user's purchased courses to add purchase status
     let purchasedCourseIds = [];
+    let decoded = null;
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.substring(7);
         const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         if (decoded && decoded.userId) {
           const User = require('../models/User');
@@ -1448,6 +1449,57 @@ const getFeaturedCourses = async (req, res) => {
       
       const courseObj = course.toObject ? course.toObject() : course;
       courseObj.isPurchased = purchasedCourseIds.includes(course._id.toString());
+      
+      console.log(`🔍 [Featured] Course ${course._id}:`, {
+        title: course.title,
+        isPurchased: courseObj.isPurchased,
+        purchasedCourseIds,
+        userId: decoded?.userId
+      });
+      
+      // Add progress data for purchased courses
+      if (courseObj.isPurchased && purchasedCourseIds.includes(course._id.toString())) {
+        try {
+          const Progress = require('../models/Progress');
+          const userId = decoded?.userId;
+          
+          console.log(`🔍 [Featured] Fetching progress for course ${course._id}, user ${userId}`);
+          
+          if (userId) {
+            const courseProgressSummary = await Progress.getCourseProgressSummary(userId, course._id, course.videos ? course.videos.length : 0);
+            
+            courseObj.progress = courseProgressSummary.courseProgressPercentage || 0;
+            courseObj.totalLessons = course.videos ? course.videos.length : 0;
+            courseObj.completedLessons = courseProgressSummary.completedVideos || 0;
+            courseObj.lastWatched = courseProgressSummary.lastWatchedAt || null;
+            courseObj.isCompleted = courseProgressSummary.courseProgressPercentage >= 100 && 
+                                courseProgressSummary.completedVideos >= courseProgressSummary.totalVideos &&
+                                courseProgressSummary.totalWatchedDuration >= courseProgressSummary.courseTotalDuration;
+            
+            console.log(`✅ [Featured] Progress data for course ${course._id}:`, {
+              progress: courseObj.progress,
+              totalLessons: courseObj.totalLessons,
+              completedLessons: courseObj.completedLessons,
+              isCompleted: courseObj.isCompleted
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching progress for course ${course._id}:`, error);
+          // Set default progress values on error
+          courseObj.progress = 0;
+          courseObj.totalLessons = course.videos ? course.videos.length : 0;
+          courseObj.completedLessons = 0;
+          courseObj.lastWatched = null;
+          courseObj.isCompleted = false;
+        }
+      } else {
+        // Set default values for non-purchased courses
+        courseObj.progress = 0;
+        courseObj.totalLessons = course.videos ? course.videos.length : 0;
+        courseObj.completedLessons = 0;
+        courseObj.lastWatched = null;
+        courseObj.isCompleted = false;
+      }
       
       return courseObj;
     }));

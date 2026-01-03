@@ -167,9 +167,20 @@ const HomePage = () => {
     // Rendering featured course cards (max 3)
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 tiny:gap-4 xs:gap-6 sm:gap-8">
-        {featuredCourses.slice(0, 3).map((c) => {
+        {featuredCourses.slice(0, 3).map((c, index) => {
           // Using the centralized parseDurationToSeconds utility
           const totalSeconds = (c.videos || []).reduce((acc, v) => acc + parseDurationToSeconds(v.duration), 0);
+          
+          console.log(`🔍 [HomePage] Featured course ${index + 1}:`, {
+            id: c._id,
+            title: c.title,
+            isPurchased: c.isPurchased,
+            progress: c.progress,
+            totalLessons: c.totalLessons,
+            completedLessons: c.completedLessons,
+            isCompleted: c.isCompleted
+          });
+          
           return (
           <CourseCard
             key={c._id}
@@ -184,6 +195,12 @@ const HomePage = () => {
             instructor={t('brand.name')}
             tags={c.tags || []}
             isPurchased={c.isPurchased || false}
+            progress={c.progress}
+            totalLessons={c.totalLessons}
+            completedLessons={c.completedLessons}
+            lastWatched={c.lastWatched}
+            videos={c.videos}
+            isCompleted={c.isCompleted}
           />
         );})}
       </div>
