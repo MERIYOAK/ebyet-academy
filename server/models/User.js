@@ -21,10 +21,9 @@ const userSchema = new mongoose.Schema({
   address: { type: String, default: null },
   phoneNumber: { 
     type: String, 
-    required: function() { 
-      return this.authProvider === 'local'; 
-    } 
-  }, // Required only for local auth, Google OAuth users provide it later
+    required: false,
+    default: null
+  }, // Optional phone number
   country: { type: String, default: null },
   city: { type: String, default: null },
   // Google OAuth specific fields

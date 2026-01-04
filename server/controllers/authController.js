@@ -10,11 +10,11 @@ const register = async (req, res) => {
     const { name, email, password, phoneNumber } = req.body;
     const profilePhoto = req.file;
 
-    // Validate required fields
-    if (!name || !email || !password || !phoneNumber) {
+    // Validate required fields (phone number now optional)
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, password, and phone number are required'
+        message: 'Name, email, and password are required'
       });
     }
 
@@ -27,13 +27,15 @@ const register = async (req, res) => {
       });
     }
 
-    // Validate phone number format (international format)
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid international phone number (e.g., +1234567890)'
-      });
+    // Validate phone number format only if provided
+    if (phoneNumber) {
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid international phone number (e.g., +1234567890)'
+        });
+      }
     }
 
     // Validate password strength

@@ -24,7 +24,7 @@ class AuthService {
   }
 
   /**
-   * Generate verification token (1 hour expiry)
+   * Generate verification token (1 hour expiry for security)
    * @param {string} userId - User ID
    * @returns {string} - JWT verification token
    */
@@ -32,7 +32,7 @@ class AuthService {
     return jwt.sign(
       { userId, type: 'verification' },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '1h' } // Short expiry for security
     );
   }
 
@@ -87,7 +87,7 @@ class AuthService {
         name: userData.name,
         email: userData.email,
         password: userData.password,
-        phoneNumber: userData.phoneNumber,
+        phoneNumber: userData.phoneNumber || null, // Optional phone number
         authProvider: 'local',
         isVerified: false, // Email verification required
       });
