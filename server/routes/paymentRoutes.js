@@ -26,5 +26,7 @@ router.get('/check-purchase/:courseId', auth, paymentController.checkPurchase);
 // Receipt endpoints (requires authentication)
 router.get('/receipt/:courseId', auth, paymentController.getReceipt);
 router.get('/download-receipt/:courseId', auth, paymentController.downloadReceipt);
+router.get('/receipt/bundle/:bundleId', auth, paymentController.getBundleReceipt);
+router.get('/download-bundle-receipt/:bundleId', auth, paymentController.downloadBundleReceipt);
 
-module.exports = router; 
+module.exports = router;

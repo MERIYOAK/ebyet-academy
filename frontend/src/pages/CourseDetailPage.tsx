@@ -733,6 +733,20 @@ const CourseDetailPage = () => {
   // Refresh presigned URL for a specific video
   const refreshVideoUrl = async (videoId: string): Promise<string | null> => {
     try {
+      // Check if the video is locked before attempting to refresh URL
+      // Free preview videos should be accessible even without purchase
+      const video = courseData?.videos.find(v => v.id === videoId);
+      if (video?.locked || (!video?.hasAccess && !video?.isFreePreview)) {
+        console.log('🔒 [CourseDetail] Video is locked, skipping URL refresh');
+        return null;
+      }
+
+      // For free preview videos, use the existing video URL without authentication
+      if (video?.isFreePreview && video.videoUrl) {
+        console.log('🔓 [CourseDetail] Using existing free preview URL');
+        return video.videoUrl;
+      }
+
       const token = localStorage.getItem('token');
       if (!token) {
         console.error('❌ No authentication token for URL refresh');
@@ -820,6 +834,13 @@ const CourseDetailPage = () => {
   const retryVideoLoad = async () => {
     if (!currentVideo || retryCount >= 3) {
       console.log('❌ [CourseDetail] Max retries reached or no current video');
+      return;
+    }
+
+    // Don't retry if video is locked (but allow free preview retries)
+    if (currentVideo.locked || (!currentVideo.hasAccess && !currentVideo.isFreePreview)) {
+      console.log('🔒 [CourseDetail] Video is locked, cannot retry');
+      setVideoError('This video is locked. Please purchase the course to access it.');
       return;
     }
 
@@ -1194,7 +1215,7 @@ const CourseDetailPage = () => {
 
     if (errorDetails.type === 'FORBIDDEN' || errorDetails.type === 'MEDIA_ERR_SRC_NOT_SUPPORTED' || 
         errorDetails.message.includes('403') || errorDetails.message.includes('Forbidden')) {
-      if (currentVideo?.id) {
+      if (currentVideo?.id && !currentVideo.locked && (currentVideo.hasAccess || currentVideo.isFreePreview)) {
         setVideoError('Video access expired. Refreshing video link...');
         const freshUrl = await refreshVideoUrl(currentVideo.id);
         if (freshUrl) {
@@ -1226,7 +1247,7 @@ const CourseDetailPage = () => {
       }
     }
 
-    if (retryCount < 3) {
+    if (retryCount < 3 && currentVideo && !currentVideo.locked && (currentVideo.hasAccess || currentVideo.isFreePreview)) {
       setRetryCount(prev => prev + 1);
       setVideoError(`${errorDetails.userMessage} Retrying... (${retryCount + 1}/3)`);
       setTimeout(async () => {
@@ -1269,6 +1290,7 @@ const CourseDetailPage = () => {
     setIsSwitchingVideo(true);
     
     // Check if the video is locked or doesn't have access
+    // Free preview videos should be playable even if user hasn't purchased the course
     const newVideo = courseData?.videos.find(v => v.id === newVideoId);
     if (!newVideo) {
       console.log('❌ [CourseDetail] Video not found');
@@ -1276,7 +1298,7 @@ const CourseDetailPage = () => {
       return;
     }
     
-    if (newVideo.locked || !newVideo.hasAccess) {
+    if (newVideo.locked || (!newVideo.hasAccess && !newVideo.isFreePreview)) {
       console.log('🔒 [CourseDetail] Video is locked, cannot play');
       
       // Ensure video has no URL if it's locked
@@ -1495,8 +1517,8 @@ const CourseDetailPage = () => {
       const currentVideo = courseData.videos.find(v => v.id === currentVideoId);
       if (!currentVideo || !currentVideo.videoUrl) return;
       
-      // Don't refresh URL for locked videos
-      if (currentVideo.locked || !currentVideo.hasAccess) {
+      // Don't refresh URL for locked videos (but allow free preview refresh)
+      if (currentVideo.locked || (!currentVideo.hasAccess && !currentVideo.isFreePreview)) {
         console.log('🔒 [URL Refresh] Video is locked, skipping URL refresh');
         return;
       }
@@ -2138,38 +2160,45 @@ const CourseDetailPage = () => {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-600 dark:text-gray-400 overflow-hidden">
                         {currentVideo?.locked ? (
-                          <div className="space-y-2 tiny:space-y-3 xxs:space-y-4 text-center px-2 tiny:px-3 xxs:px-4 py-2 tiny:py-3 xxs:py-4 max-w-full">
-                            <Lock className="w-8 h-8 tiny:w-10 tiny:h-10 xxs:w-12 xxs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-2 tiny:mb-3 xxs:mb-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                            <p className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold mb-1 tiny:mb-1.5 xxs:mb-2 text-gray-900 dark:text-gray-300 px-2 break-words">{t('course_detail.video_locked')}</p>
-                            <p className="text-[10px] tiny:text-xs xxs:text-sm mb-2 tiny:mb-3 xxs:mb-4 text-gray-700 dark:text-gray-400 px-2 break-words">
-                              {!userToken 
-                                ? t('course_detail.sign_in_or_purchase')
-                                : t('course_detail.purchase_to_access')
-                              }
-                            </p>
-                            {!userToken ? (
-                              <div className="flex flex-col sm:flex-row gap-2 tiny:gap-2.5 xxs:gap-3 justify-center px-2">
-                                <button
-                                  onClick={() => navigate('/login')}
-                                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
-                                >
-                                  {t('course_detail.sign_in')}
-                                </button>
+                          <div className="w-full h-full flex items-center justify-center text-gray-600 dark:text-gray-400 overflow-hidden">
+                            {/* Mobile: Show only lock icon */}
+                            <div className="lg:hidden">
+                              <Lock className="w-12 h-12 text-gray-500 dark:text-gray-400" />
+                            </div>
+                            {/* Desktop: Show full content */}
+                            <div className="hidden lg:block space-y-2 tiny:space-y-3 xxs:space-y-4 text-center px-2 tiny:px-3 xxs:px-4 py-2 tiny:py-3 xxs:py-4 max-w-full">
+                              <Lock className="w-8 h-8 tiny:w-10 tiny:h-10 xxs:w-12 xxs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-2 tiny:mb-3 xxs:mb-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                              <p className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold mb-1 tiny:mb-1.5 xxs:mb-2 text-gray-900 dark:text-gray-300 px-2 break-words">{t('course_detail.video_locked')}</p>
+                              <p className="text-[10px] tiny:text-xs xxs:text-sm mb-2 tiny:mb-3 xxs:mb-4 text-gray-700 dark:text-gray-400 px-2 break-words">
+                                {!userToken 
+                                  ? t('course_detail.sign_in_or_purchase')
+                                  : t('course_detail.purchase_to_access')
+                                }
+                              </p>
+                              {!userToken ? (
+                                <div className="flex flex-col sm:flex-row gap-2 tiny:gap-2.5 xxs:gap-3 justify-center px-2">
+                                  <button
+                                    onClick={() => navigate('/login')}
+                                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
+                                  >
+                                    {t('course_detail.sign_in')}
+                                  </button>
+                                  <button
+                                    onClick={handlePurchase}
+                                    className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base whitespace-nowrap"
+                                  >
+                                    {t('course_detail.purchase_course')}
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
                                   onClick={handlePurchase}
-                                  className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-colors duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base whitespace-nowrap"
+                                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
                                 >
                                   {t('course_detail.purchase_course')}
                                 </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={handlePurchase}
-                                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 tiny:px-4 xxs:px-5 sm:px-6 py-1.5 tiny:py-2 xxs:py-2.5 sm:py-3 rounded-lg transition-all duration-200 font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 whitespace-nowrap"
-                              >
-                                {t('course_detail.purchase_course')}
-                              </button>
-                            )}
+                              )}
+                            </div>
                           </div>
                         ) : videoError ? (
                           <div className="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden">
@@ -2382,12 +2411,7 @@ const CourseDetailPage = () => {
             </div>
 
             {/* Course Materials Section - Below Curriculum */}
-            {loadingMaterials ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl mt-4 tiny:mt-5 xxs:mt-6 p-4 tiny:p-6 xxs:p-8 text-center">
-                <Loader className="h-6 w-6 tiny:h-7 tiny:w-7 xxs:h-8 xxs:w-8 animate-spin text-cyan-600 dark:text-cyan-400 mx-auto mb-1.5 tiny:mb-2" />
-                <p className="text-xs tiny:text-sm text-gray-600 dark:text-gray-400">{t('course_detail.loading_materials', 'Loading materials...')}</p>
-              </div>
-            ) : materials.length > 0 ? (
+            {!loadingMaterials && materials.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden mt-4 tiny:mt-5 xxs:mt-6">
                 <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
                   <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.course_materials', 'Course Materials')}</h3>
@@ -2406,7 +2430,7 @@ const CourseDetailPage = () => {
                         <div key={index} className="flex items-center justify-between p-3 tiny:p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors duration-200">
                           <div className="flex items-center gap-3 tiny:gap-4">
                             <div className="w-10 h-10 tiny:w-11 tiny:h-11 xxs:w-12 xxs:h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-                              <Download className="h-5 w-5 tiny:h-5.5 tiny:w-5.5 xxs:h-6 xxs:w-6 text-white" />
+                              <FileText className="w-4 h-4 tiny:w-4.5 tiny:h-4.5 xxs:w-5 xxs:h-5 text-white" />
                             </div>
                             <div>
                               <h4 className="text-sm tiny:text-base font-semibold text-gray-900 dark:text-white line-clamp-1">
@@ -2427,12 +2451,12 @@ const CourseDetailPage = () => {
                               rel="noopener noreferrer"
                               className="inline-flex items-center px-3 tiny:px-4 py-2 tiny:py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs tiny:text-sm font-medium rounded-lg transition-colors duration-200"
                             >
-                              <Download className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 mr-1.5 tiny:mr-2" />
+                              <Download className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xxs:w-4 xxs:h-4 mr-1.5 tiny:mr-2" />
                               {t('course_detail.download', 'Download')}
                             </a>
                           ) : (
-                            <span className="inline-flex items-center px-3 tiny:px-4 py-2 tiny:py-2.5 bg-gray-400 text-white text-xs tiny:text-sm font-medium rounded-lg">
-                              {t('course_detail.no_file', 'No File')}
+                            <span className="text-xs tiny:text-sm text-gray-500 dark:text-gray-400 px-3 tiny:px-4 py-2 tiny:py-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                              {t('course_detail.no_download', 'No Download')}
                             </span>
                           )}
                         </div>
@@ -2441,7 +2465,7 @@ const CourseDetailPage = () => {
                   )}
                 </div>
               </div>
-            ) : null}
+            )}
 
             {/* Certificate Section - Show only when course is completed */}
             {isCourseCompleted && (purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
@@ -2518,23 +2542,30 @@ const CourseDetailPage = () => {
                 onClick={() => setShowPlaylist(false)}
               />
               {/* Playlist Overlay */}
-              <div className="lg:hidden fixed inset-x-0 top-0 z-50 bg-gray-900 shadow-2xl" style={{ maxHeight: '70vh', height: '70vh' }}>
+              <div className="lg:hidden fixed inset-x-0 top-14 xs:top-16 sm:top-16 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl border border-gray-200/50 dark:border-gray-800/50" style={{ maxHeight: '60vh', height: '60vh' }}>
                 <div className="h-full flex flex-col">
                   {/* Playlist Header with Close Button */}
-                  <div className="flex items-center justify-between p-3 xxs:p-4 border-b border-gray-700 bg-gray-800">
-                    <h3 className="font-bold text-sm xxs:text-base text-white">{t('course_detail.course_content', 'Course Content')}</h3>
+                  <div className="flex items-center justify-between p-3 xxs:p-4 border-b border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-800 dark:to-gray-900">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                        </svg>
+                      </div>
+                      <h3 className="font-bold text-sm xxs:text-base text-gray-900 dark:text-white">{t('course_detail.course_content', 'Course Content')}</h3>
+                    </div>
                     <button
                       onClick={() => setShowPlaylist(false)}
-                      className="text-gray-400 hover:text-white transition-colors p-1 rounded"
+                      className="text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 hover:border-red-200 dark:hover:border-red-800 shadow-sm"
                       aria-label="Close playlist"
                     >
                       <svg className="w-5 h-5 xxs:w-6 xxs:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
                   {/* Playlist Content */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
                     <VideoPlaylist
                       videos={courseData.videos}
                       currentVideoId={currentVideoId}
@@ -2548,6 +2579,33 @@ const CourseDetailPage = () => {
                 </div>
               </div>
             </>
+          )}
+
+          {/* Mobile WhatsApp Section */}
+          {course.hasWhatsappGroup && (
+            <div className="lg:hidden mb-6 tiny:mb-8 xxs:mb-10">
+              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+                <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
+                  <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.community', 'Community')}</h3>
+                </div>
+                <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6">
+                  {!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
+                    <div className="mb-3 tiny:mb-4 flex items-center gap-1.5 tiny:gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 tiny:p-2.5 xxs:p-3">
+                      <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
+                      <span className="text-xs tiny:text-sm font-medium">
+                        {t('course_detail.whatsapp_locked', 'Purchase this course to access the WhatsApp community group')}
+                      </span>
+                    </div>
+                  )}
+                  <WhatsAppGroupButton
+                    courseId={id || ''}
+                    isEnrolled={!!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased)}
+                    hasPaid={!!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased)}
+                    hasWhatsappGroup={!!course.hasWhatsappGroup}
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Right Column - Playlist Sidebar */}
@@ -2590,38 +2648,29 @@ const CourseDetailPage = () => {
               </div>
 
               {/* WhatsApp Group Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
-                <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
-                  <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.community', 'Community')}</h3>
+              {course.hasWhatsappGroup && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+                  <div className="p-3 tiny:p-4 xxs:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900">
+                    <h3 className="text-base tiny:text-lg font-semibold text-gray-900 dark:text-white">{t('course_detail.community', 'Community')}</h3>
+                  </div>
+                  <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6">
+                    {!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
+                      <div className="mb-3 tiny:mb-4 flex items-center gap-1.5 tiny:gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 tiny:p-2.5 xxs:p-3">
+                        <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
+                        <span className="text-xs tiny:text-sm font-medium">
+                          {t('course_detail.whatsapp_locked', 'Purchase this course to access the WhatsApp community group')}
+                        </span>
+                      </div>
+                    )}
+                    <WhatsAppGroupButton
+                      courseId={id || ''}
+                      isEnrolled={!!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased)}
+                      hasPaid={!!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased)}
+                      hasWhatsappGroup={!!course.hasWhatsappGroup}
+                    />
+                  </div>
                 </div>
-                <div className="p-3 tiny:p-4 xxs:p-4 sm:p-6">
-                  {course.hasWhatsappGroup ? (
-                    <>
-                      {!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
-                        <div className="mb-3 tiny:mb-4 flex items-center gap-1.5 tiny:gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 tiny:p-2.5 xxs:p-3">
-                          <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
-                          <span className="text-xs tiny:text-sm font-medium">
-                            {t('course_detail.whatsapp_locked', 'Purchase this course to access the WhatsApp community group')}
-                          </span>
-                        </div>
-                      )}
-                      <WhatsAppGroupButton
-                        courseId={id || ''}
-                        isEnrolled={!!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased)}
-                        hasPaid={!!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased)}
-                        hasWhatsappGroup={!!course.hasWhatsappGroup}
-                      />
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-1.5 tiny:gap-2 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 tiny:p-3.5 xxs:p-4">
-                      <MessageCircle className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 flex-shrink-0" />
-                      <span className="text-xs tiny:text-sm">
-                        {t('course_detail.no_whatsapp_access', 'This course does not have WhatsApp access')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

@@ -496,9 +496,12 @@
     "keywords": "professional development, online learning, trading, investing, finance courses, content creation, social media, digital marketing, video editing, camera skills, content creator, video production, digital media, technology skills, career development, online courses"
   },
   "cookie": {
-    "banner_message": "We use cookies to enhance your experience. Do you accept?",
+    "title": "Cookie Preferences",
+    "subtitle": "We respect your privacy",
+    "banner_message": "We use cookies to enhance your experience, analyze site traffic, and personalize content. By accepting, you help us improve our services for you.",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "learn_more": "Learn more about our privacy policy"
   },
   "language": {
     "tigrinya": "Tigrinya",
@@ -577,6 +580,7 @@
     "certificate_of_completion": "Certificate of completion",
     "regular_course_updates": "Regular course updates",
     "community": "Community",
+    "whatsapp_locked": "Purchase this course to access the WhatsApp community group",
     "failed_to_load_course": "Failed to load course",
     "unknown_error": "Unknown error",
     "loading_course_details": "Loading course details...",

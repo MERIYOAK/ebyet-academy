@@ -657,6 +657,322 @@ exports.getReceipt = async (req, res) => {
 };
 
 /**
+ * Get bundle receipt information
+ * GET /api/payment/receipt/bundle/:bundleId
+ */
+exports.getBundleReceipt = async (req, res) => {
+  try {
+    const { bundleId } = req.params;
+    
+    // Validate user authentication
+    if (!req.user || (!req.user.userId && !req.user._id)) {
+      console.log('❌ User not authenticated in getBundleReceipt');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+    }
+    
+    // Get user ID from token (handle both userId and _id formats)
+    const userId = req.user.userId || req.user._id;
+
+    console.log(`🔧 Getting bundle receipt info...`);
+    console.log(`   - User ID: ${userId}`);
+    console.log(`   - Bundle ID: ${bundleId}`);
+
+    // Get user info first
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Find bundle payment record
+    let payment = await Payment.findOne({
+      userId: userId,
+      bundleId: bundleId,
+      status: 'completed'
+    }).populate('bundleId', 'title description');
+
+    // If no payment record exists, check if user has purchased bundle
+    if (!payment) {
+      console.log(`⚠️  No bundle payment record found, checking if user owns bundle...`);
+      
+      if (!user.purchasedBundles || !user.purchasedBundles.includes(bundleId)) {
+        console.log(`❌ User ${userId} has not purchased bundle ${bundleId}`);
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Bundle payment not found' 
+        });
+      }
+
+      // User owns the bundle but no payment record exists (development mode or webhook failed)
+      console.log(`✅ User owns bundle but no payment record - creating fallback receipt`);
+      
+      const bundle = await Bundle.findById(bundleId);
+      if (!bundle) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Bundle not found' 
+        });
+      }
+
+      // Create a fallback payment record
+      const fallbackPaymentData = {
+        userId: userId,
+        bundleId: bundleId,
+        stripeSessionId: `fallback_${Date.now()}`,
+        amount: bundle.price,
+        currency: 'usd',
+        status: 'completed',
+        paymentMethod: 'card',
+        metadata: {
+          userEmail: user.email,
+          bundleTitle: bundle.title,
+          paymentDate: new Date()
+        }
+      };
+
+      payment = new Payment(fallbackPaymentData);
+      await payment.save();
+    }
+
+    // Return receipt information
+    res.json({
+      success: true,
+      receipt: {
+        type: 'bundle',
+        bundleId: payment.bundleId._id,
+        bundleTitle: payment.bundleId.title,
+        bundleDescription: payment.bundleId.description,
+        amount: payment.amount,
+        currency: payment.currency,
+        paymentMethod: payment.paymentMethod,
+        stripeSessionId: payment.stripeSessionId,
+        createdAt: payment.createdAt,
+        userEmail: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error getting bundle receipt:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get bundle receipt information',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Download bundle receipt as HTML
+ * GET /api/payment/download-bundle-receipt/:bundleId
+ */
+exports.downloadBundleReceipt = async (req, res) => {
+  try {
+    const { bundleId } = req.params;
+    
+    // Validate user authentication
+    if (!req.user || (!req.user.userId && !req.user._id)) {
+      console.log('❌ User not authenticated in downloadBundleReceipt');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+    }
+    
+    // Get user ID from token (handle both userId and _id formats)
+    const userId = req.user.userId || req.user._id;
+
+    console.log(`🔧 Downloading bundle receipt for payment...`);
+    console.log(`   - User ID: ${userId}`);
+    console.log(`   - Bundle ID: ${bundleId}`);
+
+    // Get user info first
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Find bundle payment record
+    let payment = await Payment.findOne({
+      userId: userId,
+      bundleId: bundleId,
+      status: 'completed'
+    }).populate('bundleId', 'title description');
+
+    // If no payment record exists, check if user has purchased bundle
+    if (!payment) {
+      console.log(`⚠️  No bundle payment record found, checking if user owns bundle...`);
+      
+      if (!user.purchasedBundles || !user.purchasedBundles.includes(bundleId)) {
+        console.log(`❌ User ${userId} has not purchased bundle ${bundleId}`);
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Bundle payment not found' 
+        });
+      }
+
+      // User owns the bundle but no payment record exists (development mode or webhook failed)
+      console.log(`✅ User owns bundle but no payment record - creating fallback receipt`);
+      
+      const bundle = await Bundle.findById(bundleId);
+      if (!bundle) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Bundle not found' 
+        });
+      }
+
+      // Create a fallback payment record
+      const fallbackPaymentData = {
+        userId: userId,
+        bundleId: bundleId,
+        stripeSessionId: `fallback_${Date.now()}`,
+        amount: bundle.price,
+        currency: 'usd',
+        status: 'completed',
+        paymentMethod: 'card',
+        metadata: {
+          userEmail: user.email,
+          bundleTitle: bundle.title,
+          paymentDate: new Date()
+        }
+      };
+
+      payment = new Payment(fallbackPaymentData);
+      await payment.save();
+    }
+
+    // Generate PDF receipt
+    const receiptHtml = generateBundleReceiptPdf(payment, user);
+
+    // Set headers for HTML download (PDF-optimized format)
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="bundle-receipt-${payment.stripeSessionId}.html"`);
+    
+    console.log(`✅ Bundle receipt generated for user ${userId}, bundle ${bundleId}`);
+    res.send(receiptHtml);
+
+  } catch (error) {
+    console.error('❌ Error downloading bundle receipt:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to download bundle receipt' 
+    });
+  }
+};
+
+/**
+ * Generate PDF receipt for bundle
+ */
+function generateBundleReceiptPdf(payment, user) {
+  const bundle = payment.bundleId;
+  const bundleTitle = getEnglishText(bundle.title);
+  const bundleDescription = getEnglishText(bundle.description || 'Course Bundle');
+  const paymentDate = new Date(payment.createdAt).toLocaleDateString();
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Bundle Receipt - ${bundleTitle}</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif; 
+          max-width: 800px; 
+          margin: 0 auto; 
+          padding: 20px; 
+          line-height: 1.4;
+        }
+        .header { 
+          text-align: center; 
+          border-bottom: 2px solid #333; 
+          padding-bottom: 20px; 
+          margin-bottom: 30px; 
+        }
+        .receipt-details { 
+          margin-bottom: 30px; 
+        }
+        .item { 
+          margin-bottom: 15px; 
+          padding: 10px;
+          background: #f9f9f9;
+          border-radius: 4px;
+        }
+        .total { 
+          font-size: 18px; 
+          font-weight: bold; 
+          margin-top: 20px; 
+          background: #e8f5e8;
+          padding: 15px;
+          border-radius: 4px;
+        }
+        .footer { 
+          text-align: center; 
+          margin-top: 40px; 
+          color: #666; 
+          font-size: 14px;
+        }
+        @media print {
+          body { padding: 0; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🧾 Bundle Receipt</h1>
+        <h2>${bundleTitle}</h2>
+        <p><strong>Receipt ID:</strong> ${payment.stripeSessionId}</p>
+        <p><strong>Date:</strong> ${paymentDate}</p>
+      </div>
+      
+      <div class="receipt-details">
+        <div class="item">
+          <strong>Bundle:</strong> ${bundleTitle}
+        </div>
+        <div class="item">
+          <strong>Description:</strong> ${bundleDescription}
+        </div>
+        <div class="item">
+          <strong>Student:</strong> ${user.firstName} ${user.lastName}
+        </div>
+        <div class="item">
+          <strong>Email:</strong> ${user.email}
+        </div>
+        <div class="item">
+          <strong>Payment Method:</strong> ${payment.paymentMethod || 'Credit Card'}
+        </div>
+        <div class="item">
+          <strong>Amount Paid:</strong> $${(payment.amount / 100).toFixed(2)} USD
+        </div>
+        <div class="item">
+          <strong>Status:</strong> <span style="color: #28a745;">Completed</span>
+        </div>
+      </div>
+      
+      <div class="total">
+        <strong>Total Amount:</strong> $${(payment.amount / 100).toFixed(2)} USD
+      </div>
+      
+      <div class="footer">
+        <p>Thank you for your purchase! 🎓</p>
+        <p>This is an official receipt for your records.</p>
+        <p class="no-print">Generated on: ${new Date().toLocaleString()}</p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+/**
  * Download receipt as HTML (production-friendly alternative to PDF)
  * GET /api/payment/download-receipt/:courseId
  */

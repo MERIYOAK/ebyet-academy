@@ -62,12 +62,12 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
         )}
         
         {/* Savings Badge */}
-        {savingsPercentage && (
+        {savingsPercentage && !bundle.isPurchased && (
           <div className="absolute top-3 right-3 z-10">
             <span
               className="text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg transform rotate-3 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500 ease-in-out"
               style={{
-                backgroundColor: '#10b981',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2)'
               }}
             >
@@ -97,12 +97,15 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
 
         {/* Purchased Badge */}
         {bundle.isPurchased && (
-          <div className="absolute top-3 right-3 z-10">
-            <span className="bg-green-600/90 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              {t('bundle_card.purchased', 'Purchased')}
-            </span>
-          </div>
+          <>
+            {/* Simple visible badge for all screens */}
+            <div className="absolute top-3 right-3 z-10">
+              <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg flex items-center gap-1 animate-pulse">
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                {t('bundle_card.purchased', 'Purchased')}
+              </span>
+            </div>
+          </>
         )}
         
         {/* Sold Out Badge */}
@@ -152,7 +155,7 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
                   </span>
                 )}
               </div>
-              {savingsPercentage && bundle.originalValue && (
+              {savingsPercentage && bundle.originalValue && !bundle.isPurchased && (
                 <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-1 font-medium">
                   {t('bundle_card.save_amount', `Save $${(bundle.originalValue - bundle.price).toFixed(2)}`, { amount: (bundle.originalValue - bundle.price).toFixed(2) })}
                 </p>

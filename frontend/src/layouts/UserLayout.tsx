@@ -15,7 +15,7 @@ const UserLayout: React.FC = () => {
         <Outlet />
       </main>
       <Footer className="relative z-30" openCookieSettingsRef={openCookieSettingsRef} />
-      {/* <CookieConsent onOpenSettingsRef={openCookieSettingsRef} /> */}
+      <CookieConsent onOpenSettingsRef={openCookieSettingsRef} />
       <ScrollToTop />
       {/* <FloatingContactButton /> */}
     </div>

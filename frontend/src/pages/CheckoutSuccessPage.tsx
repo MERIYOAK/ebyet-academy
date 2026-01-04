@@ -180,7 +180,11 @@ const CheckoutSuccessPage = () => {
         if (token && effectiveId) {
           try {
             console.log(`🔧 Fetching receipt for ${bundleId ? 'bundleId' : 'courseId'}: ${effectiveId}`);
-            const receiptUrl = buildApiUrl(`/api/payment/receipt/${effectiveId}`);
+            // Use different endpoints for bundle vs course receipts
+            const receiptUrl = buildApiUrl(bundleId 
+              ? `/api/payment/receipt/bundle/${effectiveId}` // For bundles, get bundle receipt info
+              : `/api/payment/receipt/${effectiveId}` // For courses
+            );
             console.log(`🔧 Receipt URL: ${receiptUrl}`);
             
             const receiptResponse = await fetch(receiptUrl, {
@@ -351,7 +355,12 @@ const CheckoutSuccessPage = () => {
         throw new Error(t('checkout_success.authentication_required'));
       }
 
-      const response = await fetch(buildApiUrl(`/api/payment/download-receipt/${effectiveId}`), {
+      // Use different endpoints for bundle vs course receipts
+      const receiptEndpoint = bundleId 
+        ? `/api/payment/download-bundle-receipt/${bundleId}`
+        : `/api/payment/download-receipt/${effectiveCourseId}`;
+
+      const response = await fetch(buildApiUrl(receiptEndpoint), {
         headers: {
           'Authorization': `Bearer ${token}`,
         }
@@ -385,11 +394,13 @@ const CheckoutSuccessPage = () => {
       // Provide more specific error messages
       let errorMessage = t('checkout_success.failed_to_download_receipt');
       
-      if (error.message.includes('404')) {
+      const errorMessageText = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessageText.includes('404')) {
         errorMessage = t('checkout_success.receipt_not_found');
-      } else if (error.message.includes('401')) {
+      } else if (errorMessageText.includes('401')) {
         errorMessage = t('checkout_success.authentication_required_login');
-      } else if (error.message.includes('Payment not found')) {
+      } else if (errorMessageText.includes('Payment not found')) {
         errorMessage = t('checkout_success.payment_record_not_found');
       }
       

@@ -535,9 +535,12 @@
     "keywords": "ፕሮፈሽናላዊ ምዕባለ, ናይ መስመር ትምህርቲ, ንግዲ, ወፍሪ, ስልጠናታት ፋይናንስ, ዲጂታላዊ ዕዳጋ, ቴክኖሎጂ ሞያታት, ምዕባለ ሞያ, ናይ መስመር ስልጠናታት"
   },
   "cookie": {
-    "banner_message": "ድልየታትኩም ንምርዳእ ኩኪስ ክንጥቀም ዶ?",
+    "title": "ምርጫታት ኩኪ",
+    "subtitle": "ውልቃዊ ሓበሬታኩም ብደምቢ ነኽብር ኢና",
+    "banner_message": "ድልየታትኩም ንምርዳእ፣ ናይ ወብሳይትና ትራፊክ ንምልላይን ኩኪስ ንጥቀም ኢና። ብምቅባልኩም፣ ግልጋሎትና ንዓኹም ዝበለጸ ይኸውን።",
     "accept": "እሺ",
-    "decline": "ኣይፋል"
+    "decline": "ኣይፋል",
+    "learn_more": "ብዛዕባ ናይ ውልቃዊ ሓበሬታ ፖሊሲና ኣንብብ"
   },
   "language": {
     "tigrinya": "ትግርኛ",
@@ -616,6 +619,7 @@
     "certificate_of_completion": "ናይ መፈጸምታ ሰርቲፊኬት",
     "regular_course_updates": "ስሩዕ ምምሕያሽ ስልጠናታት",
     "community": "ማሕበረሰብ",
+    "whatsapp_locked": "ምስ WhatsApp ማሕበረሰብ ክትጽንበሩ እዚ ስልጠና ዓድጉ",
     "failed_to_load_course": "ስልጠናታት ምጽዓን ኣይተኻእለን",
     "unknown_error": "ዘይተፈልጠ ጌጋ",
     "loading_course_details": "ዝርዝር ስልጠናታት ይጽዓን...",

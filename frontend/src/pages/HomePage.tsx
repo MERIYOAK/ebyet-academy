@@ -38,6 +38,9 @@ interface Announcement {
 const HomePage = () => {
   const { t, i18n } = useTranslation();
   
+  // Testimonials animation state
+  const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
+  
   // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [announcementsLoading, setAnnouncementsLoading] = useState(true);
@@ -781,16 +784,19 @@ const HomePage = () => {
               .testimonials-scroll {
                 will-change: transform;
                 width: fit-content;
-                animation: scroll 80s linear infinite;
+                animation: scroll 120s linear infinite;
+              }
+              .testimonials-scroll.paused {
+                animation-play-state: paused;
               }
               @media (min-width: 640px) {
                 .testimonials-scroll {
-                  animation: scroll 100s linear infinite;
+                  animation: scroll 150s linear infinite;
                 }
               }
               @media (min-width: 1024px) {
                 .testimonials-scroll {
-                  animation: scroll 120s linear infinite;
+                  animation: scroll 180s linear infinite;
                 }
               }
               .testimonials-scroll:hover {
@@ -860,7 +866,11 @@ const HomePage = () => {
                 }
               }
             `}</style>
-            <div className="flex testimonials-scroll">
+            <div 
+              className={`flex testimonials-scroll ${isTestimonialsPaused ? 'paused' : ''}`}
+              onClick={() => setIsTestimonialsPaused(!isTestimonialsPaused)}
+              onTouchStart={() => setIsTestimonialsPaused(!isTestimonialsPaused)}
+            >
               {/* Render testimonials 3 times for seamless infinite loop */}
               {[1, 2, 3].map((setIndex) => (
                 [

@@ -10,7 +10,7 @@ interface FooterProps {
   openCookieSettingsRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-const Footer: React.FC<FooterProps> = ({ className = '' }) => {
+const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }) => {
   const { t } = useTranslation();
   
   const currentYear = new Date().getFullYear();
@@ -152,6 +152,15 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
                   <FileText className="w-4 h-4" />
                   <span>{t('footer.terms_of_service', 'Terms of Service')}</span>
                 </Link>
+              </li>
+              <li>
+                <button
+                  onClick={() => openCookieSettingsRef?.current?.()}
+                  className="text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300 text-sm flex items-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>{t('footer.cookie_settings', 'Cookie Settings')}</span>
+                </button>
               </li>
               <li>
                 <Link to="/verify-certificate" className="text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300 text-sm flex items-center gap-2">
