@@ -338,6 +338,16 @@ async function handleCheckoutSessionCompleted(session) {
       throw new Error(`User not found: ${userId}`);
     }
 
+    console.log(`✅ User updated successfully:`, {
+      userId,
+      userEmail: updatedUser.email,
+      updateQuery,
+      updatedPurchasedCourses: updatedUser.purchasedCourses || [],
+      updatedPurchasedBundles: updatedUser.purchasedBundles || [],
+      totalPurchasedCourses: updatedUser.purchasedCourses?.length || 0,
+      totalPurchasedBundles: updatedUser.purchasedBundles?.length || 0
+    });
+
     let paymentData;
 
     if (itemType === 'bundle') {

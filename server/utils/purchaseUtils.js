@@ -11,7 +11,9 @@ async function userHasPurchased(userId, courseId) {
   try {
     console.log(`🔧 [userHasPurchased] Checking purchase status:`, {
       userId,
-      courseId
+      courseId,
+      courseIdType: typeof courseId,
+      courseIdString: courseId.toString()
     });
     
     const user = await User.findById(userId);
@@ -20,14 +22,32 @@ async function userHasPurchased(userId, courseId) {
       return false;
     }
     
+    console.log(`🔧 [userHasPurchased] User found:`, {
+      userId,
+      userEmail: user.email,
+      purchasedCourses: user.purchasedCourses || [],
+      purchasedCoursesLength: user.purchasedCourses?.length || 0,
+      purchasedCoursesTypes: user.purchasedCourses?.map(id => ({ id: id.toString(), type: typeof id })) || []
+    });
+    
     // Convert courseId to string for comparison since purchasedCourses contains ObjectIds
     const courseIdString = courseId.toString();
-    const hasPurchased = user.purchasedCourses && user.purchasedCourses.some(purchasedId => 
-      purchasedId.toString() === courseIdString
-    );
-    console.log(`🔧 [userHasPurchased] Purchase check result:`, {
+    const hasPurchased = user.purchasedCourses && user.purchasedCourses.some(purchasedId => {
+      const purchasedIdString = purchasedId.toString();
+      const matches = purchasedIdString === courseIdString;
+      console.log(`🔧 [userHasPurchased] Comparing:`, {
+        purchasedId: purchasedId,
+        purchasedIdString,
+        courseIdString,
+        matches
+      });
+      return matches;
+    });
+    
+    console.log(`🔧 [userHasPurchased] Final purchase check result:`, {
       userId,
       courseId,
+      courseIdString,
       hasPurchased,
       purchasedCourses: user.purchasedCourses || [],
       purchasedCoursesLength: user.purchasedCourses?.length || 0
