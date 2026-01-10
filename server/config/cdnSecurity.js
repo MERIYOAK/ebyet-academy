@@ -139,7 +139,7 @@ class CDNSecurityConfig {
   getRateLimitConfig() {
     return {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: process.env.NODE_ENV === 'development' ? 1000 : 100, // More lenient in development
+      max: process.env.NODE_ENV === 'development' ? 1000 : 300, // Increased from 100 to 300 for production
       message: {
         error: 'Too many requests from this IP, please try again later.',
         retryAfter: 15 * 60 // 15 minutes in seconds
