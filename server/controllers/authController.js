@@ -544,18 +544,21 @@ const googleCallback = async (req, res) => {
     // Check if phone number is required
     if (result.phoneNumberRequired) {
       // Redirect to phone number collection page
-      const redirectUrl = `${process.env.FRONTEND_URL}/complete-google-registration?userId=${result.user._id}&email=${encodeURIComponent(result.user.email)}&name=${encodeURIComponent(result.user.name)}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+      const redirectUrl = `${frontendUrl}/complete-google-registration?userId=${result.user._id}&email=${encodeURIComponent(result.user.email)}&name=${encodeURIComponent(result.user.name)}`;
       res.redirect(redirectUrl);
       return;
     }
 
     // Redirect to frontend with token for successful authentication
-    const redirectUrl = `${process.env.FRONTEND_URL}/auth/google-callback?token=${result.token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    const redirectUrl = `${frontendUrl}/auth/google-callback?token=${result.token}`;
     res.redirect(redirectUrl);
 
   } catch (error) {
     console.error('❌ Google callback error:', error);
-    const errorUrl = `${process.env.FRONTEND_URL}/auth/google-callback?error=${encodeURIComponent(error.message)}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    const errorUrl = `${frontendUrl}/auth/google-callback?error=${encodeURIComponent(error.message)}`;
     res.redirect(errorUrl);
   }
 };
