@@ -86,7 +86,7 @@ exports.updateProgress = async (req, res) => {
     try {
       // Check if user has purchased the course
       const user = await User.findById(userId);
-      if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+      if (!user || !user.purchasedCourses || !user.purchasedCourses.some(purchasedId => purchasedId.toString() === courseId)) {
         return res.status(403).json({
           success: false,
           message: 'You must purchase this course to track progress'
@@ -260,7 +260,7 @@ exports.getCourseProgress = async (req, res) => {
 
     // Check if user has purchased the course
     const user = await User.findById(userId);
-    if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+    if (!user || !user.purchasedCourses || !user.purchasedCourses.some(purchasedId => purchasedId.toString() === courseId)) {
       return res.status(403).json({
         success: false,
         message: 'You must purchase this course to view progress'
@@ -566,7 +566,7 @@ exports.completeVideo = async (req, res) => {
 
     // Check if user has purchased the course
     const user = await User.findById(userId);
-    if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+    if (!user || !user.purchasedCourses || !user.purchasedCourses.some(purchasedId => purchasedId.toString() === courseId)) {
       return res.status(403).json({
         success: false,
         message: 'You must purchase this course to mark videos as completed'
@@ -636,7 +636,7 @@ exports.getNextVideo = async (req, res) => {
 
     // Check if user has purchased the course
     const user = await User.findById(userId);
-    if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+    if (!user || !user.purchasedCourses || !user.purchasedCourses.some(purchasedId => purchasedId.toString() === courseId)) {
       return res.status(403).json({
         success: false,
         message: 'You must purchase this course to access videos'
@@ -704,7 +704,7 @@ exports.getResumePosition = async (req, res) => {
 
     // Check if user has purchased the course
     const user = await User.findById(userId);
-    if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+    if (!user || !user.purchasedCourses || !user.purchasedCourses.some(purchasedId => purchasedId.toString() === courseId)) {
       return res.status(403).json({
         success: false,
         message: 'You must purchase this course to resume videos'
@@ -773,7 +773,7 @@ exports.getVideoProgress = async (req, res) => {
 
     // Check if user has purchased the course
     const user = await User.findById(userId);
-    if (!user || !user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
+    if (!user || !user.purchasedCourses || !user.purchasedCourses.some(purchasedId => purchasedId.toString() === courseId)) {
       return res.status(403).json({
         success: false,
         message: 'You must purchase this course to view progress'
