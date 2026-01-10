@@ -80,10 +80,18 @@ exports.createCheckoutSession = async (req, res) => {
         });
       }
 
+      // Normalize frontend URL to ensure it has proper protocol
+      const normalizeUrl = (url) => {
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          return `https://${url}`;
+        }
+        return url;
+      };
+
       itemId = courseId;
       itemType = 'course';
-      successUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success?courseId=${courseId}`;
-      cancelUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/cancel?courseId=${courseId}`;
+      successUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/success?courseId=${courseId}`;
+      cancelUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/cancel?courseId=${courseId}`;
       console.log(`✅ Course found: ${course.title} ($${course.price})`);
 
     } else if (bundleId) {
@@ -107,8 +115,8 @@ exports.createCheckoutSession = async (req, res) => {
 
       itemId = bundleId;
       itemType = 'bundle';
-      successUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success?bundleId=${bundleId}`;
-      cancelUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/cancel?bundleId=${bundleId}`;
+      successUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/success?bundleId=${bundleId}`;
+      cancelUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/cancel?bundleId=${bundleId}`;
       console.log(`✅ Bundle found: ${bundle.title} ($${bundle.price})`);
     }
 
