@@ -56,9 +56,18 @@ const upload = multer({
 const app = express();
 
 // CORS configuration for development and production
+// Normalize URLs to ensure they have proper protocols
+const normalizeUrl = (url) => {
+  if (!url) return url;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  process.env.CLIENT_URL || 'http://localhost:5173',
+  normalizeUrl(process.env.FRONTEND_URL || 'http://localhost:5173'),
+  normalizeUrl(process.env.CLIENT_URL || 'http://localhost:5173'),
   'http://127.0.0.1:5173', // Alternative localhost
   'https://ebyet-academy-pink.vercel.app', // Production Vercel frontend
   'https://www.ibyet.com', // Production website with HTTPS
