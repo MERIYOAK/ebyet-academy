@@ -539,26 +539,34 @@ const uploadProfilePhoto = async (req, res) => {
  */
 const googleCallback = async (req, res) => {
   try {
+    console.log('🔧 Google callback - FRONTEND_URL env var:', process.env.FRONTEND_URL);
+    
     const result = await authService.handleGoogleAuth(req.user);
 
     // Check if phone number is required
     if (result.phoneNumberRequired) {
       // Redirect to phone number collection page
       const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+      console.log('🔧 Phone number required - frontendUrl:', frontendUrl);
       const redirectUrl = `${frontendUrl}/complete-google-registration?userId=${result.user._id}&email=${encodeURIComponent(result.user.email)}&name=${encodeURIComponent(result.user.name)}`;
+      console.log('🔧 Phone redirect URL:', redirectUrl);
       res.redirect(redirectUrl);
       return;
     }
 
     // Redirect to frontend with token for successful authentication
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    console.log('🔧 Success - frontendUrl:', frontendUrl);
     const redirectUrl = `${frontendUrl}/auth/google-callback?token=${result.token}`;
+    console.log('🔧 Success redirect URL:', redirectUrl);
     res.redirect(redirectUrl);
 
   } catch (error) {
     console.error('❌ Google callback error:', error);
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    console.log('🔧 Error - frontendUrl:', frontendUrl);
     const errorUrl = `${frontendUrl}/auth/google-callback?error=${encodeURIComponent(error.message)}`;
+    console.log('🔧 Error redirect URL:', errorUrl);
     res.redirect(errorUrl);
   }
 };
