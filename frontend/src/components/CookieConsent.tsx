@@ -88,8 +88,8 @@ const CookieConsent: React.FC<CookieConsentProps> = ({ measurementId = config.GA
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-[15vh] min-h-[80px] w-full">
-      <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-cyan-200/50 dark:border-cyan-800/50 h-full shadow-2xl shadow-cyan-500/10 dark:shadow-cyan-500/20">
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-[15vh] min-h-[80px] w-full flex justify-center px-4 xs:pb-4 pb-2">
+      <div className="bg-gray-900/95 backdrop-blur-xl border-t border-x border-cyan-800/50 xs:border-transparent h-full shadow-2xl shadow-cyan-500/20 w-full max-w-6xl rounded-t-2xl">
         <div className="h-full flex flex-col items-center justify-between px-2 py-2 xs:px-3 xs:py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 lg:flex-row lg:px-8 lg:py-4">
           {/* Top section - Icon and Title */}
           <div className="flex items-center gap-2 xs:gap-3 mb-2 lg:mb-0 lg:flex-1">
@@ -102,51 +102,53 @@ const CookieConsent: React.FC<CookieConsentProps> = ({ measurementId = config.GA
             
             {/* Title and subtitle */}
             <div className="text-center lg:text-left">
-              <h3 className="text-gray-900 dark:text-white font-semibold text-sm xs:text-base lg:text-xl leading-tight">
+              <h3 className="text-white font-semibold text-sm xs:text-base lg:text-xl leading-tight">
                 {t('cookie.title', 'Cookie Preferences')}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-xs xs:text-sm mt-0.5 hidden xs:block">
+              <p className="text-gray-400 text-xs xs:text-sm mt-0.5">
                 {t('cookie.subtitle', 'We respect your privacy')}
               </p>
             </div>
           </div>
 
-          {/* Middle section - Message (hidden on very small screens) */}
-          <div className="hidden sm:block text-center lg:text-left lg:flex-1 mb-2 lg:mb-0">
-            <p className="text-gray-700 dark:text-gray-300 text-xs xs:text-sm max-w-2xl leading-tight">
+          {/* Middle section - Message and Privacy link */}
+          <div className="hidden sm:block text-center lg:text-left lg:flex-1 mb-2 lg:mb-0 px-2 lg:px-4">
+            <p className="text-gray-300 text-xs xs:text-sm leading-tight mb-2">
               {t('cookie.banner_message', 'We use cookies to enhance your experience, analyze site traffic, and personalize content.')}
             </p>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open('/privacy-policy', '_blank');
+              }}
+              className="text-xs text-gray-400 hover:text-cyan-400 transition-colors duration-200 underline underline-offset-2"
+            >
+              {t('cookie.learn_more', 'Learn more')}
+            </button>
           </div>
 
           {/* Bottom section - Actions */}
-          <div className="flex flex-col xs:flex-row items-center gap-2 xs:gap-3 w-full lg:w-auto">
+          <div className="flex flex-col xs:flex-row items-center gap-2 xs:gap-3 w-full lg:w-auto lg:flex-shrink-0">
             <div className="flex flex-row gap-2 xs:gap-3 w-full xs:w-auto">
               <button
                 onClick={() => applyConsent('false')}
-                className="flex-1 xs:flex-none px-2 py-1 xs:px-3 xs:py-2 lg:px-6 lg:py-3 rounded-lg xs:rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-xs xs:text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md whitespace-nowrap"
+                className="flex-1 xs:flex-none px-3 py-2 xs:px-4 xs:py-2 lg:px-6 lg:py-3 rounded-lg xs:rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium text-xs xs:text-sm transition-all duration-200 border border-gray-700 hover:border-gray-600 hover:shadow-md whitespace-nowrap min-w-[80px]"
               >
                 {t('cookie.decline', 'Decline')}
               </button>
               <button
                 onClick={() => applyConsent('true')}
-                className="flex-1 xs:flex-none px-2 py-1 xs:px-3 xs:py-2 lg:px-6 lg:py-3 rounded-lg xs:rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-medium text-xs xs:text-sm transition-all duration-200 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/35 hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                className="flex-1 xs:flex-none px-3 py-2 xs:px-4 xs:py-2 lg:px-6 lg:py-3 rounded-lg xs:rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-medium text-xs xs:text-sm transition-all duration-200 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/35 hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap min-w-[80px]"
               >
                 {t('cookie.accept', 'Accept')}
               </button>
             </div>
-            
-            {/* Privacy link - hidden on very small screens */}
-            <button
-              onClick={() => window.open('/privacy-policy', '_blank')}
-              className="hidden xs:block text-xs text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 underline underline-offset-2 whitespace-nowrap"
-            >
-              {t('cookie.learn_more', 'Learn more')}
-            </button>
           </div>
         </div>
 
         {/* Decorative top accent */}
-        <div className="h-1 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400"></div>
+        <div className="h-1 bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 xs:hidden"></div>
       </div>
     </div>
   );
