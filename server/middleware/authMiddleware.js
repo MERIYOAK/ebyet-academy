@@ -2,6 +2,11 @@ const authService = require('../services/authService');
 
 const auth = async (req, res, next) => {
   try {
+    // Skip authentication for OPTIONS requests (CORS preflight)
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
@@ -58,4 +63,4 @@ const auth = async (req, res, next) => {
   }
 };
 
-module.exports = auth; 
+module.exports = auth;
