@@ -543,10 +543,16 @@ const googleCallback = async (req, res) => {
     
     const result = await authService.handleGoogleAuth(req.user);
 
+    // Ensure frontend URL has proper protocol
+    let frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    if (!frontendUrl.startsWith('http://') && !frontendUrl.startsWith('https://')) {
+      frontendUrl = `https://${frontendUrl}`;
+    }
+    console.log('🔧 Normalized frontendUrl:', frontendUrl);
+
     // Check if phone number is required
     if (result.phoneNumberRequired) {
       // Redirect to phone number collection page
-      const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
       console.log('🔧 Phone number required - frontendUrl:', frontendUrl);
       const redirectUrl = `${frontendUrl}/complete-google-registration?userId=${result.user._id}&email=${encodeURIComponent(result.user.email)}&name=${encodeURIComponent(result.user.name)}`;
       console.log('🔧 Phone redirect URL:', redirectUrl);
@@ -555,7 +561,6 @@ const googleCallback = async (req, res) => {
     }
 
     // Redirect to frontend with token for successful authentication
-    const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
     console.log('🔧 Success - frontendUrl:', frontendUrl);
     const redirectUrl = `${frontendUrl}/auth/google-callback?token=${result.token}`;
     console.log('🔧 Success redirect URL:', redirectUrl);
@@ -563,7 +568,10 @@ const googleCallback = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Google callback error:', error);
-    const frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    let frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
+    if (!frontendUrl.startsWith('http://') && !frontendUrl.startsWith('https://')) {
+      frontendUrl = `https://${frontendUrl}`;
+    }
     console.log('🔧 Error - frontendUrl:', frontendUrl);
     const errorUrl = `${frontendUrl}/auth/google-callback?error=${encodeURIComponent(error.message)}`;
     console.log('🔧 Error redirect URL:', errorUrl);
