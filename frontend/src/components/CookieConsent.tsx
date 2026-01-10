@@ -46,19 +46,16 @@ interface CookieConsentProps {
 const CookieConsent: React.FC<CookieConsentProps> = ({ measurementId = config.GA_MEASUREMENT_ID, onOpenSettingsRef }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
-  const [consent, setConsent] = useState<string | null>(null);
 
   const applyConsent = useCallback((value: 'true' | 'false') => {
     if (value === 'true') {
       // Only persist consent if user accepts
       localStorage.setItem(CONSENT_KEY, value);
-      setConsent(value);
       setVisible(false);
       loadGA(measurementId || '');
     } else {
       // Remove any existing consent and hide banner temporarily
       localStorage.removeItem(CONSENT_KEY);
-      setConsent('false');
       setVisible(false);
       removeGA();
     }
@@ -68,11 +65,9 @@ const CookieConsent: React.FC<CookieConsentProps> = ({ measurementId = config.GA
     const stored = localStorage.getItem(CONSENT_KEY);
     if (stored === 'true') {
       // User has accepted cookies - don't show banner
-      setConsent(stored);
       loadGA(measurementId || '');
     } else {
       // User has declined or no consent stored - show banner
-      setConsent(stored || 'false');
       setVisible(true);
     }
   }, [measurementId]);
@@ -112,7 +107,7 @@ const CookieConsent: React.FC<CookieConsentProps> = ({ measurementId = config.GA
           </div>
 
           {/* Middle section - Message and Privacy link */}
-          <div className="hidden sm:block text-center lg:text-left lg:flex-1 mb-2 lg:mb-0 px-2 lg:px-4">
+          <div className="hidden sm:block text-center lg:text-left lg:flex-1 mb-2 lg:mb-0 px-2 lg:px-4 py-2">
             <p className="text-gray-300 text-xs xs:text-sm leading-tight mb-2">
               {t('cookie.banner_message', 'We use cookies to enhance your experience, analyze site traffic, and personalize content.')}
             </p>
