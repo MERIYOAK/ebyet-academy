@@ -113,8 +113,11 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  preflightContinue: true,
+  optionsSuccessStatus: 200
 }));
+
 // Parse JSON bodies for all routes except webhook
 app.use((req, res, next) => {
   if (req.path === '/api/payment/webhook') {
@@ -152,6 +155,29 @@ app.use(session({
 // Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Handle OPTIONS requests for CORS preflight
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log('🔧 OPTIONS preflight request from origin:', origin);
+  
+  // Check if origin is allowed
+  if (!origin || allowedOrigins.indexOf(origin) !== -1 || 
+      (process.env.NODE_ENV === 'development' && (origin.includes('localhost') || origin.includes('127.0.0.1')))) {
+    
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    
+    console.log('✅ Preflight request allowed for origin:', origin);
+    return res.status(200).end();
+  }
+  
+  console.log('❌ Preflight request blocked for origin:', origin);
+  return res.status(403).json({ error: 'CORS policy violation' });
+});
 
 // Health check route
 app.get('/health', (req, res) => {
