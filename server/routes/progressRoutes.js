@@ -27,6 +27,9 @@ router.get('/next-video/:courseId/:currentVideoId', progressController.getNextVi
 // Get resume position for a video
 router.get('/resume/:courseId/:videoId', progressController.getResumePosition);
 
+// Check certificate generation status
+router.get('/certificate-status/:courseId', progressController.checkCertificateStatus);
+
 // Reset video completion status (admin use only)
 router.post('/reset-completion', progressController.resetVideoCompletion);
 

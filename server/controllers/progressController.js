@@ -108,13 +108,16 @@ exports.updateProgress = async (req, res) => {
         { upsert: true, new: true }
       );
 
-      // Calculate watched percentage safely
+      // Calculate watched percentage safely with better logging
       let watchedPercentage = 0;
       if (validTotalDuration > 0) {
         watchedPercentage = Math.min(100, Math.round((validWatchedDuration / validTotalDuration) * 100));
       } else if (validWatchedDuration > 0) {
         // If total duration is 0 but we have watched duration, set to 100%
         watchedPercentage = 100;
+        console.log(`⚠️ [Progress] Total duration is 0 but watched duration is ${validWatchedDuration}, setting progress to 100%`);
+      } else {
+        console.log(`📊 [Progress] Watched: ${validWatchedDuration}s, Total: ${validTotalDuration}s, Percentage: 0%`);
       }
 
       // Update video-level progress using atomic operation
@@ -162,10 +165,12 @@ exports.updateProgress = async (req, res) => {
           completedAt: new Date(),
           completionPercentage: watchedPercentage
         };
+        console.log(`🎯 [Progress] Marking video as completed at ${watchedPercentage}%`);
       } else {
         completionUpdate = {
           completionPercentage: watchedPercentage
         };
+        console.log(`📊 [Progress] Video progress updated: ${watchedPercentage}%`);
       }
 
       // Apply completion update if needed
@@ -185,6 +190,13 @@ exports.updateProgress = async (req, res) => {
       // Get updated course progress
       const courseProgress = await Progress.getOverallCourseProgress(userId, courseId, course.videos.length);
 
+      console.log(`📊 [Progress] Course Progress Check:`);
+      console.log(`   - Course Progress Percentage: ${courseProgress.courseProgressPercentage}%`);
+      console.log(`   - Completed Videos: ${courseProgress.completedVideos}/${courseProgress.totalVideos}`);
+      console.log(`   - Total Watched Duration: ${courseProgress.totalWatchedDuration}s`);
+      console.log(`   - Course Total Duration: ${courseProgress.courseTotalDuration}s`);
+      console.log(`   - Should Generate Certificate: ${courseProgress.courseProgressPercentage >= 100 && courseProgress.completedVideos >= courseProgress.totalVideos && courseProgress.totalWatchedDuration >= courseProgress.courseTotalDuration}`);
+
       // Check if course is 100% completed and auto-generate certificate
       if (courseProgress.courseProgressPercentage >= 100 && 
           courseProgress.completedVideos >= courseProgress.totalVideos &&
@@ -196,6 +208,17 @@ exports.updateProgress = async (req, res) => {
         } catch (certError) {
           console.error('❌ [Certificate] Error auto-generating certificate:', certError);
           // Don't fail the progress update if certificate generation fails
+        }
+      } else {
+        console.log(`ℹ️ [Certificate] Certificate generation conditions not met:`);
+        if (courseProgress.courseProgressPercentage < 100) {
+          console.log(`   - Reason: Course progress is ${courseProgress.courseProgressPercentage}% (need 100%)`);
+        } else if (courseProgress.completedVideos < courseProgress.totalVideos) {
+          console.log(`   - Reason: Only ${courseProgress.completedVideos}/${courseProgress.totalVideos} videos completed`);
+        } else if (courseProgress.totalWatchedDuration < courseProgress.courseTotalDuration) {
+          const remainingTime = Math.max(0, courseProgress.courseTotalDuration - courseProgress.totalWatchedDuration);
+          const remainingMinutes = Math.ceil(remainingTime / 60);
+          console.log(`   - Reason: User needs to watch ${remainingMinutes} more minutes`);
         }
       }
 
@@ -826,6 +849,63 @@ exports.getVideoProgress = async (req, res) => {
     });
   }
 };
+
+/**
+ * Check certificate generation status for debugging
+ * GET /api/progress/certificate-status/:courseId
+ */
+exports.checkCertificateStatus = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user?.userId || req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+    }
+    
+    console.log(`🔍 [Certificate Status] Checking certificate status for user ${userId}, course ${courseId}`);
+    
+    // Get user's course progress
+    const courseProgress = await Progress.getOverallCourseProgress(userId, courseId);
+    
+    // Check if certificate exists
+    const certificate = await Certificate.getCourseCertificate(userId, courseId);
+    
+    res.json({
+      success: true,
+      data: {
+        courseId,
+        userId,
+        courseProgress: {
+          percentage: courseProgress.courseProgressPercentage,
+          completedVideos: courseProgress.completedVideos,
+          totalVideos: courseProgress.totalVideos,
+          totalWatchedDuration: courseProgress.totalWatchedDuration,
+          courseTotalDuration: courseProgress.courseTotalDuration
+        },
+        certificate: certificate ? {
+          certificateId: certificate.certificateId,
+          dateIssued: certificate.dateIssued,
+          pdfUrl: certificate.pdfUrl
+        } : null,
+        shouldGenerateCertificate: !certificate && 
+          courseProgress.courseProgressPercentage >= 100 && 
+          courseProgress.completedVideos >= courseProgress.totalVideos &&
+          courseProgress.totalWatchedDuration >= courseProgress.courseTotalDuration
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Certificate Status] Error checking certificate status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check certificate status',
+      error: error.message
+    });
+  }
+}; 
 
 /**
  * Reset video completion status (admin use only)
