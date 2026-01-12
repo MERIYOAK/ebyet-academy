@@ -278,26 +278,39 @@ const CourseDetailPage = () => {
       console.log('   - Course ID:', id);
       console.log('   - User has purchased:', purchaseStatus?.hasPurchased || courseData?.userHasPurchased);
       console.log('   - Course completed:', isCourseCompleted);
+      console.log('   - User Agent:', navigator.userAgent);
+      console.log('   - Is Mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
       
       setGeneratingCertificate(true);
       const token = localStorage.getItem('token');
       
       if (!token) {
         console.error('❌ [Certificate] No authentication token found');
+        // Show mobile-friendly error message
+        alert('Please log in to generate your certificate');
         return;
       }
 
       console.log('🔧 [Certificate] Sending request to generate certificate...');
+      
+      // Add mobile-specific timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for mobile
+      
       const response = await fetch(buildApiUrl('/api/certificates/generate'), {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Mobile-Client': /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'true' : 'false'
         },
         body: JSON.stringify({
           courseId: id
         })
       });
+      
+      clearTimeout(timeoutId);
 
       console.log('🔧 [Certificate] Response status:', response.status);
       console.log('🔧 [Certificate] Response ok:', response.ok);
@@ -305,6 +318,15 @@ const CourseDetailPage = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('❌ [Certificate] Error response:', errorData);
+        
+        // Show mobile-friendly error message
+        if (response.status === 403) {
+          alert('You must complete the course before generating a certificate');
+        } else if (response.status === 401) {
+          alert('Please log in again to generate your certificate');
+        } else {
+          alert(errorData.message || 'Failed to generate certificate. Please try again.');
+        }
         throw new Error(errorData.message || 'Failed to generate certificate');
       }
 
@@ -319,6 +341,15 @@ const CourseDetailPage = () => {
       
     } catch (error) {
       console.error('❌ [Certificate] Error generating certificate:', error);
+      
+      // Show mobile-friendly error message
+      if (error.name === 'AbortError') {
+        alert('Request timed out. Please check your connection and try again.');
+      } else if (error.message) {
+        alert(error.message);
+      } else {
+        alert('Failed to generate certificate. Please try again.');
+      }
     } finally {
       setGeneratingCertificate(false);
     }
@@ -2509,8 +2540,10 @@ const CourseDetailPage = () => {
                       ) : (
                         <button
                           onClick={generateCertificate}
+                          onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                          onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
                           disabled={generatingCertificate}
-                          className="flex items-center justify-center space-x-1.5 tiny:space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 tiny:px-5 xxs:px-6 py-2 tiny:py-2.5 xxs:py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 transform disabled:hover:scale-100 disabled:cursor-not-allowed font-semibold text-xs tiny:text-sm xxs:text-base w-full sm:w-auto"
+                          className="flex items-center justify-center space-x-1.5 tiny:space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 active:from-cyan-700 active:to-blue-700 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 tiny:px-5 xxs:px-6 py-2 tiny:py-2.5 xxs:py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transform disabled:hover:scale-100 disabled:cursor-not-allowed font-semibold text-xs tiny:text-sm xxs:text-base w-full sm:w-auto min-h-[44px] touch-manipulation"
                         >
                           {generatingCertificate ? (
                             <>

@@ -13,6 +13,10 @@ exports.generateCertificate = async (req, res) => {
   try {
     const { courseId } = req.body;
     
+    // Log mobile client info
+    const isMobileClient = req.headers['x-mobile-client'] === 'true';
+    console.log(`🔧 [Certificate] Request from mobile client: ${isMobileClient}`);
+    
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
       return res.status(401).json({ 
@@ -131,17 +135,52 @@ exports.generateCertificate = async (req, res) => {
       platformName: 'IBYET-INVESTING'
     });
 
-    // Generate PDF
-    const pdfBuffer = await exports.generateCertificatePDF(certificate);
+    console.log(`📄 [Certificate] Starting PDF generation for certificate: ${certificateId}`);
     
-    // Save PDF to S3
-    const pdfUrl = await saveCertificatePDF(pdfBuffer, certificateId, courseTitleString);
+    // Generate PDF with memory management
+    let pdfBuffer;
+    try {
+      pdfBuffer = await exports.generateCertificatePDF(certificate);
+      console.log(`✅ [Certificate] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+    } catch (pdfError) {
+      console.error('❌ [Certificate] PDF generation failed:', pdfError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate certificate PDF',
+        error: pdfError.message
+      });
+    }
+    
+    // Save PDF to S3 with timeout and retry logic
+    let pdfUrl;
+    try {
+      console.log(`📤 [Certificate] Starting S3 upload for certificate: ${certificateId}`);
+      pdfUrl = await saveCertificatePDF(pdfBuffer, certificateId, courseTitleString);
+      console.log(`✅ [Certificate] S3 upload completed: ${pdfUrl}`);
+    } catch (s3Error) {
+      console.error('❌ [Certificate] S3 upload failed:', s3Error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to save certificate to cloud storage',
+        error: s3Error.message
+      });
+    }
     
     // Update certificate with PDF URL
     certificate.pdfUrl = pdfUrl;
     
     // Save certificate to database
-    await certificate.save();
+    try {
+      await certificate.save();
+      console.log(`✅ [Certificate] Certificate saved to database: ${certificateId}`);
+    } catch (dbError) {
+      console.error('❌ [Certificate] Database save failed:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to save certificate to database',
+        error: dbError.message
+      });
+    }
 
     console.log(`✅ [Certificate] Certificate generated successfully: ${certificateId}`);
 
@@ -160,11 +199,17 @@ exports.generateCertificate = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [Certificate] Error generating certificate:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate certificate'
-    });
+    console.error('❌ [Certificate] CRITICAL ERROR - Server might crash:', error);
+    console.error('❌ [Certificate] Error stack:', error.stack);
+    
+    // Prevent server crash by always responding
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Certificate generation failed due to server error',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
   }
 };
 

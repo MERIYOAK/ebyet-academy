@@ -202,12 +202,15 @@ exports.updateProgress = async (req, res) => {
           courseProgress.completedVideos >= courseProgress.totalVideos &&
           courseProgress.totalWatchedDuration >= courseProgress.courseTotalDuration) {
         try {
+          console.log(`🎓 [Certificate] Auto-generating certificate for completed course...`);
           const certificateController = require('./certificateController');
           await certificateController.autoGenerateCertificate(userId, courseId);
           console.log(`🎓 [Certificate] Auto-generated certificate for 100% completed course with full duration watched`);
         } catch (certError) {
-          console.error('❌ [Certificate] Error auto-generating certificate:', certError);
+          console.error('❌ [Certificate] CRITICAL ERROR in auto-generation:', certError);
+          console.error('❌ [Certificate] Error stack:', certError.stack);
           // Don't fail the progress update if certificate generation fails
+          // This prevents the entire backend from crashing
         }
       } else {
         console.log(`ℹ️ [Certificate] Certificate generation conditions not met:`);
