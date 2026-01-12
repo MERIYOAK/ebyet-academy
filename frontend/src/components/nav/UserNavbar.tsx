@@ -118,6 +118,11 @@ const UserNavbar: React.FC = () => {
           } else {
             setProfileImageUrl(null);
           }
+          
+          // Set user name for profile display
+          if (userResult.data.name) {
+            // User name is available but we'll use profile image instead
+          }
         }
       } catch (error) {
         setProfileImageUrl(null);
@@ -251,18 +256,51 @@ const UserNavbar: React.FC = () => {
                 </div>
               )}
 
-              {/* Hamburger Menu Button - Mobile */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="sm:hidden p-1.5 xs:p-2 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? (
-                  <X className="h-5 w-5 xs:h-6 xs:w-6" />
-                ) : (
-                  <Menu className="h-5 w-5 xs:h-6 xs:w-6" />
-                )}
-              </button>
+              {/* User Profile - Mobile */}
+              {isAuthenticated && (
+                <div className="sm:hidden">
+                  {profileImageUrl ? (
+                    <button
+                      onClick={() => navigate('/profile')}
+                      className="p-1.5 xs:p-2 rounded-full hover:opacity-80 transition-opacity"
+                      aria-label="User profile"
+                    >
+                      <img 
+                        src={profileImageUrl}
+                        alt="User profile"
+                        className="w-8 h-8 xs:w-10 xs:h-10 rounded-full object-cover border-2 border-white/50 dark:border-gray-700/50 shadow-lg"
+                      />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => navigate('/profile')}
+                      className="p-1.5 xs:p-2 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-200 shadow-lg hover:shadow-cyan-500/40 hover:scale-105"
+                      aria-label="User profile"
+                    >
+                      <div className="w-8 h-8 xs:w-10 xs:h-10 rounded-full bg-white/10 dark:bg-gray-800/50 backdrop-blur-sm border-2 border-white/50 dark:border-gray-700/50 flex items-center justify-center">
+                        <span className="text-cyan-600 dark:text-cyan-400 text-lg xs:text-xl font-bold">
+                          {'U'}
+                        </span>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {/* Hamburger Menu Button - Mobile (only show when not authenticated) */}
+              {!isAuthenticated && (
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="sm:hidden p-1.5 xs:p-2 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                  aria-label="Toggle menu"
+                >
+                  {isMenuOpen ? (
+                    <X className="h-5 w-5 xs:h-6 xs:w-6" />
+                  ) : (
+                    <Menu className="h-5 w-5 xs:h-6 xs:w-6" />
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

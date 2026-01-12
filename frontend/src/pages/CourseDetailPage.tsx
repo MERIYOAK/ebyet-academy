@@ -339,13 +339,13 @@ const CourseDetailPage = () => {
       setShowCertificateSuccess(true);
       setTimeout(() => setShowCertificateSuccess(false), 3000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [Certificate] Error generating certificate:', error);
       
       // Show mobile-friendly error message
-      if (error.name === 'AbortError') {
+      if (error && error.name === 'AbortError') {
         alert('Request timed out. Please check your connection and try again.');
-      } else if (error.message) {
+      } else if (error && error.message) {
         alert(error.message);
       } else {
         alert('Failed to generate certificate. Please try again.');
