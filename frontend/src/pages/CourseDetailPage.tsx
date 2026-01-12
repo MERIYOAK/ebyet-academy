@@ -120,6 +120,7 @@ const CourseDetailPage = () => {
   const [isDecryptingUrl, setIsDecryptingUrl] = useState(false);
   const [pauseStartTime, setPauseStartTime] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [resumePosition, setResumePosition] = useState<number>(0);
   
   // Materials state
   const [materials, setMaterials] = useState<any[]>([]);
@@ -951,6 +952,14 @@ const CourseDetailPage = () => {
   };
 
   // Udemy-style progress tracking (from VideoPlayerPage)
+  // Update course progress in real-time
+  const updateProgressInOtherPages = useCallback((courseId: string, progress: any) => {
+    const event = new CustomEvent('courseProgressUpdate', {
+      detail: { courseId, progress }
+    });
+    window.dispatchEvent(event);
+  }, []);
+
   const updateProgress = useCallback(async (watchedDuration: number, totalDuration: number, timestamp: number) => {
     console.log(`🔧 [Progress] updateProgress called: ${watchedDuration}s / ${totalDuration}s`);
     console.log(`   - Course ID: ${id}`);
@@ -1125,16 +1134,25 @@ const CourseDetailPage = () => {
         console.log('✅ [Udemy-Style] Progress saved immediately');
         
         if (courseData && result.data.courseProgress) {
+          // Update course progress in real-time across all pages
+          updateProgressInOtherPages(id, result.data.courseProgress);
+          
+          setCourseData(prev => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              overallProgress: result.data.courseProgress
+            };
+          });
+        }
+        
+        if (result.data.videoProgress && currentVideoId) {
           setCourseData(prev => {
             if (!prev) return null;
             
             const updatedCourseData = {
               ...prev,
-              overallProgress: result.data.courseProgress
-            };
-            
-            if (result.data.videoProgress && currentVideoId) {
-              updatedCourseData.videos = prev.videos.map(video => 
+              videos: prev.videos.map(video => 
                 video.id === currentVideoId 
                   ? { 
                       ...video, 
@@ -1148,8 +1166,10 @@ const CourseDetailPage = () => {
                       }
                     }
                   : video
-              );
+              )
             }
+            
+            updateProgressInOtherPages(id, result.data.courseProgress);
             
             return updatedCourseData;
           });
@@ -1404,6 +1424,7 @@ const CourseDetailPage = () => {
     setCurrentTime(0);
     setDuration(0);
     setCurrentVideoPercentage(0);
+    setResumePosition(0); // Reset resume position for new video
     setRetryCount(0);
     setIsRetrying(false);
     setError(null);
@@ -1609,6 +1630,7 @@ const CourseDetailPage = () => {
         if (resumeResponse.ok) {
           const resumeResult = await resumeResponse.json();
           const resumePosition = resumeResult.data.resumePosition;
+          setResumePosition(resumePosition);
           console.log(`✅ [CourseDetail] Resume position set to ${resumePosition}s`);
         }
       } catch (error) {
@@ -2103,6 +2125,7 @@ const CourseDetailPage = () => {
                             videoId={currentVideoId}
                             courseId={id}
                             playing={isPlaying}
+                            initialTime={resumePosition}
                             playbackRate={playbackRate}
                             onPlay={() => {
                               console.log('🔧 [CourseDetail] Video play event triggered');
@@ -2136,7 +2159,6 @@ const CourseDetailPage = () => {
                             onPlaybackRateChange={setPlaybackRate}
                             onControlsToggle={setControlsVisible}
                             className="w-full h-full"
-                            initialTime={currentVideo?.progress?.lastPosition || 0}
                             drmEnabled={currentVideo?.drm?.enabled || false}
                             watermarkData={currentVideo?.drm?.watermarkData}
                             forensicWatermark={null}
