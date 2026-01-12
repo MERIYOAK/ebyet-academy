@@ -263,60 +263,163 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
       });
     };
     
-    // Create simple HTML page with PDF viewer and verify button only
+    // Helper function to get English text for certificate preview
+    const getEnglishText = (text) => {
+      if (!text) return text;
+      
+      // Handle bilingual objects
+      if (typeof text === 'object' && text.en) {
+        return text.en;
+      }
+      
+      // Handle Tigrinya strings - remove Unicode characters
+      if (typeof text === 'string') {
+        return text.replace(/[\u1200-\u137F]/g, '').trim();
+      }
+      
+      return text;
+    };
+    
+    // Create polished HTML page with enhanced design
     const html = `
      <!DOCTYPE html>
      <html lang="en">
      <head>
        <meta charset="UTF-8">
        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>Certificate of Completion - ${certificate.courseTitle}</title>
+       <title>Certificate of Completion - ${getEnglishText(certificate.courseTitle)}</title>
        <meta name="description" content="Certificate of Completion issued by IBYET-INVESTING">
        <script src="https://cdn.tailwindcss.com"></script>
+       <link rel="preconnect" href="https://fonts.googleapis.com">
+       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
        <style>
+         body {
+           font-family: 'Inter', sans-serif;
+         }
          .pdf-container {
-           height: calc(100vh - 180px);
+           height: calc(100vh - 200px);
            min-height: 600px;
          }
          @media (max-width: 768px) {
            .pdf-container {
-             height: calc(100vh - 220px);
+             height: calc(100vh - 240px);
              min-height: 500px;
            }
          }
+         .gradient-border {
+           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           padding: 2px;
+         }
+         .hover-lift {
+           transition: all 0.3s ease;
+         }
+         .hover-lift:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+         }
+         .certificate-badge {
+           background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+           animation: pulse 2s infinite;
+         }
+         @keyframes pulse {
+           0%, 100% { opacity: 1; }
+           50% { opacity: 0.8; }
+         }
        </style>
      </head>
-     <body class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50">
-       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-         <!-- Header -->
-         <div class="text-center mb-6">
-           <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-4 shadow-lg">
-             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+     <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+         <!-- Header Section -->
+         <div class="text-center mb-8">
+           <div class="certificate-badge inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 shadow-xl">
+             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
              </svg>
            </div>
-           <h1 class="text-3xl font-bold text-gray-900 mb-2">Certificate of Completion</h1>
-           <p class="text-lg text-gray-600">${certificate.courseTitle}</p>
-           <p class="text-sm text-gray-500 mt-2">Issued to ${certificate.studentName} on ${formatDate(certificate.dateIssued)}</p>
-           <p class="text-xs text-gray-400 mt-1">Certificate ID: ${certificate.certificateId}</p>
+           <div class="mb-4">
+             <h1 class="text-4xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+               Certificate of Completion
+             </h1>
+             <div class="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-md mb-4">
+               <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+               </svg>
+               <span class="text-sm font-medium text-gray-700">Verified Certificate</span>
+             </div>
+           </div>
+           <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 hover-lift">
+             <h2 class="text-2xl font-semibold text-gray-900 mb-2">${getEnglishText(certificate.courseTitle)}</h2>
+             <div class="flex items-center justify-center space-x-6 text-sm text-gray-600">
+               <div class="flex items-center">
+                 <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                 </svg>
+                 <span>Awarded to: <strong>${certificate.studentName}</strong></span>
+               </div>
+               <div class="flex items-center">
+                 <svg class="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                 </svg>
+                 <span>Issued: ${formatDate(certificate.dateIssued)}</span>
+               </div>
+             </div>
+             <div class="mt-4 pt-4 border-t border-gray-200">
+               <p class="text-xs text-gray-500 flex items-center justify-center">
+                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                 </svg>
+                 Certificate ID: <code class="ml-1 px-2 py-1 bg-gray-100 rounded">${certificate.certificateId}</code>
+               </p>
+             </div>
+           </div>
          </div>
          
-         <!-- PDF Viewer -->
-         <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
-           <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b">
-             <h3 class="text-lg font-semibold text-gray-900">Certificate Preview</h3>
+         <!-- PDF Viewer Section -->
+         <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 hover-lift">
+           <div class="gradient-border">
+             <div class="bg-white px-6 py-4">
+               <div class="flex items-center justify-between">
+                 <div class="flex items-center space-x-3">
+                   <div class="p-2 bg-red-500 rounded-lg">
+                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0112.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                     </svg>
+                   </div>
+                   <div>
+                     <h3 class="text-lg font-semibold text-gray-900">Official Certificate Document</h3>
+                     <p class="text-sm text-gray-500">High-resolution PDF certificate suitable for printing and sharing</p>
+                   </div>
+                 </div>
+                 <div class="flex items-center space-x-2">
+                   <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Verified</span>
+                   <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Official</span>
+                 </div>
+               </div>
+             </div>
            </div>
-           <div class="pdf-container">
+           <div class="pdf-container bg-gray-50">
              <iframe 
                src="${pdfDataUri}" 
                class="w-full h-full border-0"
                title="Certificate PDF"
+               style="background: white;"
              ></iframe>
            </div>
          </div>
          
-         <!-- Verify Button Only -->
-         <div class="flex justify-center">
+         <!-- Action Buttons -->
+         <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+           <a
+             href="${pdfDataUri}"
+             download="certificate-${getEnglishText(certificate.courseTitle).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf"
+             class="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
+           >
+             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+             </svg>
+             <span>Download Certificate</span>
+           </a>
            <a
              href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify/${certificate.certificateId}"
              target="_blank"
@@ -325,13 +428,24 @@ app.get(['/certificate-preview/:certificateId', '/verify/:certificateId'], async
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
              </svg>
-             <span>Verify Certificate</span>
+             <span>Verify Authenticity</span>
            </a>
          </div>
          
          <!-- Footer -->
-         <div class="text-center mt-8 text-sm text-gray-500">
-           <p>This certificate is issued by IBYET-INVESTING</p>
+         <div class="text-center">
+           <div class="inline-flex items-center px-6 py-3 bg-white rounded-full shadow-md">
+             <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
+               <span class="text-white font-bold text-sm">IB</span>
+             </div>
+             <div class="text-left">
+               <p class="text-sm font-medium text-gray-900">IBYET-INVESTING</p>
+               <p class="text-xs text-gray-500">Professional Investment Education Platform</p>
+             </div>
+           </div>
+           <p class="mt-4 text-xs text-gray-500">
+             2026 IBYET-INVESTING. All certificates are cryptographically verifiable.
+           </p>
          </div>
        </div>
      </body>

@@ -154,11 +154,11 @@ const CertificatesPage = () => {
     if (navigator.share) {
       console.log('📱 Using native share API');
       
-      // Create share data
-      const localizedCourseTitle = getLocalizedText(certificate.courseTitle, currentLanguage);
+      // Create share data - always use English for sharing
+      const englishCourseTitle = getLocalizedText(certificate.courseTitle, 'en');
       const shareData = {
-        title: `${t('certificates.certificate_of_completion')} - ${localizedCourseTitle}`,
-        text: `${t('certificates.share_text', { courseTitle: localizedCourseTitle })}`,
+        title: `${t('certificates.certificate_of_completion')} - ${englishCourseTitle}`,
+        text: `${t('certificates.share_text', { courseTitle: englishCourseTitle })}`,
         url: shareUrl
       };
       
@@ -455,19 +455,6 @@ const CertificatesPage = () => {
                           {sharing === certificate.certificateId ? t('certificates.sharing') : t('certificates.share')}
                         </span>
                       </button>
-                    </div>
-
-                    {/* Verify Link */}
-                    <div className="pt-4 border-t border-gray-700/50">
-                      <a
-                        href={buildApiUrl(`/api/certificates/verify/${certificate.certificateId}`)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-2 text-xs text-gray-400 hover:text-cyan-400 transition-colors duration-200"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>{t('certificates.verify_certificate')}</span>
-                      </a>
                     </div>
                   </div>
 
