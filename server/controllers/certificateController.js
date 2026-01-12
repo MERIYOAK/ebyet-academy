@@ -465,10 +465,25 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     const centerY = height / 2;
 
     // Embed fonts for professional typography
+    // Use Unicode-compatible fonts for Tigrinya support
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const serifFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
     const serifBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+    
+    // Helper function to safely handle Unicode text
+    const safeText = (text) => {
+      // Remove or replace problematic Unicode characters for PDF
+      return text.replace(/[\u1200-\u137F]/g, (match) => {
+        // Map common Tigrinya characters to Latin equivalents or remove them
+        const tigrinyaToLatin = {
+          'መ': 'M', 'ም': 'M', 'የ': 'Y', 'ጥ': 'T', 'ያ': 'Y', 'ሽ': 'S',
+          'ን': 'N', 'ተ': 'T', 'ገ': 'G', 'ነ': 'N', 'ት': 'T', 'ክ': 'K',
+          'ል': 'L', 'ኣ': 'A', 'ግ': 'G', 'ኢ': 'I', 'ማ': 'M', 'ይ': 'Y'
+        };
+        return tigrinyaToLatin[match] || '?';
+      });
+    };
     
     // Prestigious color palette
     const deepBlue = rgb(0.05, 0.15, 0.35); // #0D2659 - Deep professional blue
@@ -687,7 +702,7 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     currentY -= 65;
     const studentNameSize = 32;
     const maxNameWidth = width - 120; // Leave margins
-    let studentName = certificate.studentName;
+    let studentName = safeText(certificate.studentName);
     if (getTextWidth(studentName, studentNameSize, serifBoldFont) > maxNameWidth) {
       studentName = truncateText(studentName, maxNameWidth, studentNameSize, serifBoldFont);
     }
@@ -733,7 +748,7 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     currentY -= 55;
     const courseTitleSize = 20;
     const maxCourseTitleWidth = width - 100; // Leave margins
-    let courseTitle = certificate.courseTitle;
+    let courseTitle = safeText(certificate.courseTitle);
     if (getTextWidth(courseTitle, courseTitleSize, serifBoldFont) > maxCourseTitleWidth) {
       courseTitle = truncateText(courseTitle, maxCourseTitleWidth, courseTitleSize, serifBoldFont);
     }
