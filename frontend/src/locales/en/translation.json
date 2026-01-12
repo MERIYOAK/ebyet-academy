@@ -1,4 +1,16 @@
 {
+  "rate_limit": {
+    "title": "Rate Limit Exceeded",
+    "subtitle": "Too many requests",
+    "time_remaining": "Time remaining",
+    "why_title": "Why this happened?",
+    "reason_1": "Too many requests made in a short time",
+    "reason_2": "Security protection against abuse",
+    "reason_3": "Prevents server overload",
+    "reset_time": "Resets at",
+    "wait_button": "Please wait...",
+    "continue_button": "Continue"
+  },
   "navbar": {
     "home": "Home",
     "courses": "Courses",

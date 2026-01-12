@@ -16,6 +16,8 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import ScrollManager from './components/ScrollManager';
 import SessionMonitorWrapper from './components/SessionMonitorWrapper';
 import MetaTagsUpdater from './components/MetaTagsUpdater';
+import RateLimitOverlay from './components/RateLimitOverlay';
+import { useRateLimit } from './hooks/useRateLimit';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -58,6 +60,8 @@ import CompleteGoogleRegistrationPage from './pages/CompleteGoogleRegistrationPa
 import PaymentFailureHandler from './components/PaymentFailureHandler';
 
 function App() {
+  const { rateLimit, dismissRateLimit } = useRateLimit();
+
   // Initialize persistent cache on app startup
   useEffect(() => {
     initializePersistentCache();
@@ -146,9 +150,15 @@ function App() {
             </Routes>
           </ScrollManager>
         </SessionMonitorWrapper>
+        <RateLimitOverlay 
+          isVisible={rateLimit.isVisible}
+          onDismiss={dismissRateLimit}
+          resetTime={rateLimit.resetTime}
+          retryAfter={rateLimit.retryAfter}
+        />
       </Router>
-      </ThemeProvider>
-    </QueryClientProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
   );
 }
 

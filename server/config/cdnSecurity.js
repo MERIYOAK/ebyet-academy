@@ -139,10 +139,13 @@ class CDNSecurityConfig {
   getRateLimitConfig() {
     return {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: process.env.NODE_ENV === 'development' ? 1000 : 1000, // Increased to 1000 for production to prevent 429 errors
+      max: process.env.NODE_ENV === 'development' ? 1000 : 3000, // 3000 for production, balanced for security and usability
       message: {
-        error: 'Too many requests from this IP, please try again later.',
-        retryAfter: 15 * 60 // 15 minutes in seconds
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests from this IP, please try again later.',
+        retryAfter: 15 * 60, // 15 minutes in seconds
+        resetTime: new Date(Date.now() + (15 * 60 * 1000)).toISOString(),
+        windowMs: 15 * 60 * 1000 // 15 minutes in milliseconds
       },
       standardHeaders: true,
       legacyHeaders: false,
