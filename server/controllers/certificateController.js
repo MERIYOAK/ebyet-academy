@@ -471,18 +471,22 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     const serifFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
     const serifBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
     
-    // Helper function to safely handle Unicode text
-    const safeText = (text) => {
-      // Remove or replace problematic Unicode characters for PDF
-      return text.replace(/[\u1200-\u137F]/g, (match) => {
-        // Map common Tigrinya characters to Latin equivalents or remove them
-        const tigrinyaToLatin = {
-          'መ': 'M', 'ም': 'M', 'የ': 'Y', 'ጥ': 'T', 'ያ': 'Y', 'ሽ': 'S',
-          'ን': 'N', 'ተ': 'T', 'ገ': 'G', 'ነ': 'N', 'ት': 'T', 'ክ': 'K',
-          'ል': 'L', 'ኣ': 'A', 'ግ': 'G', 'ኢ': 'I', 'ማ': 'M', 'ይ': 'Y'
-        };
-        return tigrinyaToLatin[match] || '?';
-      });
+    // Helper function to convert bilingual text to English for certificate
+    const toEnglishText = (text) => {
+      if (!text) return text;
+      
+      // Handle bilingual objects
+      if (typeof text === 'object' && text.en) {
+        return text.en;
+      }
+      
+      // Handle Tigrinya strings - convert to English or remove
+      if (typeof text === 'string') {
+        // Remove Tigrinya Unicode characters and return clean text
+        return text.replace(/[\u1200-\u137F]/g, '').trim();
+      }
+      
+      return text;
     };
     
     // Prestigious color palette
@@ -702,7 +706,7 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     currentY -= 65;
     const studentNameSize = 32;
     const maxNameWidth = width - 120; // Leave margins
-    let studentName = safeText(certificate.studentName);
+    let studentName = toEnglishText(certificate.studentName);
     if (getTextWidth(studentName, studentNameSize, serifBoldFont) > maxNameWidth) {
       studentName = truncateText(studentName, maxNameWidth, studentNameSize, serifBoldFont);
     }
@@ -748,7 +752,7 @@ exports.generateCertificatePDF = async function generateCertificatePDF(certifica
     currentY -= 55;
     const courseTitleSize = 20;
     const maxCourseTitleWidth = width - 100; // Leave margins
-    let courseTitle = safeText(certificate.courseTitle);
+    let courseTitle = toEnglishText(certificate.courseTitle);
     if (getTextWidth(courseTitle, courseTitleSize, serifBoldFont) > maxCourseTitleWidth) {
       courseTitle = truncateText(courseTitle, maxCourseTitleWidth, courseTitleSize, serifBoldFont);
     }

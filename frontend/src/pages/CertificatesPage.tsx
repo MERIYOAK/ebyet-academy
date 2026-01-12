@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, CheckCircle, Calendar, BookOpen, Award, Share2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { buildApiUrl, config } from '../config/environment';
+import { getLocalizedText } from '../utils/bilingualHelper';
 
 interface Certificate {
   certificateId: string;
@@ -19,7 +20,8 @@ interface Certificate {
 }
 
 const CertificatesPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -153,9 +155,10 @@ const CertificatesPage = () => {
       console.log('📱 Using native share API');
       
       // Create share data
+      const localizedCourseTitle = getLocalizedText(certificate.courseTitle, currentLanguage);
       const shareData = {
-        title: `${t('certificates.certificate_of_completion')} - ${certificate.courseTitle}`,
-        text: `${t('certificates.share_text', { courseTitle: certificate.courseTitle })}`,
+        title: `${t('certificates.certificate_of_completion')} - ${localizedCourseTitle}`,
+        text: `${t('certificates.share_text', { courseTitle: localizedCourseTitle })}`,
         url: shareUrl
       };
       
@@ -224,9 +227,9 @@ const CertificatesPage = () => {
       console.error('❌ Failed to copy to clipboard:', error);
       
       // Provide more specific error messages
-      if (error.name === 'NotAllowedError') {
+      if (error instanceof Error && error.name === 'NotAllowedError') {
         setError(t('certificates.clipboard_permission_denied'));
-      } else if (error.name === 'SecurityError') {
+      } else if (error instanceof Error && error.name === 'SecurityError') {
         setError(t('certificates.clipboard_security_error'));
       } else {
         console.log('📋 Trying fallback copy method...');
@@ -406,7 +409,7 @@ const CertificatesPage = () => {
                   {/* Certificate Content */}
                   <div className="p-5 xxs:p-6">
                     <h3 className="text-base xxs:text-lg font-semibold text-white mb-4 xxs:mb-5 line-clamp-2">
-                      {certificate.courseTitle}
+                      {getLocalizedText(certificate.courseTitle, currentLanguage)}
                     </h3>
                     
                     <div className="space-y-3 xxs:space-y-4 mb-5 xxs:mb-6">
@@ -424,7 +427,7 @@ const CertificatesPage = () => {
                     {/* Action Buttons */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <button
-                        onClick={() => downloadCertificate(certificate.certificateId, certificate.courseTitle)}
+                        onClick={() => downloadCertificate(certificate.certificateId, getLocalizedText(certificate.courseTitle, currentLanguage))}
                         disabled={downloading === certificate.certificateId}
                         className="flex items-center justify-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-600 disabled:to-gray-600 text-white px-3 xxs:px-4 py-2.5 rounded-xl transition-all duration-200 text-xs xxs:text-sm font-medium shadow-lg hover:shadow-xl"
                         title={t('certificates.download_pdf')}
