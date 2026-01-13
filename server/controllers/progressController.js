@@ -160,17 +160,19 @@ exports.updateProgress = async (req, res) => {
         };
       } else if (watchedPercentage >= 90) {
         // Mark as completed if watched 90% or more
+        // Cap completion percentage at 100%
         completionUpdate = {
           isCompleted: true,
           completedAt: new Date(),
-          completionPercentage: watchedPercentage
+          completionPercentage: Math.min(100, watchedPercentage)
         };
-        console.log(`🎯 [Progress] Marking video as completed at ${watchedPercentage}%`);
+        console.log(`🎯 [Progress] Marking video as completed at ${Math.min(100, watchedPercentage)}%`);
       } else {
+        // Cap completion percentage at 100%
         completionUpdate = {
-          completionPercentage: watchedPercentage
+          completionPercentage: Math.min(100, watchedPercentage)
         };
-        console.log(`📊 [Progress] Video progress updated: ${watchedPercentage}%`);
+        console.log(`📊 [Progress] Video progress updated: ${Math.min(100, watchedPercentage)}%`);
       }
 
       // Apply completion update if needed
@@ -293,14 +295,55 @@ exports.getCourseProgress = async (req, res) => {
       });
     }
 
-    // Get course with videos
-    const course = await Course.findById(courseId).populate('videos');
+    // Get course with videos - need to get videos from current version
+    const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({
         success: false,
         message: 'Course not found'
       });
     }
+
+    // Get the version the user purchased (not the current version)
+    const { getUserPurchasedVersion } = require('../utils/purchaseUtils');
+    const purchasedVersion = await getUserPurchasedVersion(userId, courseId);
+    const versionToUse = purchasedVersion || 1; // Default to version 1 if not found
+    
+    console.log(`📦 [getCourseProgress] User ${userId} purchased version ${versionToUse} of course ${courseId}`);
+    console.log(`   - Current course version: ${course.currentVersion || course.version || 1}`);
+    
+    const CourseVersion = require('../models/CourseVersion');
+    const Video = require('../models/Video');
+    
+    const courseVersion = await CourseVersion.findOne({ 
+      courseId: courseId, 
+      versionNumber: versionToUse 
+    });
+    
+    if (!courseVersion) {
+      console.warn(`⚠️ [getCourseProgress] CourseVersion ${versionToUse} not found, falling back to version 1`);
+      const fallbackVersion = await CourseVersion.findOne({ 
+        courseId: courseId, 
+        versionNumber: 1 
+      });
+      if (!fallbackVersion) {
+        return res.status(404).json({
+          success: false,
+          message: 'Course version not found'
+        });
+      }
+    }
+    
+    // Get all videos for the purchased version (excluding deleted ones)
+    const courseVideos = await Video.find({ 
+      courseId: courseId, 
+      courseVersion: versionToUse,
+      status: { $ne: 'deleted' }
+    }).sort({ order: 1 });
+    
+    console.log(`📊 [getCourseProgress] Course: ${course.title}, Using Purchased Version: ${versionToUse}`);
+    console.log(`   - Total Videos in current version: ${courseVideos.length}`);
+    console.log(`   - Video IDs:`, courseVideos.map(v => v._id.toString()));
 
     // Get progress for all videos
     const progressEntries = await Progress.getCourseProgress(userId, courseId);
@@ -323,10 +366,15 @@ exports.getCourseProgress = async (req, res) => {
       }
     });
 
-    // Get overall course progress with correct total videos count
+    // Get overall course progress with correct total videos count (use actual course videos count)
+    // IMPORTANT: courseVideos.length must match the actual number of videos in the course
+    const totalVideosCount = courseVideos.length;
+    console.log(`🔍 [getCourseProgress] Passing totalVideosCount: ${totalVideosCount} to getOverallCourseProgress`);
+    console.log(`   - This should match the number of videos displayed to the user`);
+    
     let overallProgress;
     try {
-      overallProgress = await Progress.getOverallCourseProgress(userId, courseId, course.videos.length);
+      overallProgress = await Progress.getOverallCourseProgress(userId, courseId, totalVideosCount);
     } catch (error) {
       console.error('❌ Error getting overall course progress:', error);
       // Fallback to basic progress calculation
@@ -342,8 +390,8 @@ exports.getCourseProgress = async (req, res) => {
       };
     }
 
-    // Prepare video list with progress and URLs
-    const videosWithProgress = await Promise.all(course.videos.map(async (video) => {
+    // Prepare video list with progress and URLs (use courseVideos instead of course.videos)
+    const videosWithProgress = await Promise.all(courseVideos.map(async (video) => {
       // Get signed URL for the video
       const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
       const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
@@ -487,9 +535,97 @@ exports.getDashboardProgress = async (req, res) => {
     }
 
     // Get progress for all purchased courses
+    const CourseVersion = require('../models/CourseVersion');
+    const Video = require('../models/Video');
+    
+    const { getUserPurchasedVersion } = require('../utils/purchaseUtils');
+    
     const coursesWithProgress = await Promise.all(
       user.purchasedCourses.map(async (course) => {
-        const courseProgressSummary = await Progress.getCourseProgressSummary(userId, course._id, course.videos ? course.videos.length : 0);
+        // Get the version the user purchased (not the current version)
+        const purchasedVersion = await getUserPurchasedVersion(userId, course._id);
+        const versionToUse = purchasedVersion || 1; // Default to version 1 if not found
+        
+        console.log(`📦 [getDashboardProgress] User ${userId} purchased version ${versionToUse} of course ${course._id}`);
+        console.log(`   - Current course version: ${course.currentVersion || course.version || 1}`);
+        
+        // Get all videos for the purchased version (excluding deleted ones)
+        const courseVideos = await Video.find({ 
+          courseId: course._id, 
+          courseVersion: versionToUse,
+          status: { $ne: 'deleted' }
+        }).sort({ order: 1 });
+        
+        const totalVideos = courseVideos.length;
+        
+        console.log(`📊 [getDashboardProgress] Course: ${course.title}, Using Purchased Version: ${versionToUse}`);
+        console.log(`   - Total Videos in purchased version: ${totalVideos}`);
+        console.log(`   - Video IDs:`, courseVideos.map(v => v._id.toString()));
+        console.log(`   - Passing totalVideos: ${totalVideos} to getCourseProgressSummary`);
+        
+        // Get progress summary using the actual video count from purchased version
+        const courseProgressSummary = await Progress.getCourseProgressSummary(userId, course._id, totalVideos);
+        
+        // Calculate total course duration from all videos (sum of all video durations)
+        // Video duration can be stored as:
+        // 1. A number (in seconds)
+        // 2. A string in MM:SS or HH:MM:SS format
+        const parseVideoDurationToSeconds = (duration) => {
+          if (!duration) return 0;
+          
+          // If it's already a number (in seconds), return it
+          if (typeof duration === 'number') {
+            return duration;
+          }
+          
+          // If it's a string, parse it
+          if (typeof duration === 'string') {
+            const parts = duration.trim().split(':');
+            
+            if (parts.length === 2) {
+              // MM:SS format
+              const minutes = parseInt(parts[0], 10) || 0;
+              const seconds = parseInt(parts[1], 10) || 0;
+              return (minutes * 60) + seconds;
+            } else if (parts.length === 3) {
+              // HH:MM:SS format
+              const hours = parseInt(parts[0], 10) || 0;
+              const minutes = parseInt(parts[1], 10) || 0;
+              const seconds = parseInt(parts[2], 10) || 0;
+              return (hours * 3600) + (minutes * 60) + seconds;
+            } else {
+              // Try to parse as number
+              const numValue = parseInt(duration, 10);
+              return isNaN(numValue) ? 0 : numValue;
+            }
+          }
+          
+          return 0;
+        };
+        
+        // Sum all video durations
+        const totalCourseDurationSeconds = courseVideos.reduce((total, video) => {
+          const videoDurationSeconds = parseVideoDurationToSeconds(video.duration);
+          return total + videoDurationSeconds;
+        }, 0);
+        
+        // Format total duration for display (HH:MM:SS or MM:SS)
+        const formatDuration = (totalSeconds) => {
+          if (!totalSeconds || totalSeconds === 0) return '0:00';
+          
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = Math.floor(totalSeconds % 60);
+          
+          if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          } else {
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          }
+        };
+        
+        const formattedTotalDuration = formatDuration(totalCourseDurationSeconds);
+        console.log(`   - Total Course Duration: ${totalCourseDurationSeconds}s (${formattedTotalDuration})`);
         
         // Generate thumbnail URL if needed (using presigned URL for thumbnails)
         let thumbnailUrl = course.thumbnailURL;
@@ -514,12 +650,17 @@ exports.getDashboardProgress = async (req, res) => {
           title: course.title,
           description: course.description,
           thumbnail: thumbnailUrl,
-          duration: course.videos ? `${course.videos.length} lessons` : '0 lessons',
-          totalLessons: course.videos ? course.videos.length : 0,
+          duration: formattedTotalDuration, // Use calculated total duration instead of lesson count
+          totalLessons: totalVideos,
           completedLessons: courseProgressSummary.completedVideos,
-          progress: courseProgressSummary.courseProgressPercentage,
+          progress: Math.min(100, courseProgressSummary.courseProgressPercentage || 0), // Cap at 100%
           lastWatched: courseProgressSummary.lastWatchedAt,
-          videos: course.videos || [],
+          videos: courseVideos.map(v => ({
+            _id: v._id,
+            title: v.title,
+            duration: v.duration,
+            order: v.order
+          })),
           isCompleted: courseProgressSummary.courseProgressPercentage >= 100 && 
                       courseProgressSummary.completedVideos >= courseProgressSummary.totalVideos &&
                       courseProgressSummary.totalWatchedDuration >= courseProgressSummary.courseTotalDuration
@@ -530,8 +671,11 @@ exports.getDashboardProgress = async (req, res) => {
     // Calculate overall statistics
     const totalCourses = coursesWithProgress.length;
     const completedCourses = coursesWithProgress.filter(c => c.isCompleted).length;
+    // Cap each course progress at 100% before calculating average, then cap the average at 100%
     const totalProgress = totalCourses > 0 
-      ? Math.round(coursesWithProgress.reduce((sum, c) => sum + c.progress, 0) / totalCourses)
+      ? Math.min(100, Math.round(
+          coursesWithProgress.reduce((sum, c) => sum + Math.min(100, c.progress || 0), 0) / totalCourses
+        ))
       : 0;
 
     console.log(`✅ Dashboard progress retrieved successfully`);

@@ -231,9 +231,53 @@ async function checkVideoAccess(videoId, userId, isAdmin = false) {
   }
 }
 
+/**
+ * Get the purchased version for a user's course purchase
+ * @param {string} userId - User ID
+ * @param {string} courseId - Course ID
+ * @returns {Promise<number>} - The version number the user purchased (defaults to 1 if not found)
+ */
+async function getUserPurchasedVersion(userId, courseId) {
+  try {
+    const Payment = require('../models/Payment');
+    
+    // Find the most recent completed payment for this user and course
+    const payment = await Payment.findOne({
+      userId: userId,
+      courseId: courseId,
+      status: 'completed'
+    }).sort({ createdAt: -1 });
+    
+    if (payment && payment.courseVersion) {
+      console.log(`📦 [getUserPurchasedVersion] Found purchased version ${payment.courseVersion} for user ${userId}, course ${courseId}`);
+      return payment.courseVersion;
+    }
+    
+    // If no payment record with version exists, check when they purchased
+    // For existing purchases without version, default to version 1
+    if (payment) {
+      console.log(`⚠️ [getUserPurchasedVersion] Payment found but no version stored, defaulting to version 1 for user ${userId}, course ${courseId}`);
+      return 1;
+    }
+    
+    // If no payment record at all, check if user has purchased (might be dev mode)
+    const hasPurchased = await userHasPurchased(userId, courseId);
+    if (hasPurchased) {
+      console.log(`⚠️ [getUserPurchasedVersion] User has purchased but no payment record, defaulting to version 1 for user ${userId}, course ${courseId}`);
+      return 1;
+    }
+    
+    return null; // User hasn't purchased
+  } catch (error) {
+    console.error('❌ [getUserPurchasedVersion] Error getting purchased version:', error);
+    return null;
+  }
+}
+
 module.exports = {
   userHasPurchased,
   filterVideosByAccess,
   getVideosWithAccess,
-  checkVideoAccess
+  checkVideoAccess,
+  getUserPurchasedVersion
 };

@@ -139,31 +139,10 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
                     </span>
                   )}
                 </h4>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1 text-gray-400 text-xs">
-                  <Clock className="h-3 w-3" />
-                  <span>{formatDuration(video.duration)}</span>
-                    </div>
-                    {progress && progress.completionPercentage > 0 && (
-                      <div className="text-xs text-gray-400">
-                        {progress.completionPercentage}%
-                      </div>
-                    )}
+                  <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                    <Clock className="h-3 w-3" />
+                    <span>{formatDuration(video.duration)}</span>
                   </div>
-                  
-                  {/* Individual video progress bar */}
-                  {progress && progress.completionPercentage > 0 && (
-                    <div className="mt-2 bg-gray-700 rounded-full h-1">
-                      <div
-                        className={`h-1 rounded-full transition-all duration-300 ${
-                          isCompleted 
-                            ? 'bg-green-500' 
-                            : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                        }`}
-                        style={{ width: `${progress.completionPercentage}%` }}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

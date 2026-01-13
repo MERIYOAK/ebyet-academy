@@ -4,6 +4,7 @@ import { buildApiUrl } from '../config/environment';
 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AuthForm from '../components/AuthForm';
+import { validatePassword } from '../utils/passwordValidation';
 
 const ResetPasswordPage = () => {
   const { t } = useTranslation();
@@ -108,15 +109,17 @@ const ResetPasswordPage = () => {
       const newPassword = data.newPassword as string;
       const confirmPassword = data.confirmPassword as string;
 
-      // Validate passwords match
-      if (newPassword !== confirmPassword) {
-        setError(t('reset_password.passwords_no_match'));
+      // Password validation
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.isValid) {
+        const errorMessages = passwordValidation.errors.map(err => t(`auth.${err}`));
+        setError(t('reset_password.password_requirements_error', 'Password does not meet requirements:\n') + errorMessages.join('\n'));
         return;
       }
 
-      // Validate password strength
-      if (newPassword.length < 6) {
-        setError(t('reset_password.password_too_short'));
+      // Validate passwords match
+      if (newPassword !== confirmPassword) {
+        setError(t('reset_password.passwords_no_match'));
         return;
       }
 

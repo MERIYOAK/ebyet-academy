@@ -11,6 +11,10 @@ const paymentSchema = new mongoose.Schema({
     ref: 'Course',
     required: function() { return !this.bundleId; }
   },
+  courseVersion: {
+    type: Number,
+    default: 1
+  },
   bundleId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Bundle',

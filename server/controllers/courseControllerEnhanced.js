@@ -430,8 +430,21 @@ const createNewVersion = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, price, category, tags, level, status, isPublic, maxEnrollments, hasWhatsappGroup, whatsappGroupLink, featured } = req.body;
+    let { title, description, price, category, tags, level, status, isPublic, maxEnrollments, hasWhatsappGroup, whatsappGroupLink, featured } = req.body;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
+
+    // Parse bilingual title and description if they come as JSON strings
+    try {
+      if (title && typeof title === 'string' && title.startsWith('{')) {
+        title = JSON.parse(title);
+      }
+      if (description && typeof description === 'string' && description.startsWith('{')) {
+        description = JSON.parse(description);
+      }
+    } catch (e) {
+      // If parsing fails, treat as regular string (backward compatibility)
+      console.log('[updateCourse] Title/description not JSON, using as string');
+    }
 
     const course = await Course.findById(id);
     if (!course) {
@@ -1652,9 +1665,29 @@ const getCourseById = async (req, res) => {
       });
     }
 
-    // Get version information
-    let courseVersion;
-    const versionToFetch = version ? parseInt(version) : (course.currentVersion || course.version || 1);
+    // Determine which version to fetch
+    // If version is explicitly provided in query, use it
+    // Otherwise, if user has purchased, use their purchased version
+    // Otherwise, use current version
+    let versionToFetch;
+    if (version) {
+      versionToFetch = parseInt(version);
+    } else {
+      // Check if user has purchased and get their purchased version
+      const userId = req.user?.userId || req.user?.id || req.user?._id;
+      if (userId) {
+        const { getUserPurchasedVersion } = require('../utils/purchaseUtils');
+        const purchasedVersion = await getUserPurchasedVersion(userId, id);
+        if (purchasedVersion) {
+          versionToFetch = purchasedVersion;
+          console.log(`📦 [getCourseById] User ${userId} purchased version ${purchasedVersion} of course ${id}`);
+        } else {
+          versionToFetch = course.currentVersion || course.version || 1;
+        }
+      } else {
+        versionToFetch = course.currentVersion || course.version || 1;
+      }
+    }
     
     console.log(`🔍 [getCourseById] Fetching course ${id}, version: ${versionToFetch}`);
     

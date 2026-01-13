@@ -122,11 +122,11 @@ progressSchema.statics.getCourseProgress = function(userId, courseId) {
 
 // Static method to get user's overall course progress (course-level)
 progressSchema.statics.getOverallCourseProgress = async function(userId, courseId, totalVideos = null) {
-  const progressEntries = await this.find({ userId, courseId });
-  
-  if (progressEntries.length === 0) {
+  // CRITICAL: totalVideos must be provided and must be the actual total number of videos in the course
+  if (!totalVideos || totalVideos === 0) {
+    console.warn(`⚠️ [getOverallCourseProgress] totalVideos not provided or is 0 for course ${courseId}`);
     return {
-      totalVideos: totalVideos || 0,
+      totalVideos: 0,
       completedVideos: 0,
       totalProgress: 0,
       lastWatchedVideo: null,
@@ -137,18 +137,59 @@ progressSchema.statics.getOverallCourseProgress = async function(userId, courseI
     };
   }
   
-  // Use provided totalVideos or fall back to progress entries length
-  const actualTotalVideos = totalVideos || progressEntries.length;
-  const completedVideos = progressEntries.filter(p => p.isCompleted).length;
+  const progressEntries = await this.find({ userId, courseId });
   
-  // Calculate course-level progress from video completion percentages
-  const totalCompletionPercentage = progressEntries.reduce((sum, p) => sum + p.completionPercentage, 0);
-  const courseProgressPercentage = Math.round(totalCompletionPercentage / actualTotalVideos);
+  // Create a map of videoId -> completionPercentage for quick lookup
+  const progressMap = new Map();
+  progressEntries.forEach(entry => {
+    if (entry.videoId) {
+      const videoId = entry.videoId.toString ? entry.videoId.toString() : entry.videoId;
+      progressMap.set(videoId, {
+        completionPercentage: entry.completionPercentage || 0,
+        isCompleted: entry.isCompleted || false,
+        watchedDuration: entry.watchedDuration || 0,
+        totalDuration: entry.totalDuration || 0,
+        lastWatchedAt: entry.lastWatchedAt
+      });
+    }
+  });
+  
+  // Calculate course progress: sum of all video completion percentages / total videos
+  // Videos without progress entries count as 0%
+  // Cap individual video completion at 100% to prevent exceeding maximum
+  const totalCompletionPercentage = progressEntries.reduce((sum, p) => {
+    const completion = Math.min(100, p.completionPercentage || 0); // Cap at 100%
+    return sum + completion;
+  }, 0);
+  
+  // IMPORTANT: Divide by actual total videos (including videos with no progress)
+  // Ensure we don't divide by zero and cap at 100% to prevent exceeding maximum
+  if (totalVideos === 0) {
+    console.warn(`⚠️ [getOverallCourseProgress] totalVideos is 0, cannot calculate progress`);
+    return {
+      totalVideos: 0,
+      completedVideos: 0,
+      totalProgress: 0,
+      lastWatchedVideo: null,
+      lastWatchedPosition: 0,
+      courseProgressPercentage: 0,
+      totalWatchedDuration: 0,
+      courseTotalDuration: 0
+    };
+  }
+  
+  // Calculate progress: (sum of completion percentages) / total videos
+  // This gives us the average completion across all videos
+  const rawProgress = (totalCompletionPercentage / totalVideos);
+  const courseProgressPercentage = Math.min(100, Math.round(rawProgress));
+  
+  // Count completed videos
+  const completedVideos = progressEntries.filter(p => p.isCompleted).length;
   
   // Calculate total watched duration across all videos
   const totalWatchedDuration = progressEntries.reduce((sum, p) => sum + (p.watchedDuration || 0), 0);
   
-  // Calculate course total duration (sum of all video durations)
+  // Calculate course total duration (sum of all video durations from progress entries)
   const courseTotalDuration = progressEntries.reduce((sum, p) => sum + (p.totalDuration || 0), 0);
   
   // Find last watched video
@@ -156,8 +197,26 @@ progressSchema.statics.getOverallCourseProgress = async function(userId, courseI
     .filter(p => p.lastWatchedAt)
     .sort((a, b) => new Date(b.lastWatchedAt) - new Date(a.lastWatchedAt))[0];
   
+  console.log(`📊 [getOverallCourseProgress] Course ${courseId}:`);
+  console.log(`   - Total Videos (expected): ${totalVideos}`);
+  console.log(`   - Progress Entries (videos with progress): ${progressEntries.length}`);
+  console.log(`   - Completed Videos: ${completedVideos}`);
+  console.log(`   - Total Completion % (sum of all video completions): ${totalCompletionPercentage}%`);
+  console.log(`   - Raw Progress (${totalCompletionPercentage} / ${totalVideos}): ${rawProgress.toFixed(2)}%`);
+  console.log(`   - Course Progress % (rounded & capped): ${courseProgressPercentage}%`);
+  
+  // Debug: Log each progress entry
+  if (progressEntries.length > 0) {
+    console.log(`   - Progress Entries Details:`);
+    progressEntries.forEach((entry, idx) => {
+      console.log(`     ${idx + 1}. Video ${entry.videoId}: ${entry.completionPercentage || 0}% complete, isCompleted: ${entry.isCompleted}`);
+    });
+  } else {
+    console.log(`   - No progress entries found (all videos at 0%)`);
+  }
+  
   return {
-    totalVideos: actualTotalVideos,
+    totalVideos: totalVideos,
     completedVideos,
     totalProgress: courseProgressPercentage,
     lastWatchedVideo: lastWatched ? lastWatched.videoId : null,
@@ -221,11 +280,11 @@ progressSchema.statics.getNextVideo = async function(userId, courseId, currentVi
 
 // Static method to get course progress summary for dashboard
 progressSchema.statics.getCourseProgressSummary = async function(userId, courseId, totalVideos = null) {
-  const progressEntries = await this.find({ userId, courseId });
-  
-  if (progressEntries.length === 0) {
+  // CRITICAL: totalVideos must be provided and must be the actual total number of videos in the course
+  if (!totalVideos || totalVideos === 0) {
+    console.warn(`⚠️ [getCourseProgressSummary] totalVideos not provided or is 0 for course ${courseId}`);
     return {
-      totalVideos: totalVideos || 0,
+      totalVideos: 0,
       completedVideos: 0,
       courseProgressPercentage: 0,
       lastWatchedAt: null,
@@ -234,24 +293,68 @@ progressSchema.statics.getCourseProgressSummary = async function(userId, courseI
     };
   }
   
-  // Use provided totalVideos or fall back to progress entries length
-  const actualTotalVideos = totalVideos || progressEntries.length;
+  const progressEntries = await this.find({ userId, courseId });
+  
+  // Calculate course progress: sum of all video completion percentages / total videos
+  // Videos without progress entries count as 0%
+  // Cap individual video completion at 100% to prevent exceeding maximum
+  const totalCompletionPercentage = progressEntries.reduce((sum, p) => {
+    const completion = Math.min(100, p.completionPercentage || 0);
+    return sum + completion;
+  }, 0);
+  
+  // IMPORTANT: Divide by actual total videos (including videos with no progress)
+  // Ensure we don't divide by zero and cap at 100% to prevent exceeding maximum
+  if (totalVideos === 0) {
+    console.warn(`⚠️ [getCourseProgressSummary] totalVideos is 0, cannot calculate progress`);
+    return {
+      totalVideos: 0,
+      completedVideos: 0,
+      courseProgressPercentage: 0,
+      lastWatchedAt: null,
+      totalWatchedDuration: 0,
+      courseTotalDuration: 0
+    };
+  }
+  
+  // Calculate progress: (sum of completion percentages) / total videos
+  // This gives us the average completion across all videos
+  const rawProgress = (totalCompletionPercentage / totalVideos);
+  const courseProgressPercentage = Math.min(100, Math.round(rawProgress));
+  
+  // Count completed videos
   const completedVideos = progressEntries.filter(p => p.isCompleted).length;
-  const totalCompletionPercentage = progressEntries.reduce((sum, p) => sum + p.completionPercentage, 0);
-  const courseProgressPercentage = Math.round(totalCompletionPercentage / actualTotalVideos);
   
   // Calculate total watched duration across all videos
   const totalWatchedDuration = progressEntries.reduce((sum, p) => sum + (p.watchedDuration || 0), 0);
   
-  // Calculate course total duration (sum of all video durations)
+  // Calculate course total duration (sum of all video durations from progress entries)
   const courseTotalDuration = progressEntries.reduce((sum, p) => sum + (p.totalDuration || 0), 0);
   
   const lastWatched = progressEntries
     .filter(p => p.lastWatchedAt)
     .sort((a, b) => new Date(b.lastWatchedAt) - new Date(a.lastWatchedAt))[0];
   
+  console.log(`📊 [getCourseProgressSummary] Course ${courseId}:`);
+  console.log(`   - Total Videos (expected): ${totalVideos}`);
+  console.log(`   - Progress Entries (videos with progress): ${progressEntries.length}`);
+  console.log(`   - Completed Videos: ${completedVideos}`);
+  console.log(`   - Total Completion % (sum of all video completions): ${totalCompletionPercentage}%`);
+  console.log(`   - Raw Progress (${totalCompletionPercentage} / ${totalVideos}): ${rawProgress.toFixed(2)}%`);
+  console.log(`   - Course Progress % (rounded & capped): ${courseProgressPercentage}%`);
+  
+  // Debug: Log each progress entry
+  if (progressEntries.length > 0) {
+    console.log(`   - Progress Entries Details:`);
+    progressEntries.forEach((entry, idx) => {
+      console.log(`     ${idx + 1}. Video ${entry.videoId}: ${entry.completionPercentage || 0}% complete, isCompleted: ${entry.isCompleted}`);
+    });
+  } else {
+    console.log(`   - No progress entries found (all videos at 0%)`);
+  }
+  
   return {
-    totalVideos: actualTotalVideos,
+    totalVideos: totalVideos,
     completedVideos,
     courseProgressPercentage,
     lastWatchedAt: lastWatched ? lastWatched.lastWatchedAt : null,

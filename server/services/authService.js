@@ -667,6 +667,14 @@ class AuthService {
       user.password = newPassword;
       await user.save();
 
+      // Send password change notification email
+      try {
+        await emailService.sendPasswordChangeNotification(user.email, user.name);
+      } catch (emailError) {
+        // Don't fail password change if email fails
+        console.error('⚠️  Failed to send password change notification email:', emailError);
+      }
+
       console.log(`✅ Password changed successfully for user: ${user.email}`);
 
       return true;

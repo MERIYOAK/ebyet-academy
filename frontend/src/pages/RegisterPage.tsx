@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthForm from '../components/AuthForm';
 import { buildApiUrl } from '../config/environment';
+import { validatePassword } from '../utils/passwordValidation';
 
 const RegisterPage = () => {
   const { t } = useTranslation();
@@ -66,6 +67,14 @@ const RegisterPage = () => {
     
     // Prevent multiple submissions
     if (isLoading) return;
+    
+    // Password validation
+    const passwordValidation = validatePassword(data.password as string);
+    if (!passwordValidation.isValid) {
+      const errorMessages = passwordValidation.errors.map(err => t(`auth.${err}`));
+      alert(t('auth.register.password_requirements_error', 'Password does not meet requirements:\n') + errorMessages.join('\n'));
+      return;
+    }
     
     // Basic validation
     if (data.password !== data.confirmPassword) {

@@ -39,9 +39,29 @@ export const useCourseProgress = (courseId: string | undefined) => {
 
         if (response.ok) {
           const result = await response.json();
+          console.log('🔍 [useCourseProgress] API Response:', result);
           // Extract overallProgress from the nested response structure
-          setProgress(result.data?.overallProgress || null);
+          const overallProgress = result.data?.overallProgress;
+          if (overallProgress) {
+            // Map the backend response to the expected format
+            setProgress({
+              totalVideos: overallProgress.totalVideos || 0,
+              completedVideos: overallProgress.completedVideos || 0,
+              totalProgress: overallProgress.courseProgressPercentage || 0,
+              courseProgressPercentage: overallProgress.courseProgressPercentage || 0,
+              lastWatchedVideo: overallProgress.lastWatchedVideo || null,
+              lastWatchedPosition: overallProgress.lastWatchedPosition || 0,
+              totalWatchedDuration: overallProgress.totalWatchedDuration || 0,
+              courseTotalDuration: overallProgress.courseTotalDuration || 0,
+              isCompleted: (overallProgress.courseProgressPercentage || 0) >= 100 && 
+                           (overallProgress.completedVideos || 0) >= (overallProgress.totalVideos || 0)
+            });
+          } else {
+            console.warn('⚠️ [useCourseProgress] No overallProgress in response');
+            setProgress(null);
+          }
         } else {
+          console.warn('⚠️ [useCourseProgress] API request failed:', response.status);
           setProgress(null);
         }
       } catch (error) {

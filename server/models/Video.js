@@ -36,7 +36,7 @@ const videoSchema = new mongoose.Schema({
   // Status
   status: { 
     type: String, 
-    enum: ['active', 'processing', 'error', 'archived'], 
+    enum: ['active', 'processing', 'error', 'archived', 'deleted'], 
     default: 'active' 
   },
   

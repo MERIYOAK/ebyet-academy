@@ -83,6 +83,7 @@ const HomePage = () => {
 
 
 
+
   // Fetch announcements from API
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -992,6 +993,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
 
       {/* CTA Section */}
       <section className="py-6 tiny:py-10 xs:py-12 sm:py-16 md:py-20 relative overflow-hidden"

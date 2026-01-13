@@ -805,7 +805,15 @@
       "phone_required": "ቁጽሪ ስልኪ የድሊ",
       "invalid_phone": "ቅኑዕ ዓለምለኻዊ ቁጽሪ ስልኪ ኣእቱ (ንኣብነት፣ +1234567890)",
       "profile_photo": "ስእሊኻ",
-      "terms_agreement": "ብምምዝጋብካ፣ ንውዕል ኣገልግሎትናን ፖሊሲ ብሕቲናን ተቀቢልካ ኣለኻ።"
+      "terms_agreement": "ብምምዝጋብካ፣ ንውዕል ኣገልግሎትናን ፖሊሲ ብሕቲናን ተቀቢልካ ኣለኻ።",
+      "password_requirements_error": "መሕለፊ ቃል ንምውሳነ ኣድላይ መረጋገጺ ኣይትረኸበን"
+    },
+    "password_requirements": {
+      "title": "መሕለፊ ቃል ከምዚ ዝስዕብ ክኸውን ኣለዎ:",
+      "min_length": "እንተወሓደ 8 ፊደላት",
+      "requires_letter": "እንተወሓደ ሓንቲ ፊደል (a-z, A-Z)",
+      "requires_number": "እንተወሓደ ሓንቲ ቁጽሪ (0-9)",
+      "requires_symbol": "እንተወሓደ ሓንቲ ምልክት (!@#$%^&*)"
     },
     "verify_email": {
       "page_title": "ኢመይል ኣረጋግጽ",
@@ -1146,5 +1154,30 @@
     "changes_title": "ናይ ፖሊሲ ብሕቲ ለውጢታት",
     "changes_content": "ኣብ ኣገባባትና ወይ ኣብ ዝተገብሩ ሕግታት ለውጢታት ንምንጸባረቕ እዚ ፖሊሲ ብሕቲ ካብ ግዜ ናብ ግዜ ክንሕድስ ንኽእል። ናይ ንጥቀመሉ ለውጢታት ብወብሳይትና ናይ ዝተሓድሰ ፖሊሲ ምስ ምቕራብን \"ዝሓለፈ ዝተምሓየሸ\" ዕለት ምሕዳስን ክንገልጽ ኢና።",
     "contact_questions": "ብዛዕባ እዚ ፖሊሲ ብሕቲ ወይ ኣገባባት ዳታና ሕቶታት እንተ ኣለኩም፣ ርኸቡና:"
+  },
+  "reviews": {
+    "title": "ርእይቶ ተማሃሮ",
+    "leave_review": "ርእይቶ ሃብ",
+    "complete_course_message": "ነዚ ስልጠና ንምውዳእ ምስክር ወረቓቕት ረኺብካ/ኪ ኣብ ድሕሪኡ መግለጺ ክትጽሕፍ ትኽእል",
+    "purchase_required": "ነዚ ስልጠና ዓድግ ንምርእይቶ ምሃብ",
+    "rating_label": "ደረጃ",
+    "review_label": "ርእይቶ",
+    "select_rating": "ደረጃ ምረጽ",
+    "star": "ኮኾብ",
+    "stars": "ከዋኽብቲ",
+    "share_experience_placeholder": "ብዛዕባ እዚ ስልጠና ተመክሮኻ/ኺ ኣካፍል...",
+    "characters": "ፊደላት",
+    "cancel": "ኣቋርጽ",
+    "submit_review": "ርእይቶ ስደድ",
+    "submitting": "ይስደድ ኣሎ...",
+    "no_reviews": "ክሳብ ሕጂ ርእይቶ የለን",
+    "no_reviews_message": "ንመጀመርታ ነዚ ስልጠና ተመክሮኻ/ኺ ኣካፍል!",
+    "course_rating": "ደረጃ ስልጠና",
+    "average_from_reviews": "ካብ ኩሎም ርእይቶ ዝተረኽበ ውጽኢት",
+    "instructor_reply": "መልሲ መምህር",
+    "pinned": "ተሳሒቡ",
+    "review": "ርእይቶ",
+    "reviews_plural": "ርእይቶታት",
+    "already_reviewed": "ነዚ ስልጠና ኣቐዲምካ/ኪ ርእይቶ ሂብኻ/ኺ ኢኻ/ኺ"
   }
 }

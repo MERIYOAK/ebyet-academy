@@ -99,6 +99,17 @@ const DashboardPage = () => {
 
         const progressResult = await progressResponse.json();
         const courses = Array.isArray(progressResult?.data?.courses) ? progressResult.data.courses : [];
+        
+        // Debug: Log course progress data
+        console.log('📊 [Dashboard] Course progress data:', courses.map(c => ({
+          id: c._id,
+          title: c.title,
+          progress: c.progress,
+          totalLessons: c.totalLessons,
+          completedLessons: c.completedLessons,
+          isCompleted: c.isCompleted
+        })));
+        
         setEnrolledCourses(courses);
 
           } catch (error) {

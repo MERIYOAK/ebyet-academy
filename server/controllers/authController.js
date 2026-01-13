@@ -39,10 +39,11 @@ const register = async (req, res) => {
     }
 
     // Validate password strength
-    if (password.length < 6) {
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]).{8,}$/;
+    if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long'
+        message: 'Password must be at least 8 characters long and contain at least one letter, one number, and one symbol'
       });
     }
 
@@ -399,10 +400,11 @@ const changePassword = async (req, res) => {
     }
 
     // Validate new password strength
-    if (newPassword.length < 6) {
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters long'
+        message: 'New password must be at least 8 characters long and contain at least one letter, one number, and one symbol'
       });
     }
 
@@ -718,10 +720,11 @@ const resetPassword = async (req, res) => {
     }
 
     // Validate password strength
-    if (newPassword.length < 6) {
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long'
+        message: 'Password must be at least 8 characters long and contain at least one letter, one number, and one symbol'
       });
     }
 

@@ -134,6 +134,7 @@ exports.createCheckoutSession = async (req, res) => {
         const devPaymentData = {
           userId: userId,
           courseId: courseId,
+          courseVersion: course.currentVersion || course.version || 1, // Store the version at time of purchase
           stripeSessionId: `dev_session_${Date.now()}`,
           amount: course.price,
           currency: 'usd',
@@ -416,6 +417,7 @@ async function handleCheckoutSessionCompleted(session) {
       paymentData = {
         userId: userId,
         courseId: courseId,
+        courseVersion: course.currentVersion || course.version || 1, // Store the version at time of purchase
         stripeSessionId: session.id,
         amount: session.amount_total / 100,
         currency: session.currency,

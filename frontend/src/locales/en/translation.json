@@ -806,7 +806,15 @@
       "phone_required": "Phone number is required",
       "invalid_phone": "Please enter a valid international phone number (e.g., +1234567890)",
       "profile_photo": "Profile Photo",
-      "terms_agreement": "By signing up, you agree to our Terms of Service and Privacy Policy"
+      "terms_agreement": "By signing up, you agree to our Terms of Service and Privacy Policy",
+      "password_requirements_error": "Password does not meet requirements"
+    },
+    "password_requirements": {
+      "title": "Password must contain:",
+      "min_length": "At least 8 characters",
+      "requires_letter": "At least one letter (a-z, A-Z)",
+      "requires_number": "At least one number (0-9)",
+      "requires_symbol": "At least one symbol (!@#$%^&*)"
     },
     "reset_password": {
       "page_title": "Reset Password",
@@ -1176,5 +1184,30 @@
     "changes_title": "Changes to This Privacy Policy",
     "changes_content": "We may update this Privacy Policy from time to time to reflect changes in our practices or applicable laws. We will notify you of any material changes by posting the updated policy on our website and updating the \"Last updated\" date.",
     "contact_questions": "If you have any questions about this Privacy Policy or our data practices, please contact us:"
+  },
+  "reviews": {
+    "title": "Student Reviews",
+    "leave_review": "Leave a Review",
+    "complete_course_message": "Complete the course to earn a certificate and unlock review writing",
+    "purchase_required": "Purchase this course to leave a review",
+    "rating_label": "Rating",
+    "review_label": "Review",
+    "select_rating": "Select a rating",
+    "star": "star",
+    "stars": "stars",
+    "share_experience_placeholder": "Share your experience with this course...",
+    "characters": "characters",
+    "cancel": "Cancel",
+    "submit_review": "Submit Review",
+    "submitting": "Submitting...",
+    "no_reviews": "No Reviews Yet",
+    "no_reviews_message": "Be the first to share your experience with this course!",
+    "course_rating": "Course Rating",
+    "average_from_reviews": "Average from all reviews",
+    "instructor_reply": "Instructor Reply",
+    "pinned": "Pinned",
+    "review": "review",
+    "reviews_plural": "reviews",
+    "already_reviewed": "You have already reviewed this course"
   }
 }

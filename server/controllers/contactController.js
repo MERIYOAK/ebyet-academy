@@ -53,12 +53,12 @@ class ContactController {
         });
       }
 
-      // Sanitize inputs (basic XSS prevention)
+      // Sanitize inputs (XSS prevention and spam protection)
       const sanitizedData = {
-        name: name.trim().replace(/<[^>]*>/g, ''),
-        email: email.trim().toLowerCase(),
-        subject: subject.trim().replace(/<[^>]*>/g, ''),
-        message: message.trim().replace(/<[^>]*>/g, '')
+        name: name.trim().replace(/<[^>]*>/g, '').substring(0, 100),
+        email: email.trim().toLowerCase().substring(0, 255),
+        subject: subject.trim().replace(/<[^>]*>/g, '').substring(0, 200),
+        message: message.trim().replace(/<[^>]*>/g, '').substring(0, 2000)
       };
 
       // Send email
@@ -102,7 +102,7 @@ class ContactController {
       return res.status(200).json({
         success: true,
         emailConfigured: isEmailConfigured,
-        recipientEmail: 'philiweb123@gmail.com',
+        recipientEmail: process.env.CONTACT_FORM_RECIPIENT || 'ibyet.course@gmail.com',
         message: isEmailConfigured 
           ? 'Contact form is ready to receive submissions'
           : 'Contact form is not configured - emails will not be sent'
@@ -114,6 +114,58 @@ class ContactController {
       return res.status(500).json({
         success: false,
         message: 'Error checking contact form status'
+      });
+    }
+  }
+
+  /**
+   * Send a test email (for development/testing)
+   * POST /api/contact/test-email
+   * Body: { "email": "your-email@example.com" }
+   */
+  async sendTestEmail(req, res) {
+    try {
+      const { email } = req.body;
+
+      // Validate email format
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is required'
+        });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid email address'
+        });
+      }
+
+      const result = await emailService.sendTestEmail(email);
+
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: result.message,
+          service: result.service
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: result.message,
+          error: result.error
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Test email error:', error);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Error sending test email',
+        error: error.message
       });
     }
   }

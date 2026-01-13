@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Upload, X, Phone } from 'lucide-react';
+import { Eye, EyeOff, Upload, X, Phone, Check, X as XIcon } from 'lucide-react';
 import { buildApiUrl } from '../config/environment';
+import { validatePassword } from '../utils/passwordValidation';
 
 interface Field {
   name: string;
@@ -46,6 +47,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [passwordValidation, setPasswordValidation] = React.useState<ReturnType<typeof validatePassword> | null>(null);
 
   // Use external loading state if provided, otherwise use internal state
   const isLoadingState = loading !== undefined ? loading : isLoading;
@@ -62,6 +64,14 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
   const handleChange = (name: string, value: string | File) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Validate password in real-time if it's a password field
+    if (name === 'password' && typeof value === 'string') {
+      const validation = validatePassword(value);
+      setPasswordValidation(validation);
+    } else if (name === 'password' && !value) {
+      setPasswordValidation(null);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,38 +170,99 @@ const AuthForm: React.FC<AuthFormProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="relative">
-                    <input
-                      id={field.name}
-                      name={field.name}
-                      type={field.type === 'password' && !showPassword ? 'password' : 'text'}
-                      required={field.required}
-                      className={`appearance-none relative block w-full ${
-                        field.type === 'tel' ? 'pl-12' : 'px-4'
-                      } py-3 bg-gray-100 dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-500 focus:border-cyan-500 dark:focus:border-cyan-500 focus:z-10 transition-all duration-200`}
-                      placeholder={field.placeholder}
-                      value={formData[field.name] as string || ''}
-                      onChange={(e) => handleChange(field.name, e.target.value)}
-                    />
-                    {field.type === 'tel' && (
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Phone className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  <>
+                    <div className="relative">
+                      <input
+                        id={field.name}
+                        name={field.name}
+                        type={field.type === 'password' && !showPassword ? 'password' : 'text'}
+                        required={field.required}
+                        className={`appearance-none relative block w-full ${
+                          field.type === 'tel' ? 'pl-12' : 'px-4'
+                        } py-3 bg-gray-100 dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-500 focus:border-cyan-500 dark:focus:border-cyan-500 focus:z-10 transition-all duration-200`}
+                        placeholder={field.placeholder}
+                        value={formData[field.name] as string || ''}
+                        onChange={(e) => handleChange(field.name, e.target.value)}
+                      />
+                      {field.type === 'tel' && (
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Phone className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                        </div>
+                      )}
+                      {field.type === 'password' && (
+                        <button
+                          type="button"
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Password Requirements Info */}
+                    {field.type === 'password' && field.name === 'password' && (
+                      <div className="mt-2 space-y-1.5">
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          {t('password_requirements.title', 'Password must contain:')}
+                        </p>
+                        <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-500">
+                          <li className={`flex items-center gap-1.5 ${
+                            passwordValidation && (formData.password as string)?.length >= 8 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-500'
+                          }`}>
+                            {passwordValidation && (formData.password as string)?.length >= 8 ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : (
+                              <XIcon className="h-3.5 w-3.5" />
+                            )}
+                            {t('password_requirements.min_length', 'At least 8 characters')}
+                          </li>
+                          <li className={`flex items-center gap-1.5 ${
+                            passwordValidation && /[a-zA-Z]/.test((formData.password as string) || '')
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-500'
+                          }`}>
+                            {passwordValidation && /[a-zA-Z]/.test((formData.password as string) || '') ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : (
+                              <XIcon className="h-3.5 w-3.5" />
+                            )}
+                            {t('password_requirements.requires_letter', 'At least one letter (a-z, A-Z)')}
+                          </li>
+                          <li className={`flex items-center gap-1.5 ${
+                            passwordValidation && /[0-9]/.test((formData.password as string) || '')
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-500'
+                          }`}>
+                            {passwordValidation && /[0-9]/.test((formData.password as string) || '') ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : (
+                              <XIcon className="h-3.5 w-3.5" />
+                            )}
+                            {t('password_requirements.requires_number', 'At least one number (0-9)')}
+                          </li>
+                          <li className={`flex items-center gap-1.5 ${
+                            passwordValidation && /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test((formData.password as string) || '')
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-500'
+                          }`}>
+                            {passwordValidation && /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test((formData.password as string) || '') ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : (
+                              <XIcon className="h-3.5 w-3.5" />
+                            )}
+                            {t('password_requirements.requires_symbol', 'At least one symbol (!@#$%^&*)')}
+                          </li>
+                        </ul>
                       </div>
                     )}
-                    {field.type === 'password' && (
-                      <button
-                        type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400" />
-                        )}
-                      </button>
-                    )}
-                  </div>
+                  </>
                 )}
               </div>
             ))}

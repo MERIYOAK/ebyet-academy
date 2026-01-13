@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { 
   User, Mail, Calendar, Shield, Camera, Save, Edit3, X, 
   CheckCircle, AlertCircle, Eye, EyeOff, Phone, MapPin, Globe, 
-  UserCheck, Trash2
+  UserCheck, Trash2, Check
 } from 'lucide-react';
 import { config } from '../config/environment';
+import { validatePassword } from '../utils/passwordValidation';
 
 interface UserData {
   _id: string;
@@ -408,13 +409,16 @@ const ProfilePage = () => {
   };
 
   const handlePasswordChange = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showToastMessage(t('profile.passwords_do_not_match'), 'error');
+    // Password validation
+    const passwordValidation = validatePassword(passwordData.newPassword);
+    if (!passwordValidation.isValid) {
+      const errorMessages = passwordValidation.errors.map(err => t(`auth.${err}`));
+      showToastMessage(t('profile.password_requirements_error', 'Password does not meet requirements:\n') + errorMessages.join('\n'), 'error');
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      showToastMessage(t('profile.password_length_validation'), 'error');
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToastMessage(t('profile.passwords_do_not_match'), 'error');
       return;
     }
 
@@ -1099,7 +1103,11 @@ const ProfilePage = () => {
                         <input
                           type={showPasswords.new ? "text" : "password"}
                           value={passwordData.newPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          onChange={(e) => {
+                            setPasswordData({ ...passwordData, newPassword: e.target.value });
+                            const validation = validatePassword(e.target.value);
+                            setPasswordValidation(validation);
+                          }}
                           className="w-full px-3 tiny:px-4 xxs:px-5 py-2 tiny:py-2.5 xxs:py-3 sm:py-3.5 pr-10 tiny:pr-12 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 border-blue-300 dark:border-gray-700/40 rounded-xl tiny:rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-xs tiny:text-sm xxs:text-base placeholder-blue-400 dark:placeholder-gray-500"
                           placeholder={t('profile.enter_new_password')}
                         />
@@ -1111,6 +1119,65 @@ const ProfilePage = () => {
                           {showPasswords.new ? <EyeOff className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 xxs:h-5 xxs:w-5" /> : <Eye className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 xxs:h-5 xxs:w-5" />}
                         </button>
                       </div>
+                      
+                      {/* Password Requirements Info */}
+                      {passwordData.newPassword && (
+                        <div className="mt-2 space-y-1.5">
+                          <p className="text-[9px] tiny:text-[10px] xxs:text-xs font-medium text-blue-700 dark:text-gray-400">
+                            {t('password_requirements.title', 'Password must contain:')}
+                          </p>
+                          <ul className="space-y-1 text-[9px] tiny:text-[10px] xxs:text-xs text-blue-600 dark:text-gray-500">
+                            <li className={`flex items-center gap-1.5 ${
+                              passwordData.newPassword.length >= 8 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-blue-600 dark:text-gray-500'
+                            }`}>
+                              {passwordData.newPassword.length >= 8 ? (
+                                <Check className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              ) : (
+                                <X className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              )}
+                              {t('password_requirements.min_length', 'At least 8 characters')}
+                            </li>
+                            <li className={`flex items-center gap-1.5 ${
+                              /[a-zA-Z]/.test(passwordData.newPassword)
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-blue-600 dark:text-gray-500'
+                            }`}>
+                              {/[a-zA-Z]/.test(passwordData.newPassword) ? (
+                                <Check className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              ) : (
+                                <X className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              )}
+                              {t('password_requirements.requires_letter', 'At least one letter (a-z, A-Z)')}
+                            </li>
+                            <li className={`flex items-center gap-1.5 ${
+                              /[0-9]/.test(passwordData.newPassword)
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-blue-600 dark:text-gray-500'
+                            }`}>
+                              {/[0-9]/.test(passwordData.newPassword) ? (
+                                <Check className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              ) : (
+                                <X className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              )}
+                              {t('password_requirements.requires_number', 'At least one number (0-9)')}
+                            </li>
+                            <li className={`flex items-center gap-1.5 ${
+                              /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordData.newPassword)
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-blue-600 dark:text-gray-500'
+                            }`}>
+                              {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordData.newPassword) ? (
+                                <Check className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              ) : (
+                                <X className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
+                              )}
+                              {t('password_requirements.requires_symbol', 'At least one symbol (!@#$%^&*)')}
+                            </li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -1147,6 +1214,7 @@ const ProfilePage = () => {
                         onClick={() => {
                           setShowPasswordChange(false);
                           setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                          setPasswordValidation(null);
                         }}
                         className="flex items-center justify-center space-x-1.5 tiny:space-x-2 border-2 border-blue-300 dark:border-gray-600/50 text-blue-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700/50 hover:border-blue-400 dark:hover:border-gray-500 px-3 tiny:px-4 xxs:px-5 sm:px-6 md:px-8 py-2 tiny:py-2.5 xxs:py-3 sm:py-3.5 rounded-xl tiny:rounded-2xl font-semibold transition-all duration-200 text-xs tiny:text-sm xxs:text-base"
                       >

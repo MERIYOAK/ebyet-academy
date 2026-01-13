@@ -182,6 +182,21 @@ const AdminDashboardPage = () => {
             </Link>
 
             <Link
+              to="/admin/reviews"
+              className="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-3 xxs:p-4 sm:p-6 hover:shadow-md hover:border-cyan-500/50 transition-all duration-200"
+            >
+              <div className="flex items-center">
+                <div className="flex-shrink-0 p-2 xxs:p-3 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+                  <Megaphone className="h-4 w-4 xxs:h-5 xxs:w-5 sm:h-6 sm:w-6 text-purple-400" />
+                </div>
+                <div className="ml-2 xxs:ml-3 sm:ml-4">
+                  <h3 className="text-sm xxs:text-base sm:text-lg font-medium text-white">Manage Reviews</h3>
+                  <p className="text-xs xxs:text-sm text-gray-400">Review and moderate student reviews</p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
               to="/admin/bundles"
               className="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-3 xxs:p-4 sm:p-6 hover:shadow-md hover:border-cyan-500/50 transition-all duration-200"
             >
@@ -191,7 +206,7 @@ const AdminDashboardPage = () => {
                 </div>
                 <div className="ml-2 xxs:ml-3 sm:ml-4">
                   <h3 className="text-sm xxs:text-base sm:text-lg font-medium text-white">Manage Bundles</h3>
-                  <p className="text-xs xxs:text-sm text-gray-400">View and manage course bundles</p>
+                  <p className="text-xs xxs:text-sm text-gray-400">Create and manage course bundles</p>
                 </div>
               </div>
             </Link>

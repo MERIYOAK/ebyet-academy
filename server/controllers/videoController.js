@@ -665,13 +665,40 @@ exports.deleteVideo = async (req, res) => {
     
     // Get course and course version
     const course = await Course.findById(video.courseId);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Course not found' 
+      });
+    }
+    
     const courseVersion = await CourseVersion.findOne({ 
       courseId: video.courseId, 
       versionNumber: video.courseVersion 
     });
     
     if (!courseVersion) {
-      console.log(`⚠️ [deleteVideo] CourseVersion not found for version ${video.courseVersion}`);
+      console.log(`⚠️ [deleteVideo] CourseVersion not found for version ${video.courseVersion}, proceeding with simple deletion`);
+      // If CourseVersion doesn't exist, just remove from course and mark as deleted
+      if (Array.isArray(course.videos)) {
+        course.videos = course.videos.filter(vid => vid.toString() !== video._id.toString());
+      } else {
+        course.videos = [];
+      }
+      await course.save();
+      
+      // Mark video as deleted
+      video.status = 'deleted';
+      await video.save();
+      
+      return res.json({
+        success: true,
+        message: 'Video removed (CourseVersion not found, simple deletion performed).',
+        data: {
+          videoId: video._id,
+          s3FilePreserved: true
+        }
+      });
     } else {
       // Auto-create new version if modifying the current version
       // During initial upload (only version 1 exists), deletions stay in version 1
@@ -679,7 +706,8 @@ exports.deleteVideo = async (req, res) => {
       let targetVersion = courseVersion;
       let targetVersionNumber = video.courseVersion;
       
-      if (course && course.currentVersion === video.courseVersion) {
+      const currentVersion = course.currentVersion || course.version || 1;
+      if (course && currentVersion === video.courseVersion) {
         // Check if this is initial upload (course has no enrollments)
         // During initial upload, deletions stay in version 1
         // After enrollments exist, deletions create new versions
@@ -689,10 +717,39 @@ exports.deleteVideo = async (req, res) => {
         if (isInitialUpload) {
           // Initial upload: Just remove from version 1, don't create new version
           console.log(`📝 [deleteVideo] Initial upload mode: Removing video from version 1 (no enrollments yet)`);
-          course.videos = course.videos.filter(vid => vid.toString() !== video._id.toString());
+          
+          // Remove from course's videos array
+          if (Array.isArray(course.videos)) {
+            course.videos = course.videos.filter(vid => vid.toString() !== video._id.toString());
+          } else {
+            course.videos = [];
+          }
           await course.save();
+          
+          // Remove from courseVersion's videos array
+          if (courseVersion) {
+            if (Array.isArray(courseVersion.videos)) {
+              courseVersion.videos = courseVersion.videos.filter(vid => vid.toString() !== video._id.toString());
+            } else {
+              courseVersion.videos = [];
+            }
+            await courseVersion.save();
+            try {
+              await courseVersion.updateStatistics();
+              console.log(`✅ [deleteVideo] Video removed from CourseVersion v${video.courseVersion}`);
+            } catch (statsError) {
+              console.error(`⚠️ [deleteVideo] Error updating statistics:`, statsError);
+              // Continue even if statistics update fails
+            }
+          }
+          
+          // Mark video as deleted so it doesn't appear in queries, but keep the database record and S3 file for potential restoration
+          video.status = 'deleted';
+          await video.save();
+          console.log(`✅ [deleteVideo] Video marked as deleted (status: 'deleted')`);
+          
           // DO NOT delete from database or S3 - preserve for potential restoration
-          console.log(`🔒 [deleteVideo] Video database record and S3 file preserved`);
+          console.log(`🔒 [deleteVideo] Video database record and S3 file preserved for potential restoration`);
           return res.json({
             success: true,
             message: 'Video removed from version 1 during initial upload. File preserved.',
@@ -820,7 +877,11 @@ exports.deleteVideo = async (req, res) => {
           course.version = newVersionNumber;
           course.lastModifiedBy = adminEmail;
           // Remove video from course's video array
-          course.videos = course.videos.filter(vid => vid.toString() !== video._id.toString());
+          if (Array.isArray(course.videos)) {
+            course.videos = course.videos.filter(vid => vid.toString() !== video._id.toString());
+          } else {
+            course.videos = [];
+          }
           await course.save();
           
           // Use the new version
@@ -846,7 +907,8 @@ exports.deleteVideo = async (req, res) => {
       } else {
         // Video is in an older version - DO NOT DELETE
         // Students with access to that version need this video
-        console.log(`⚠️ [deleteVideo] Video is in version ${video.courseVersion}, but current version is ${course.currentVersion || course.version || 1}`);
+        const currentVersion = course.currentVersion || course.version || 1;
+        console.log(`⚠️ [deleteVideo] Video is in version ${video.courseVersion}, but current version is ${currentVersion}`);
         console.log(`   Keeping video for students who purchased version ${video.courseVersion}`);
         return res.json({
           success: true,
@@ -854,7 +916,7 @@ exports.deleteVideo = async (req, res) => {
           data: { 
             videoId: video._id,
             videoVersion: video.courseVersion,
-            currentVersion: course.currentVersion || course.version || 1
+            currentVersion: currentVersion
           }
         });
       }
@@ -870,7 +932,13 @@ exports.deleteVideo = async (req, res) => {
     });
   } catch (err) {
     console.error('[deleteVideo] error:', err?.message || err);
-    res.status(500).json({ message: 'Delete failed', error: err.message });
+    console.error('[deleteVideo] error stack:', err?.stack);
+    res.status(500).json({ 
+      success: false,
+      message: 'Delete failed', 
+      error: err.message,
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 };
 

@@ -23,6 +23,7 @@ const materialRoutes = require('./routes/materialRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const adminReviewRoutes = require('./routes/adminReviewRoutes');
 const progressRoutes = require('./routes/progressRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const drmVideoRoutes = require('./routes/drmVideoRoutes');
@@ -112,7 +113,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-mobile-client'],
   preflightContinue: true,
   optionsSuccessStatus: 200
@@ -166,7 +167,7 @@ app.options('*', (req, res) => {
       (process.env.NODE_ENV === 'development' && (origin.includes('localhost') || origin.includes('127.0.0.1')))) {
     
     res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, x-mobile-client');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400'); // 24 hours
@@ -546,6 +547,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/my-courses', myCoursesRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/reviews', require('./routes/reviewRoutes.js')); 
+app.use('/api/admin/reviews', adminReviewRoutes);
 
 // Fallback route for profile photo (backward compatibility)
 app.get('/api/users/me/photo', authMiddleware, (req, res) => {

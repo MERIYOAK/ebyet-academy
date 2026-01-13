@@ -13,6 +13,7 @@ import UserLayout from './layouts/UserLayout';
 import AdminLayout from './layouts/AdminLayout';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import DarkModeToggle from './components/DarkModeToggle';
 import ScrollManager from './components/ScrollManager';
 import SessionMonitorWrapper from './components/SessionMonitorWrapper';
 import MetaTagsUpdater from './components/MetaTagsUpdater';
@@ -44,6 +45,7 @@ import AdminBundleUploadPage from './pages/AdminBundleUploadPage';
 import AdminBundleViewPage from './pages/AdminBundleViewPage';
 import AdminBundleEditPage from './pages/AdminBundleEditPage';
 import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
+import AdminReviewsPage from './pages/AdminReviewsPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import PaymentFailurePage from './pages/PaymentFailurePage';
@@ -146,6 +148,7 @@ function App() {
           <Route path="bundles/:bundleId" element={<AdminBundleViewPage />} />
           <Route path="bundles/:bundleId/edit" element={<AdminBundleEditPage />} />
           <Route path="announcements" element={<AdminAnnouncementsPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>
             </Routes>
           </ScrollManager>

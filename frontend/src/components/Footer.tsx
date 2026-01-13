@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaFacebook, FaYoutube, FaTiktok, FaLinkedin } from 'react-icons/fa';
+import { FaFacebook, FaYoutube, FaTiktok } from 'react-icons/fa';
 import { Mail, Phone, MapPin, Shield, FileText, HelpCircle } from 'lucide-react';
 import { config } from '../config/environment';
 
@@ -82,15 +82,6 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
                 aria-label="Facebook"
               >
                 <FaFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-cyan-500/20 dark:hover:bg-cyan-500/20 border border-gray-300 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                aria-label="LinkedIn"
-              >
-                <FaLinkedin className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" />
               </a>
             </div>
           </div>

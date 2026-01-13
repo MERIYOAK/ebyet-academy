@@ -821,6 +821,14 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       return;
     }
 
+    // Check if user is typing in an input field, textarea, or other editable element
+    const target = e.target as HTMLElement;
+    const isEditableElement = 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'TEXTAREA' || 
+      target.isContentEditable ||
+      target.closest('input, textarea, [contenteditable="true"]') !== null;
+
     // Block common download/save shortcuts
     const blockedShortcuts = [
       'F12', // Developer tools
@@ -839,6 +847,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     const keyCombo = e.key + (e.ctrlKey ? '+Ctrl' : '') + (e.shiftKey ? '+Shift' : '') + (e.altKey ? '+Alt' : '') + (e.metaKey ? '+Win' : '');
     
     // CRITICAL: Block ALL Windows key combinations when video is playing
+    // (Still block security-related shortcuts even when typing in forms)
     if (isPlaying && e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -851,6 +860,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     }
     
     // Enhanced Game Bar shortcut detection (for when video is paused)
+    // (Still block security-related shortcuts even when typing in forms)
     const isGameBarShortcut = (
       // Win+Alt+R (Start/Stop recording) - PRIMARY TARGET
       (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) ||
@@ -881,6 +891,12 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       e.stopImmediatePropagation();
       console.log('🚫 Blocked shortcut:', keyCombo);
       return false;
+    }
+
+    // Skip video control shortcuts if user is typing in an editable element
+    // This allows users to type normally in forms, textareas, etc.
+    if (isEditableElement) {
+      return;
     }
 
     // Video control keyboard shortcuts (only if no modifier keys are pressed)

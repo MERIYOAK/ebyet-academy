@@ -45,16 +45,33 @@ const CourseCard: React.FC<CourseCardProps> = ({
   className = '',
   onPurchaseSuccess,
   isPurchased = false,
-  // Dashboard-specific props - now fetched from hook
-  // progress = 0,
-  // totalLessons = lessons,
-  // completedLessons = 0,
-  // lastWatched = null,
-  // videos = [],
-  // isCompleted = false
+  // Dashboard-specific props
+  progress,
+  totalLessons,
+  completedLessons,
+  lastWatched,
+  videos,
+  isCompleted
 }) => {
-  // Use real-time progress fetching
-  const { progress: courseProgress, loading: progressLoading } = useCourseProgress(isPurchased ? id : undefined);
+  // Use progress prop if provided (e.g., from dashboard), otherwise fetch via hook
+  const { progress: hookProgress, loading: progressLoading } = useCourseProgress(
+    isPurchased && progress === undefined ? id : undefined
+  );
+  
+  // Use prop progress if available, otherwise use hook progress
+  const courseProgress = progress !== undefined 
+    ? {
+        courseProgressPercentage: typeof progress === 'number' ? Math.max(0, Math.min(100, progress)) : 0,
+        totalVideos: totalLessons || lessons || 0,
+        completedVideos: completedLessons || 0,
+        isCompleted: isCompleted || false
+      }
+    : hookProgress;
+  
+  // Determine if we're using prop data (no loading needed) or hook data (might be loading)
+  const isUsingPropProgress = progress !== undefined;
+  const effectiveProgressLoading = isUsingPropProgress ? false : progressLoading;
+  
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
@@ -69,16 +86,18 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Link to course detail page
   const watchLink = `/course/${id}`;
 
-  // Determine if course is completed using real-time progress
-  const courseCompleted = courseProgress?.isCompleted || (isPurchased && (courseProgress?.courseProgressPercentage ?? 0) >= 100);
+  // Determine if course is completed using progress data
+  const courseCompleted = courseProgress?.isCompleted || 
+    (isPurchased && isCompleted) ||
+    (isPurchased && (courseProgress?.courseProgressPercentage ?? 0) >= 100);
 
-  // Get course condition text using real-time progress
+  // Get course condition text using progress data
   const getCourseCondition = () => {
-    if (!courseProgress) {
+    if (!courseProgress && !isPurchased) {
       return null;
     }
 
-    const progress = courseProgress.courseProgressPercentage ?? 0;
+    const progressValue = courseProgress?.courseProgressPercentage ?? progress ?? 0;
 
     if (courseCompleted) {
       return {
@@ -87,14 +106,14 @@ const CourseCard: React.FC<CourseCardProps> = ({
         bgColor: "bg-green-50",
         borderColor: "border-green-200"
       };
-    } else if (progress >= 50) {
+    } else if (progressValue >= 50) {
       return {
         text: t('dashboard_card.great_progress'),
         color: "text-blue-700",
         bgColor: "bg-blue-50",
         borderColor: "border-blue-200"
       };
-    } else if (progress > 0) {
+    } else if (progressValue > 0) {
       return {
         text: t('dashboard_card.keep_going'),
         color: "text-orange-700",
@@ -111,7 +130,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  const condition = isPurchased && progressLoading === false ? getCourseCondition() : null;
+  const condition = isPurchased && !effectiveProgressLoading ? getCourseCondition() : null;
 
   const formattedDuration = useMemo(() => {
     return formatDuration(duration);
@@ -359,17 +378,24 @@ const CourseCard: React.FC<CourseCardProps> = ({
             </div>
           </div>
         )}
-        {/* Progress indicator for all courses - using real-time data */}
+        {/* Progress indicator for all courses */}
         <div className="absolute bottom-0 left-0 right-0 bg-gray-700 h-1">
-          {isPurchased && courseProgress ? (
-            <div
-              className={`h-1 transition-all duration-500 ${
-                courseProgress.isCompleted 
-                  ? 'bg-gradient-to-r from-green-500 to-green-600' 
-                  : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-              }`}
-              style={{ width: `${courseProgress?.courseProgressPercentage ?? 0}%` }}
-            />
+          {isPurchased ? (
+            (() => {
+              const progressValue = courseProgress?.courseProgressPercentage ?? progress ?? 0;
+              const isCompletedStatus = courseProgress?.isCompleted ?? isCompleted ?? false;
+              const clampedProgress = Math.min(100, Math.max(0, progressValue));
+              return (
+                <div
+                  className={`h-1 transition-all duration-500 ${
+                    isCompletedStatus || progressValue >= 100
+                      ? 'bg-gradient-to-r from-green-500 to-green-600' 
+                      : 'bg-gradient-to-r from-cyan-500 to-blue-500'
+                  }`}
+                  style={{ width: `${clampedProgress}%` }}
+                />
+              );
+            })()
           ) : (
             <div className="h-1 bg-gray-600" style={{ width: '0%' }} />
           )}
@@ -420,7 +446,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         <div className="flex items-center justify-between mb-2 xxs:mb-2.5 mt-auto">
           <div className="flex items-center space-x-1 text-gray-400 text-xs xxs:text-sm">
             <Clock className="h-3 w-3 xxs:h-4 xxs:w-4" />
-            <span>{isPurchased ? (courseProgress?.totalVideos || lessons) : lessons} {t('course_card.lessons')}</span>
+            <span>{isPurchased ? (courseProgress?.totalVideos || totalLessons || lessons || 0) : (lessons || 0)} {t('course_card.lessons')}</span>
           </div>
           <span className="text-xs xxs:text-sm text-gray-400">{formattedDuration}</span>
         </div>

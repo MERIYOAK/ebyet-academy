@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Clock, Play, CheckCircle, Award, Download, BookOpen, ShoppingCart, Loader, Lock, FileText, ExternalLink, Sparkles, Eye, MessageCircle } from 'lucide-react';
 import VideoPlaylist from '../components/VideoPlaylist';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import WhatsAppGroupButton from '../components/WhatsAppGroupButton';
+import ReviewForm from '../components/ReviewForm';
+import ReviewList from '../components/ReviewList';
 import { buildApiUrl } from '../config/environment';
 import DRMVideoService from '../services/drmVideoService';
 import { parseDurationToSeconds, formatDuration } from '../utils/durationFormatter';
@@ -132,6 +134,15 @@ const CourseDetailPage = () => {
   const [generatingCertificate, setGeneratingCertificate] = useState(false);
   const [showCertificateSuccess, setShowCertificateSuccess] = useState(false);
 
+  // Review states
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState<any>(null);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [hasCertificate, setHasCertificate] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   // Udemy-style progress tracking
   const pendingProgressRequest = useRef<AbortController | null>(null);
   const progressUpdateTimeout = useRef<number | null>(null);
@@ -141,6 +152,89 @@ const CourseDetailPage = () => {
   // URL cache for video URLs
   const videoUrlCache = useRef<Map<string, { url: string; timestamp: number }>>(new Map());
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  // Get current user ID from token
+  useEffect(() => {
+    const token = userToken || localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        const userId = decoded.userId || decoded._id || decoded.id;
+        setCurrentUserId(userId);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        setCurrentUserId(null);
+      }
+    } else {
+      setCurrentUserId(null);
+    }
+  }, [userToken]);
+
+  // Check if current user has already reviewed this course
+  const hasUserReviewed = useMemo(() => {
+    if (!currentUserId || !reviews || reviews.length === 0) return false;
+    return reviews.some((review: any) => {
+      // Handle both populated and non-populated userId
+      const reviewUserId = review.userId?._id || review.userId;
+      return reviewUserId === currentUserId;
+    });
+  }, [currentUserId, reviews]);
+
+  // Review functions
+  const fetchReviews = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      setLoadingReviews(true);
+      const response = await fetch(buildApiUrl(`/api/reviews/course/${id}`));
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Reviews API Response:', data);
+        console.log('Reviews data:', data.data);
+        setReviews(data.data.reviews);
+        setReviewStats(data.data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, [id]);
+
+  const handleSubmitReview = useCallback(async (reviewData: { rating: number; comment: string }) => {
+    if (!id || !userToken) return;
+    
+    try {
+      setSubmittingReview(true);
+      const response = await fetch(buildApiUrl('/api/reviews'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          courseId: id, 
+          rating: reviewData.rating, 
+          comment: reviewData.comment 
+        })
+      });
+
+      if (response.ok) {
+        setShowReviewForm(false);
+        fetchReviews(); // Refresh reviews
+        // Show success message
+        alert('Review submitted successfully! It will be visible after approval.');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  }, [id, userToken, fetchReviews]);
 
   
   // Fetch materials for the course
@@ -258,18 +352,23 @@ const CourseDetailPage = () => {
         if (result.data.certificate) {
           setCertificateExists(true);
           setCertificateId(result.data.certificate.certificateId);
+          setHasCertificate(true); // Set hasCertificate to true
+          console.log('✅ Certificate found for review eligibility:', result.data.certificate.certificateId);
         } else {
           setCertificateExists(false);
           setCertificateId(null);
+          setHasCertificate(false);
         }
       } else if (response.status === 404) {
         setCertificateExists(false);
         setCertificateId(null);
+        setHasCertificate(false);
       }
     } catch (error) {
       console.error('Error checking certificate:', error);
       setCertificateExists(false);
       setCertificateId(null);
+      setHasCertificate(false);
     }
   };
 
@@ -616,6 +715,9 @@ const CourseDetailPage = () => {
         console.log('🔧 [CourseDetail] Setting courseData with userHasPurchased:', userHasPurchased);
         console.log('🔧 [CourseDetail] Final courseData:', finalCourseData);
         setCourseData(finalCourseData);
+        
+        // Fetch reviews after course data is loaded
+        fetchReviews();
         
         // Set current video - prioritize videoId from URL params, then existing currentVideoId, then first accessible
         if (videoId && transformedVideos.find((v: Video) => v.id === videoId)) {
@@ -1261,6 +1363,12 @@ const CourseDetailPage = () => {
   };
 
   const handleVideoError = async (error: any) => {
+    // Don't show errors during video switching - they're usually transient
+    if (isSwitchingVideo) {
+      console.log('🔄 [CourseDetail] Ignoring error during video switch:', error);
+      return;
+    }
+    
     console.error('❌ Video error:', error);
     const errorDetails = getVideoErrorDetails(error);
 
@@ -1373,7 +1481,8 @@ const CourseDetailPage = () => {
     
     // Always refresh the URL for the new video to ensure it's fresh
     console.log('🔧 [CourseDetail] Refreshing URL for new video...');
-    setVideoError('Loading video...');
+    // Clear any existing error messages during video switch
+    setVideoError(null);
     
     try {
       const freshUrl = await refreshVideoUrl(newVideoId);
@@ -2073,24 +2182,24 @@ const CourseDetailPage = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-2 tiny:px-3 xxs:px-4 sm:px-6 lg:px-8 py-4 tiny:py-6 xxs:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 tiny:gap-6 xxs:gap-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 md:gap-8 w-full">
           {/* Left Column - Video Player */}
-          <div className="lg:col-span-8 space-y-4 tiny:space-y-6 xxs:space-y-8">
+          <div className="lg:col-span-8 space-y-4 sm:space-y-6 md:space-y-8 w-full min-w-0">
             {/* Video Player Section */}
             {(!courseData || courseData.videos.length === 0) ? (
-              <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-lg tiny:rounded-xl p-4 tiny:p-6 xxs:p-8 text-center border border-blue-200 dark:border-gray-700 shadow-lg dark:shadow-none">
+              <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 text-center border border-blue-200 dark:border-gray-700 shadow-lg dark:shadow-none w-full">
                 <div className="text-gray-600 dark:text-gray-400">
-                  <BookOpen className="w-12 h-12 tiny:w-14 tiny:h-14 xxs:w-16 xxs:h-16 mx-auto mb-3 tiny:mb-4" />
-                  <p className="text-sm tiny:text-base xxs:text-lg font-semibold mb-1.5 tiny:mb-2 text-gray-800 dark:text-gray-300">{t('course_detail.loading_course_content')}</p>
-                  <p className="text-xs tiny:text-sm text-gray-600 dark:text-gray-400">{t('course_detail.please_wait_loading_videos')}</p>
+                  <BookOpen className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-sm sm:text-base md:text-lg font-semibold mb-1.5 sm:mb-2 text-gray-800 dark:text-gray-300">{t('course_detail.loading_course_content')}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('course_detail.please_wait_loading_videos')}</p>
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg tiny:rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl">
+              <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl w-full min-w-0">
                 {/* Video Player */}
-                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', minHeight: '200px', maxHeight: 'calc(100vh - 200px)' }}>
-                  <div className="w-full h-full bg-black overflow-hidden">
+                <div className="relative w-full bg-black" style={{ aspectRatio: '16/9', minHeight: '200px' }}>
+                  <div className="absolute inset-0 w-full h-full bg-black">
                     {currentVideo?.hasAccess &&
                      !currentVideo?.locked &&
                      (currentVideo?.videoUrl || isRefreshingUrl) &&
@@ -2159,6 +2268,7 @@ const CourseDetailPage = () => {
                             onPlaybackRateChange={setPlaybackRate}
                             onControlsToggle={setControlsVisible}
                             className="w-full h-full"
+                            style={{ width: '100%', height: '100%' }}
                             drmEnabled={currentVideo?.drm?.enabled || false}
                             watermarkData={currentVideo?.drm?.watermarkData}
                             forensicWatermark={null}
@@ -2253,7 +2363,7 @@ const CourseDetailPage = () => {
                               )}
                             </div>
                           </div>
-                        ) : videoError ? (
+                        ) : videoError && !isSwitchingVideo ? (
                           <div className="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden">
                             <div className="space-y-2 tiny:space-y-3 xxs:space-y-4 text-center px-2 tiny:px-3 xxs:px-4 py-2 tiny:py-3 xxs:py-4 max-w-full">
                               <div className="text-red-400">
@@ -2337,21 +2447,21 @@ const CourseDetailPage = () => {
                 </div>
 
                 {/* Current Video Info */}
-                <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-900 dark:via-gray-800/95 dark:to-gray-900 px-2 tiny:px-3 xxs:px-4 sm:px-6 py-2 tiny:py-2.5 xxs:py-3 sm:py-4 border-t border-blue-200 dark:border-gray-700">
-                  <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
+                <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 dark:from-gray-900 dark:via-gray-800/95 dark:to-gray-900 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-blue-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4">
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-gray-900 dark:text-white font-semibold text-[10px] tiny:text-xs xxs:text-sm sm:text-base md:text-lg mb-1 tiny:mb-1.5 xxs:mb-2 leading-tight line-clamp-2">
+                      <h2 className="text-gray-900 dark:text-white font-semibold text-sm sm:text-base md:text-lg mb-1 sm:mb-2 leading-tight line-clamp-2">
                         {currentVideo?.title ? getLocalizedText(currentVideo.title, currentLanguage) : t('course_detail.select_a_video')}
                       </h2>
-                      <div className="flex items-center gap-1 tiny:gap-1.5 xxs:gap-2 flex-wrap mt-1 tiny:mt-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-1 sm:mt-1.5">
                         {currentVideo?.isFreePreview && !currentVideo?.locked && (
-                          <span className="inline-flex items-center px-1 tiny:px-1.5 xxs:px-2 py-0.5 rounded text-[9px] tiny:text-[10px] xxs:text-xs font-medium bg-green-600 text-white">
+                          <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm font-medium bg-green-600 text-white">
                             🔓 {t('course_detail.free_preview')}
                           </span>
                         )}
                         {currentVideo?.completed && (
-                          <div className="flex items-center space-x-0.5 tiny:space-x-1 text-green-600 dark:text-green-400 text-[9px] tiny:text-[10px] xxs:text-xs sm:text-sm">
-                            <CheckCircle className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 xxs:h-3.5 xxs:w-3.5 flex-shrink-0" />
+                          <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 text-xs sm:text-sm">
+                            <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
                             <span>{t('course_detail.completed')}</span>
                           </div>
                         )}
@@ -2359,11 +2469,11 @@ const CourseDetailPage = () => {
                     </div>
                     <button
                       onClick={() => setShowPlaylist(!showPlaylist)}
-                      className="flex items-center space-x-1 tiny:space-x-1.5 xxs:space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 px-1.5 tiny:px-2 xxs:px-3 py-1 tiny:py-1.5 xxs:py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-800 flex-shrink-0"
+                      className="flex items-center space-x-1.5 sm:space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-800 flex-shrink-0"
                     >
-                      <BookOpen className="h-3.5 w-3.5 tiny:h-4 tiny:w-4 xxs:h-5 xxs:w-5" />
-                      <span className="text-[10px] tiny:text-xs xxs:text-sm hidden xs:inline">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
-                      <span className="text-[10px] tiny:text-xs xxs:text-sm xs:hidden">{showPlaylist ? t('course_detail.hide', 'Hide') : t('course_detail.show', 'Show')}</span>
+                      <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="text-xs sm:text-sm hidden sm:inline">{showPlaylist ? t('course_detail.hide_playlist') : t('course_detail.show_playlist')}</span>
+                      <span className="text-xs sm:hidden">{showPlaylist ? t('course_detail.hide', 'Hide') : t('course_detail.show', 'Show')}</span>
                     </button>
                   </div>
                 </div>
@@ -2664,8 +2774,8 @@ const CourseDetailPage = () => {
           )}
 
           {/* Right Column - Playlist Sidebar */}
-          <div className="hidden lg:block lg:col-span-4">
-            <div className="sticky top-24 space-y-4 tiny:space-y-6">
+          <div className="hidden lg:block lg:col-span-4 w-full">
+            <div className="sticky top-24 space-y-4 sm:space-y-6">
               {courseData && courseData.videos.length > 0 && showPlaylist && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
                   <div className="max-h-[calc(100vh-150px)] overflow-y-auto">
@@ -2726,6 +2836,54 @@ const CourseDetailPage = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="col-span-1 lg:col-span-12 w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-8 w-full">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('reviews.title')}
+                </h2>
+                {(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && !showReviewForm && !hasUserReviewed && (
+                  <button
+                    onClick={() => setShowReviewForm(true)}
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base"
+                  >
+                    {t('reviews.leave_review')}
+                  </button>
+                )}
+                
+                {hasUserReviewed && (
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
+                    {t('reviews.already_reviewed', 'You have already reviewed this course')}
+                  </div>
+                )}
+                
+                {!(purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    {t('reviews.purchase_required', 'Purchase this course to leave a review')}
+                  </div>
+                )}
+              </div>
+
+              {/* Review Form */}
+              {showReviewForm && (purchaseStatus?.hasPurchased || courseData?.userHasPurchased) && (
+                <ReviewForm
+                  courseId={id || ''}
+                  courseTitle={getLocalizedText(course?.title || '', currentLanguage)}
+                  onSubmit={handleSubmitReview}
+                  onCancel={() => setShowReviewForm(false)}
+                />
+              )}
+
+              {/* Reviews List */}
+              <ReviewList
+                reviews={reviews}
+                stats={reviewStats}
+                loading={loadingReviews}
+              />
             </div>
           </div>
         </div>

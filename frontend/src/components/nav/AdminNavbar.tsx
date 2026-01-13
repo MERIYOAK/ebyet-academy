@@ -31,6 +31,7 @@ const AdminNavbar: React.FC = () => {
     { name: 'Courses', href: '/admin/courses' },
     { name: 'Bundles', href: '/admin/bundles' },
     { name: 'Users', href: '/admin/users' },
+    { name: 'Reviews', href: '/admin/reviews' },
   ]), []);
 
   const isActive = (path: string) => location.pathname === path;

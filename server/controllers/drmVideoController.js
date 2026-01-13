@@ -218,7 +218,7 @@ exports.validateDRMSession = async (req, res) => {
 exports.getCourseVideosWithDRM = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const { version = 1 } = req.query;
+    let { version } = req.query;
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const isAdmin = req.user?.role === 'admin';
 
@@ -233,10 +233,30 @@ exports.getCourseVideosWithDRM = async (req, res) => {
       });
     }
 
-    // Get videos for the course
+    // Determine which version to use
+    // If version is explicitly provided, use it
+    // Otherwise, if user has purchased, use their purchased version
+    // Otherwise, use version 1 (default)
+    let versionToUse;
+    if (version) {
+      versionToUse = parseInt(version);
+    } else if (userId) {
+      const { getUserPurchasedVersion } = require('../utils/purchaseUtils');
+      const purchasedVersion = await getUserPurchasedVersion(userId, courseId);
+      if (purchasedVersion) {
+        versionToUse = purchasedVersion;
+        console.log(`📦 [getCourseVideosWithDRM] User ${userId} purchased version ${purchasedVersion} of course ${courseId}`);
+      } else {
+        versionToUse = 1; // Default for non-purchased users
+      }
+    } else {
+      versionToUse = 1; // Default for public users
+    }
+
+    // Get videos for the course version
     const videos = await Video.find({ 
       courseId: courseId,
-      courseVersion: parseInt(version)
+      courseVersion: versionToUse
     }).sort({ order: 1 });
 
     if (!videos || videos.length === 0) {
