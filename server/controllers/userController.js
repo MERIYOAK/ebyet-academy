@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const Course = require('../models/Course');
+const AuditLog = require('../models/AuditLog');
 const { uploadFileWithOrganization, deleteFileFromS3, getPublicUrl } = require('../utils/s3');
 
 exports.getUserProfile = async (req, res) => {
@@ -268,5 +270,249 @@ exports.updateUserStatus = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update user status', error: err.message });
+  }
+};
+
+/**
+ * Get user's course enrollments with access details
+ * GET /api/user/admin/:userId/courses
+ */
+exports.getUserCourseEnrollments = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Get all courses
+    const courses = await Course.find({}).select('title enrolledStudents');
+    
+    // Build enrollment list with access details
+    const enrollments = courses.map(course => {
+      const enrollment = course.getStudentEnrollment(userId);
+      const courseTitle = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || 'Untitled');
+      
+      return {
+        courseId: course._id,
+        courseTitle: courseTitle,
+        hasAccess: !!enrollment,
+        accessGrantedBy: enrollment?.accessGrantedBy || null,
+        grantedAt: enrollment?.grantedAt || null,
+        enrolledAt: enrollment?.enrolledAt || null,
+        status: enrollment?.status || null,
+        versionEnrolled: enrollment?.versionEnrolled || null
+      };
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        userId: user._id,
+        userName: user.name,
+        userEmail: user.email,
+        enrollments: enrollments
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch user course enrollments', error: err.message });
+  }
+};
+
+/**
+ * Grant course access to a user (admin only)
+ * POST /api/user/admin/:userId/courses/:courseId/grant
+ */
+exports.grantCourseAccess = async (req, res) => {
+  try {
+    const { userId, courseId } = req.params;
+    const adminEmail = req.admin?.email || req.user?.email || 'admin';
+    
+    // Validate inputs
+    if (!userId || !courseId) {
+      return res.status(400).json({ message: 'User ID and Course ID are required' });
+    }
+    
+    // Validate ObjectId format
+    if (!require('mongoose').Types.ObjectId.isValid(userId) || 
+        !require('mongoose').Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ message: 'Invalid user ID or course ID format' });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Check if already enrolled
+    const existingEnrollment = course.getStudentEnrollment(userId);
+    if (existingEnrollment) {
+      return res.status(400).json({ 
+        message: 'User already has access to this course',
+        data: {
+          accessGrantedBy: existingEnrollment.accessGrantedBy,
+          grantedAt: existingEnrollment.grantedAt
+        }
+      });
+    }
+    
+    // Grant access (enroll with admin flag)
+    await course.enrollStudent(userId, 'admin');
+    
+    // Add to user's purchasedCourses if not already there (for compatibility)
+    if (!user.purchasedCourses.includes(courseId)) {
+      user.purchasedCourses.push(courseId);
+      await user.save();
+    }
+    
+    const courseTitle = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || 'Untitled');
+    
+    // Log audit action
+    try {
+      await AuditLog.logAction({
+        action: 'course_access_granted',
+        entityType: 'course',
+        entityId: course._id,
+        entityTitle: courseTitle,
+        performedBy: adminEmail,
+        performedById: null,
+        details: {
+          userId: user._id,
+          userEmail: user.email,
+          userName: user.name,
+          accessGrantedBy: 'admin',
+          courseId: course._id
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+    } catch (auditError) {
+      console.error('Failed to log audit action:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+    
+    console.log(`✅ Admin granted course access: ${user.email} -> ${courseTitle}`);
+    
+    res.json({
+      success: true,
+      message: 'Course access granted successfully',
+      data: {
+        userId: user._id,
+        courseId: course._id,
+        courseTitle: courseTitle,
+        accessGrantedBy: 'admin',
+        grantedAt: new Date()
+      }
+    });
+  } catch (err) {
+    console.error('Error granting course access:', err);
+    res.status(500).json({ 
+      message: 'Failed to grant course access', 
+      error: err.message 
+    });
+  }
+};
+
+/**
+ * Revoke course access from a user (admin only)
+ * DELETE /api/user/admin/:userId/courses/:courseId/revoke
+ */
+exports.revokeCourseAccess = async (req, res) => {
+  try {
+    const { userId, courseId } = req.params;
+    const adminEmail = req.admin?.email || req.user?.email || 'admin';
+    
+    // Validate inputs
+    if (!userId || !courseId) {
+      return res.status(400).json({ message: 'User ID and Course ID are required' });
+    }
+    
+    // Validate ObjectId format
+    if (!require('mongoose').Types.ObjectId.isValid(userId) || 
+        !require('mongoose').Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ message: 'Invalid user ID or course ID format' });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Check if user is enrolled
+    const enrollment = course.getStudentEnrollment(userId);
+    if (!enrollment) {
+      return res.status(404).json({ message: 'User does not have access to this course' });
+    }
+    
+    // Don't revoke if access was granted by payment (only revoke admin-granted access)
+    // Actually, let's allow revoking any access as per requirements
+    // But we'll log the source for audit purposes
+    
+    // Revoke access
+    await course.revokeStudentAccess(userId);
+    
+    // Remove from user's purchasedCourses (only if it was admin-granted)
+    // Actually, let's be safe and only remove if it was admin-granted
+    if (enrollment.accessGrantedBy === 'admin') {
+      user.purchasedCourses = user.purchasedCourses.filter(
+        id => id.toString() !== courseId.toString()
+      );
+      await user.save();
+    }
+    
+    const courseTitle = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || 'Untitled');
+    
+    // Log audit action
+    try {
+      await AuditLog.logAction({
+        action: 'course_access_revoked',
+        entityType: 'course',
+        entityId: course._id,
+        entityTitle: courseTitle,
+        performedBy: adminEmail,
+        performedById: null,
+        details: {
+          userId: user._id,
+          userEmail: user.email,
+          userName: user.name,
+          previousAccessGrantedBy: enrollment.accessGrantedBy,
+          courseId: course._id
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+    } catch (auditError) {
+      console.error('Failed to log audit action:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+    
+    console.log(`✅ Admin revoked course access: ${user.email} -> ${courseTitle}`);
+    
+    res.json({
+      success: true,
+      message: 'Course access revoked successfully',
+      data: {
+        userId: user._id,
+        courseId: course._id,
+        courseTitle: courseTitle
+      }
+    });
+  } catch (err) {
+    console.error('Error revoking course access:', err);
+    res.status(500).json({ 
+      message: 'Failed to revoke course access', 
+      error: err.message 
+    });
   }
 }; 

@@ -197,11 +197,11 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
           <div className="flex flex-col items-center justify-center gap-2 text-center">
             <div className="text-gray-600 dark:text-gray-400 text-sm">
               <p>
-                © {currentYear} {t('brand.name')}. {t('footer.copyright')}
+                © {currentYear} {t('brand.name')}
               </p>
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
-              <span>{t('footer.developed_by', 'This website is made by')}</span>
+              <span>Developed by</span>
               <a
                 href="https://www.meronvault.com"
                 target="_blank"

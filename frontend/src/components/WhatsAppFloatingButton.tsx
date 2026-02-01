@@ -25,7 +25,7 @@ const WhatsAppFloatingButton: React.FC = () => {
         fixed z-50 
         bottom-4 left-4 
         sm:bottom-6 sm:left-6
-        w-14 h-14 
+        w-12 h-12 
         sm:w-16 sm:h-16 
         bg-[#25D366] 
         hover:bg-[#20BA5A] 
@@ -54,7 +54,7 @@ const WhatsAppFloatingButton: React.FC = () => {
       {/* Icon with smooth rotation on hover */}
       <FaWhatsapp 
         className={`
-          w-7 h-7 
+          w-6 h-6 
           sm:w-8 sm:h-8
           text-white 
           transition-all duration-300 ease-out

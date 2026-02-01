@@ -22,4 +22,9 @@ router.put('/admin/:id', auth, adminAuth, userController.updateUserByAdmin);
 router.delete('/admin/:id', auth, adminAuth, userController.deleteUserByAdmin);
 router.put('/admin/:id/status', auth, adminAuth, userController.updateUserStatus);
 
+// Admin course access management routes
+router.get('/admin/:userId/courses', auth, adminAuth, userController.getUserCourseEnrollments);
+router.post('/admin/:userId/courses/:courseId/grant', auth, adminAuth, userController.grantCourseAccess);
+router.delete('/admin/:userId/courses/:courseId/revoke', auth, adminAuth, userController.revokeCourseAccess);
+
 module.exports = router; 

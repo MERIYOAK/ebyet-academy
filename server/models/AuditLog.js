@@ -5,7 +5,7 @@ const auditLogSchema = new mongoose.Schema({
   action: {
     type: String,
     required: true,
-    enum: ['course_deleted', 'course_created', 'course_updated', 'course_deactivated', 'course_reactivated', 'course_archived']
+    enum: ['course_deleted', 'course_created', 'course_updated', 'course_deactivated', 'course_reactivated', 'course_archived', 'course_access_granted', 'course_access_revoked']
   },
   
   // Entity information

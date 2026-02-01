@@ -232,10 +232,10 @@ const HomePage = () => {
 
         {/* Content Overlay */}
         <div className="relative z-10 container mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-12 2xl:px-16 w-full">
-          <div className="flex flex-col justify-center space-y-2 tiny:space-y-2.5 xs:space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 max-w-2xl lg:max-w-3xl xl:max-w-4xl pt-3 tiny:pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 xl:pt-16 pb-8 tiny:pb-12 xs:pb-16 sm:pb-20 md:pb-24">
+          <div className="flex flex-col justify-center space-y-2 tiny:space-y-2.5 xs:space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6 max-w-2xl lg:max-w-3xl xl:max-w-4xl pt-0 sm:pt-8 md:pt-10 lg:pt-12 xl:pt-16 pb-8 tiny:pb-12 xs:pb-16 sm:pb-20 md:pb-24">
             {/* Big Title with Gradient */}
             <h1 
-              className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight pt-6 tiny:pt-8 xs:pt-10 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24 pb-1.5 tiny:pb-2 xs:pb-3 sm:pb-4"
+              className="text-lg tiny:text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight pt-0 sm:pt-12 md:pt-16 lg:pt-20 xl:pt-24 pb-1.5 tiny:pb-2 xs:pb-3 sm:pb-4"
               style={{
                 background: 'linear-gradient(to right, #00BFFF 0%, #00BFFF 40%, #BA55D3 60%, #BA55D3 100%)',
                 WebkitBackgroundClip: 'text',

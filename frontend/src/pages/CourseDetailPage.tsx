@@ -2268,7 +2268,6 @@ const CourseDetailPage = () => {
                             onPlaybackRateChange={setPlaybackRate}
                             onControlsToggle={setControlsVisible}
                             className="w-full h-full"
-                            style={{ width: '100%', height: '100%' }}
                             drmEnabled={currentVideo?.drm?.enabled || false}
                             watermarkData={currentVideo?.drm?.watermarkData}
                             forensicWatermark={null}

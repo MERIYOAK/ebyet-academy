@@ -59,7 +59,15 @@ const courseSchema = new mongoose.Schema({
     },
     lastAccessedAt: { type: Date, default: Date.now },
     progress: { type: Number, default: 0 }, // Percentage completed
-    completedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }]
+    completedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
+    // Access control fields
+    accessGrantedBy: { 
+      type: String, 
+      enum: ['payment', 'admin'], 
+      default: 'payment',
+      required: true 
+    },
+    grantedAt: { type: Date, default: Date.now }
   }],
   
   // Metadata
@@ -213,8 +221,8 @@ courseSchema.statics.getArchivedPastGracePeriod = function() {
 };
 
 // Instance method to enroll a student
-courseSchema.methods.enrollStudent = function(userId) {
-  if (this.status !== 'active') {
+courseSchema.methods.enrollStudent = function(userId, accessGrantedBy = 'payment') {
+  if (this.status !== 'active' && this.status !== 'inactive') {
     throw new Error('Course is not available for enrollment');
   }
   
@@ -228,7 +236,12 @@ courseSchema.methods.enrollStudent = function(userId) {
   );
   
   if (existingEnrollment) {
-    throw new Error('Student already enrolled in this course');
+    // If already enrolled, update the enrollment instead of throwing error
+    existingEnrollment.status = 'active';
+    existingEnrollment.accessGrantedBy = accessGrantedBy;
+    existingEnrollment.grantedAt = new Date();
+    existingEnrollment.lastAccessedAt = new Date();
+    return this.save();
   }
   
   // Add enrollment
@@ -236,7 +249,9 @@ courseSchema.methods.enrollStudent = function(userId) {
     userId,
     versionEnrolled: this.currentVersion,
     status: 'active',
-    lastAccessedAt: new Date()
+    lastAccessedAt: new Date(),
+    accessGrantedBy: accessGrantedBy,
+    grantedAt: new Date()
   });
   
   this.totalEnrollments += 1;
@@ -329,6 +344,31 @@ courseSchema.methods.getStudentEnrollment = function(userId) {
     console.error('❌ [getStudentEnrollment] Error:', error.message);
     return null;
   }
+};
+
+// Instance method to revoke student access (remove enrollment)
+courseSchema.methods.revokeStudentAccess = function(userId) {
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+  
+  const enrollmentIndex = this.enrolledStudents.findIndex(
+    enrollment => enrollment.userId && enrollment.userId.toString() === userId.toString()
+  );
+  
+  if (enrollmentIndex === -1) {
+    throw new Error('Student is not enrolled in this course');
+  }
+  
+  // Remove enrollment
+  this.enrolledStudents.splice(enrollmentIndex, 1);
+  
+  // Decrement total enrollments if it's greater than 0
+  if (this.totalEnrollments > 0) {
+    this.totalEnrollments -= 1;
+  }
+  
+  return this.save();
 };
 
 // Instance method to check if student has access to specific version

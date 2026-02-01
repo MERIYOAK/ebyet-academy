@@ -3,9 +3,10 @@ const Course = require('../models/Course');
 
 /**
  * Check if a user has purchased a specific course
+ * This checks both the purchasedCourses array and enrollment records
  * @param {string} userId - User ID
  * @param {string} courseId - Course ID
- * @returns {Promise<boolean>} - True if user has purchased the course
+ * @returns {Promise<boolean>} - True if user has purchased or has access to the course
  */
 async function userHasPurchased(userId, courseId) {
   try {
@@ -22,6 +23,22 @@ async function userHasPurchased(userId, courseId) {
       return false;
     }
     
+    // First check enrollment (this is the source of truth for access)
+    const course = await Course.findById(courseId);
+    if (course) {
+      const enrollment = course.getStudentEnrollment(userId);
+      if (enrollment && enrollment.status === 'active') {
+        console.log(`✅ [userHasPurchased] User has active enrollment:`, {
+          userId,
+          courseId,
+          accessGrantedBy: enrollment.accessGrantedBy,
+          grantedAt: enrollment.grantedAt
+        });
+        return true;
+      }
+    }
+    
+    // Fallback: Check purchasedCourses array (for backward compatibility)
     console.log(`🔧 [userHasPurchased] User found:`, {
       userId,
       userEmail: user.email,

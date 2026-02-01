@@ -9,7 +9,11 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Phone
+  Phone,
+  BookOpen,
+  CheckCircle,
+  XCircle,
+  Loader
 } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Toast from '../components/Toast';
@@ -25,6 +29,17 @@ interface User {
   createdAt: string;
   updatedAt: string;
   phoneNumber?: string;
+}
+
+interface CourseEnrollment {
+  courseId: string;
+  courseTitle: string;
+  hasAccess: boolean;
+  accessGrantedBy: 'payment' | 'admin' | null;
+  grantedAt: string | null;
+  enrolledAt: string | null;
+  status: string | null;
+  versionEnrolled: number | null;
 }
 
 interface Pagination {
@@ -55,6 +70,13 @@ const AdminUsersPage: React.FC = () => {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Course access management
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showCourseAccessModal, setShowCourseAccessModal] = useState(false);
+  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+  const [updatingCourseId, setUpdatingCourseId] = useState<string | null>(null);
 
   // Fetch users from API
   const fetchUsers = async (page = 1) => {
@@ -203,6 +225,128 @@ const AdminUsersPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     fetchUsers(page);
+  };
+
+  // Fetch user course enrollments
+  const fetchUserEnrollments = async (userId: string) => {
+    try {
+      setLoadingEnrollments(true);
+      const adminToken = localStorage.getItem('adminToken');
+      
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      const response = await fetch(buildApiUrl(`/api/user/admin/${userId}/courses`), {
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch course enrollments');
+      }
+
+      const data = await response.json();
+      setEnrollments(data.data.enrollments || []);
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Failed to fetch course enrollments',
+        type: 'error'
+      });
+    } finally {
+      setLoadingEnrollments(false);
+    }
+  };
+
+  // Handle opening course access modal
+  const handleOpenCourseAccess = async (user: User) => {
+    setSelectedUser(user);
+    setShowCourseAccessModal(true);
+    await fetchUserEnrollments(user._id);
+  };
+
+  // Handle granting course access
+  const handleGrantAccess = async (courseId: string) => {
+    if (!selectedUser) return;
+    
+    try {
+      setUpdatingCourseId(courseId);
+      const adminToken = localStorage.getItem('adminToken');
+      
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      const response = await fetch(buildApiUrl(`/api/user/admin/${selectedUser._id}/courses/${courseId}/grant`), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to grant course access');
+      }
+
+      // Refresh enrollments
+      await fetchUserEnrollments(selectedUser._id);
+      setToast({
+        message: 'Course access granted successfully',
+        type: 'success'
+      });
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Failed to grant course access',
+        type: 'error'
+      });
+    } finally {
+      setUpdatingCourseId(null);
+    }
+  };
+
+  // Handle revoking course access
+  const handleRevokeAccess = async (courseId: string) => {
+    if (!selectedUser) return;
+    
+    try {
+      setUpdatingCourseId(courseId);
+      const adminToken = localStorage.getItem('adminToken');
+      
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      const response = await fetch(buildApiUrl(`/api/user/admin/${selectedUser._id}/courses/${courseId}/revoke`), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to revoke course access');
+      }
+
+      // Refresh enrollments
+      await fetchUserEnrollments(selectedUser._id);
+      setToast({
+        message: 'Course access revoked successfully',
+        type: 'success'
+      });
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Failed to revoke course access',
+        type: 'error'
+      });
+    } finally {
+      setUpdatingCourseId(null);
+    }
   };
 
   useEffect(() => {
@@ -506,6 +650,15 @@ const AdminUsersPage: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
+                            {user.role !== 'admin' && (
+                              <button
+                                onClick={() => handleOpenCourseAccess(user)}
+                                className="text-cyan-600 hover:text-cyan-500 transition-colors duration-200 text-sm font-medium mr-2"
+                                title="Manage Course Access"
+                              >
+                                Manage Access
+                              </button>
+                            )}
                             {user.role !== 'admin' && user.status === 'active' && (
                               <button
                                 onClick={() => {
@@ -561,6 +714,15 @@ const AdminUsersPage: React.FC = () => {
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="text-sm xxs:text-base font-medium text-white truncate">{user.name}</h3>
                           <div className="flex items-center space-x-1 xxs:space-x-2">
+                            {user.role !== 'admin' && (
+                              <button
+                                onClick={() => handleOpenCourseAccess(user)}
+                                className="text-cyan-600 hover:text-cyan-500 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1 mr-1"
+                                title="Manage Course Access"
+                              >
+                                Access
+                              </button>
+                            )}
                             {user.role !== 'admin' && user.status === 'active' && (
                               <button
                                 onClick={() => {
@@ -730,6 +892,144 @@ const AdminUsersPage: React.FC = () => {
           cancelText="Cancel"
           isLoading={isReactivating}
         />
+      )}
+
+      {/* Course Access Management Modal */}
+      {showCourseAccessModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Manage Course Access</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  {selectedUser.name} ({selectedUser.email})
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCourseAccessModal(false);
+                  setSelectedUser(null);
+                  setEnrollments([]);
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingEnrollments ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader className="h-8 w-8 animate-spin text-cyan-500" />
+                </div>
+              ) : enrollments.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">No courses found</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {enrollments.map((enrollment) => (
+                    <div
+                      key={enrollment.courseId}
+                      className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-gray-500 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-medium truncate">
+                            {enrollment.courseTitle}
+                          </h3>
+                          <div className="flex items-center space-x-4 mt-2">
+                            {enrollment.hasAccess ? (
+                              <>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-300">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Has Access
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {enrollment.accessGrantedBy === 'admin' ? (
+                                    <span className="text-cyan-400">Granted by Admin</span>
+                                  ) : (
+                                    <span className="text-blue-400">Purchased</span>
+                                  )}
+                                </span>
+                                {enrollment.grantedAt && (
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(enrollment.grantedAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-300">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                No Access
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          {enrollment.hasAccess ? (
+                            <button
+                              onClick={() => handleRevokeAccess(enrollment.courseId)}
+                              disabled={updatingCourseId === enrollment.courseId}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            >
+                              {updatingCourseId === enrollment.courseId ? (
+                                <>
+                                  <Loader className="h-4 w-4 animate-spin" />
+                                  <span>Revoking...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-4 w-4" />
+                                  <span>Revoke</span>
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleGrantAccess(enrollment.courseId)}
+                              disabled={updatingCourseId === enrollment.courseId}
+                              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            >
+                              {updatingCourseId === enrollment.courseId ? (
+                                <>
+                                  <Loader className="h-4 w-4 animate-spin" />
+                                  <span>Granting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>Grant</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-900 px-6 py-4 border-t border-gray-700 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowCourseAccessModal(false);
+                  setSelectedUser(null);
+                  setEnrollments([]);
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toast Notification */}
