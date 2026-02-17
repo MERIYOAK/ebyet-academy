@@ -517,7 +517,7 @@ const AdminReviewsPage: React.FC = () => {
                         )}
                         
                         <div className="text-xs text-gray-500 mt-2">
-                          Course: {getDisplayText(review.courseId.title)}
+                          Course: {getDisplayText(review.courseId?.title)}
                         </div>
                       </div>
                     </td>

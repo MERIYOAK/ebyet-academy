@@ -569,7 +569,8 @@ const CourseDetailPage = () => {
         
         try {
           const drmVideoService = DRMVideoService.getInstance();
-          const videosResult = await drmVideoService.getCourseVideosWithDRM(id, 1);
+          const courseVersion = courseDataFromApi?.currentVersion || courseDataFromApi?.version || 1;
+          const videosResult = await drmVideoService.getCourseVideosWithDRM(id, courseVersion);
           console.log('🔧 [CourseDetail] DRM videos data received');
           console.log('🔧 [CourseDetail] videosResult.userHasPurchased:', videosResult.userHasPurchased);
           

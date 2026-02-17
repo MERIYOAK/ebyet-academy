@@ -4,10 +4,31 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryClient';
 
 import { useParams, Link } from 'react-router-dom';
-import { Video, Edit, Trash2, Clock, User, Save, X, GripVertical, Check, AlertCircle, Plus } from 'lucide-react';
+import { Video, Edit, Trash2, Clock, User, Save, X, GripVertical, Check, AlertCircle, Plus, Lock, Unlock } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { formatDuration } from '../utils/durationFormatter';
 import { getEnglishText } from '../utils/bilingualHelper';
+
+// DnD imports
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Video {
   _id: string;
@@ -28,6 +49,239 @@ interface Course {
   description: string | { en: string; tg: string };
   videos?: Video[];
 }
+
+// SortableVideoItem component
+const SortableVideoItem: React.FC<{
+  video: Video;
+  index: number;
+  editingVideo: string | null;
+  editForm: any;
+  selectedVideos: string[];
+  onToggleSelection: (id: string) => void;
+  onStartEdit: (video: Video) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onEditFormChange: (form: any) => void;
+  onDeleteVideo: (id: string) => void;
+  onTogglePreview: (id: string, currentStatus: boolean) => void;
+  togglingPreview: string | null;
+  getEnglishText: (title: any) => string;
+  getStatusColor: (status: string) => string;
+  formatDuration: (duration: any) => string;
+  formatDurationForInput: (duration: string | number) => string;
+  parseDurationToSeconds: (durationString: string) => number;
+}> = ({
+  video,
+  index,
+  editingVideo,
+  editForm,
+  selectedVideos,
+  onToggleSelection,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onEditFormChange,
+  onDeleteVideo,
+  onTogglePreview,
+  togglingPreview,
+  getEnglishText,
+  getStatusColor,
+  formatDuration,
+  formatDurationForInput,
+  parseDurationToSeconds,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: video._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-700/50 border border-gray-600 rounded-lg hover:bg-gray-700 space-y-3 sm:space-y-0 transition-colors duration-200 ${selectedVideos.includes(video._id) ? 'bg-blue-500/20 border-blue-500/50' : ''} ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <div className="flex items-center space-x-2 sm:space-x-4">
+        {/* Selection Checkbox */}
+        <input
+          type="checkbox"
+          checked={selectedVideos.includes(video._id)}
+          onChange={() => onToggleSelection(video._id)}
+          className="rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500"
+        />
+        
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 cursor-move touch-none"
+        >
+          <GripVertical className="h-4 w-4 text-gray-400" />
+        </div>
+        
+        <div className="flex-shrink-0">
+          <div className="w-12 h-8 sm:w-16 sm:h-10 bg-gray-600 rounded flex items-center justify-center">
+            <Video className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
+          </div>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          {editingVideo === video._id ? (
+            // Inline Edit Form - Bilingual
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={editForm.titleEn}
+                onChange={(e) => onEditFormChange({ ...editForm, titleEn: e.target.value })}
+                className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                placeholder="Video title (English) *"
+              />
+              <input
+                type="text"
+                value={editForm.titleTg}
+                onChange={(e) => onEditFormChange({ ...editForm, titleTg: e.target.value })}
+                className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                placeholder="Video title (Tigrinya) *"
+              />
+              <textarea
+                value={editForm.descriptionEn}
+                onChange={(e) => onEditFormChange({ ...editForm, descriptionEn: e.target.value })}
+                className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                placeholder="Video description (English) - optional"
+                rows={2}
+              />
+              <textarea
+                value={editForm.descriptionTg}
+                onChange={(e) => onEditFormChange({ ...editForm, descriptionTg: e.target.value })}
+                className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                placeholder="Video description (Tigrinya) - optional"
+                rows={2}
+              />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <input
+                  type="text"
+                  value={editForm.duration}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9:]/g, '');
+                    onEditFormChange({ ...editForm, duration: value });
+                  }}
+                  className="w-24 px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                  placeholder="MM:SS or HH:MM:SS"
+                  pattern="^([0-9]{1,2}:)?[0-5]?[0-9]:[0-5][0-9]$"
+                  title="Format: MM:SS or HH:MM:SS (e.g., 05:30 or 1:05:30)"
+                />
+                <input
+                  type="number"
+                  value={editForm.order}
+                  onChange={(e) => onEditFormChange({ ...editForm, order: parseInt(e.target.value) || 0 })}
+                  className="w-20 px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                  placeholder="Order"
+                />
+                <button
+                  onClick={onSaveEdit}
+                  className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200"
+                >
+                  <Save className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={onCancelEdit}
+                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors duration-200"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">
+                Duration format: MM:SS (e.g., 05:30) or HH:MM:SS (e.g., 1:05:30)
+              </p>
+            </div>
+          ) : (
+            // Display Mode
+            <>
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                <h3 className="text-sm font-medium text-white truncate">{getEnglishText(video.title)}</h3>
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(video.status)}`}>
+                  {video.status}
+                </span>
+                {video.isFreePreview && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-300">
+                    Free Preview
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {getEnglishText(video.description)}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+      
+      {/* Actions column - only show in display mode */}
+      {editingVideo !== video._id && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-400">
+            <span className="hidden sm:inline">Duration:</span>
+            <span>{formatDuration(video.duration)}</span>
+          </div>
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-400">
+            <span className="hidden sm:inline">Order:</span>
+            <span>{video.order || index + 1}</span>
+          </div>
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-400">
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <button
+              onClick={() => onStartEdit(video)}
+              className="p-1.5 sm:p-2 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 hover:text-cyan-300 rounded-lg transition-all duration-200 border border-cyan-500/30 hover:border-cyan-500/50"
+              title="Edit video"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onDeleteVideo(video._id)}
+              className="p-1.5 sm:p-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/50"
+              title="Delete video"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onTogglePreview(video._id, video.isFreePreview || false)}
+              disabled={togglingPreview === video._id}
+              className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 border ${
+                video.isFreePreview 
+                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 border-green-500/30 hover:border-green-500/50' 
+                  : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 hover:text-amber-300 border-amber-500/30 hover:border-amber-500/50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={video.isFreePreview ? 'Remove from free preview' : 'Mark as free preview'}
+            >
+              {togglingPreview === video._id ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                video.isFreePreview ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <Unlock className="h-4 w-4" />
+                )
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AdminCourseVideosPage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -63,6 +317,116 @@ const AdminCourseVideosPage: React.FC = () => {
     title: '',
     message: ''
   });
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = videos.findIndex((video) => video._id === active.id);
+      const newIndex = videos.findIndex((video) => video._id === over?.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newVideos = arrayMove(videos, oldIndex, newIndex);
+        
+        // Update order numbers based on new positions
+        const updatedVideos = newVideos.map((video, index) => ({
+          ...video,
+          order: index + 1
+        }));
+        
+        setVideos(updatedVideos);
+        
+        // Save new order to backend
+        await saveVideoOrder(updatedVideos);
+      }
+    }
+  };
+
+  // Save video order to backend
+  const saveVideoOrder = async (updatedVideos: Video[]) => {
+    try {
+      setProgressOverlay({
+        isVisible: true,
+        progress: 0,
+        status: 'loading',
+        title: 'Updating Video Order',
+        message: 'Saving new video order...'
+      });
+
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        throw new Error('Admin token not found');
+      }
+
+      // Update each video's order
+      const updatePromises = updatedVideos.map((video, index) => {
+        const updateData = {
+          order: index + 1
+        };
+
+        return fetch(buildApiUrl(`/api/videos/${video._id}`), {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData),
+        });
+      });
+
+      const responses = await Promise.all(updatePromises);
+      
+      // Check if all updates were successful
+      const allSuccessful = responses.every(response => response.ok);
+      
+      if (allSuccessful) {
+        setProgressOverlay({
+          isVisible: true,
+          progress: 100,
+          status: 'success',
+          title: 'Video Order Updated',
+          message: 'Video order has been updated successfully!'
+        });
+        
+        setSuccess('Video order updated successfully!');
+        
+        // Invalidate cache and refresh
+        if (courseId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(courseId) });
+          queryClient.invalidateQueries({ queryKey: ['videos', 'course', courseId] });
+        }
+        
+        setTimeout(() => {
+          setProgressOverlay(prev => ({ ...prev, isVisible: false }));
+          setSuccess(null);
+        }, 2000);
+      } else {
+        throw new Error('Some video updates failed');
+      }
+    } catch (error) {
+      console.error('Error saving video order:', error);
+      setProgressOverlay({
+        isVisible: true,
+        progress: 100,
+        status: 'error',
+        title: 'Update Failed',
+        message: error instanceof Error ? error.message : 'Failed to update video order'
+      });
+      
+      setTimeout(() => {
+        setProgressOverlay(prev => ({ ...prev, isVisible: false }));
+      }, 3000);
+    }
+  };
 
   // Fetch course and videos
   const fetchCourseAndVideos = async () => {
@@ -727,197 +1091,42 @@ const AdminCourseVideosPage: React.FC = () => {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-3 sm:space-y-4">
-                {videos.map((video, index) => (
-                  <div key={video._id || `video-${index}-${getEnglishText(video.title)}`} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-700/50 border border-gray-600 rounded-lg hover:bg-gray-700 space-y-3 sm:space-y-0 transition-colors duration-200 ${selectedVideos.includes(video._id) ? 'bg-blue-500/20 border-blue-500/50' : ''}`}>
-                    <div className="flex items-center space-x-2 sm:space-x-4">
-                      {/* Selection Checkbox */}
-                      <input
-                        type="checkbox"
-                        checked={selectedVideos.includes(video._id)}
-                        onChange={() => toggleVideoSelection(video._id)}
-                        className="rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500"
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={videos.map(video => video._id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3 sm:space-y-4">
+                    {videos.map((video, index) => (
+                      <SortableVideoItem
+                        key={video._id || `video-${index}-${getEnglishText(video.title)}`}
+                        video={video}
+                        index={index}
+                        editingVideo={editingVideo}
+                        editForm={editForm}
+                        selectedVideos={selectedVideos}
+                        onToggleSelection={toggleVideoSelection}
+                        onStartEdit={startEditing}
+                        onSaveEdit={saveEdit}
+                        onCancelEdit={cancelEditing}
+                        onEditFormChange={setEditForm}
+                        onDeleteVideo={deleteVideo}
+                        onTogglePreview={toggleFreePreview}
+                        togglingPreview={togglingPreview}
+                        getEnglishText={getEnglishText}
+                        getStatusColor={getStatusColor}
+                        formatDuration={formatDuration}
+                        formatDurationForInput={formatDurationForInput}
+                        parseDurationToSeconds={parseDurationToSeconds}
                       />
-                      
-                      {/* Drag Handle */}
-                      <div className="flex-shrink-0 cursor-move">
-                        <GripVertical className="h-4 w-4 text-gray-400" />
-                      </div>
-                      
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-8 sm:w-16 sm:h-10 bg-gray-600 rounded flex items-center justify-center">
-                          <Video className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
-                        </div>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        {editingVideo === video._id ? (
-                          // Inline Edit Form - Bilingual
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              value={editForm.titleEn}
-                              onChange={(e) => setEditForm(prev => ({ ...prev, titleEn: e.target.value }))}
-                              className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
-                              placeholder="Video title (English) *"
-                            />
-                            <input
-                              type="text"
-                              value={editForm.titleTg}
-                              onChange={(e) => setEditForm(prev => ({ ...prev, titleTg: e.target.value }))}
-                              className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
-                              placeholder="Video title (Tigrinya) *"
-                            />
-                            <textarea
-                              value={editForm.descriptionEn}
-                              onChange={(e) => setEditForm(prev => ({ ...prev, descriptionEn: e.target.value }))}
-                              className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
-                              placeholder="Video description (English) - optional"
-                              rows={2}
-                            />
-                            <textarea
-                              value={editForm.descriptionTg}
-                              onChange={(e) => setEditForm(prev => ({ ...prev, descriptionTg: e.target.value }))}
-                              className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
-                              placeholder="Video description (Tigrinya) - optional"
-                              rows={2}
-                            />
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                              <input
-                                type="text"
-                                value={editForm.duration}
-                                onChange={(e) => {
-                                  // Allow only numbers and colons
-                                  const value = e.target.value.replace(/[^0-9:]/g, '');
-                                  setEditForm(prev => ({ ...prev, duration: value }));
-                                }}
-                                className="w-24 px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
-                                placeholder="MM:SS or HH:MM:SS"
-                                pattern="^([0-9]{1,2}:)?[0-5]?[0-9]:[0-5][0-9]$"
-                                title="Format: MM:SS or HH:MM:SS (e.g., 05:30 or 1:05:30)"
-                              />
-                              <input
-                                type="number"
-                                value={editForm.order}
-                                onChange={(e) => setEditForm(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}
-                                className="w-20 px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
-                                placeholder="Order"
-                              />
-                              <button
-                                onClick={saveEdit}
-                                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200"
-                              >
-                                <Save className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={cancelEditing}
-                                className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors duration-200"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                            <p className="text-xs text-gray-400">
-                              Duration format: MM:SS (e.g., 05:30) or HH:MM:SS (e.g., 1:05:30)
-                            </p>
-                          </div>
-                        ) : (
-                          // Display Mode
-                          <>
-                            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                              <h3 className="text-sm font-medium text-white truncate">{getEnglishText(video.title)}</h3>
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(video.status)}`}>
-                                {video.status}
-                              </span>
-                              {video.isFreePreview && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-300">
-                                  🔓 Free Preview
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-gray-400">
-                              <div className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {formatDuration(video.duration)}
-                              </div>
-                              <div className="flex items-center">
-                                <span>Order: {video.order || index + 1}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <User className="h-3 w-3 mr-1" />
-                                {video.uploadedBy}
-                              </div>
-                              <div>
-                                {formatDate(video.createdAt)}
-                              </div>
-                            </div>
-                            {video.description && (
-                              <div className="mt-2 text-sm text-gray-300 bg-gray-800 p-2 rounded border-l-2 border-cyan-500/50">
-                                <strong className="text-gray-200">Lesson Description:</strong> {getEnglishText(video.description)}
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {editingVideo !== video._id && (
-                      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                        {/*<Link
-                          to={`/admin/courses/${courseId}/videos/${video._id}`}
-                          className="inline-flex items-center px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded text-xs font-medium"
-                          title="View video"
-                        >
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          <span className="hidden sm:inline">View</span>
-                          <span className="sm:hidden">View</span>
-                        </Link>*/}
-                        <button
-                          onClick={() => startEditing(video)}
-                          className="inline-flex items-center px-2 py-1 text-gray-300 hover:text-white hover:bg-gray-600 rounded text-xs font-medium transition-colors duration-200"
-                          title="Edit video"
-                        >
-                          <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          <span className="hidden sm:inline">Edit</span>
-                          <span className="sm:hidden">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => toggleFreePreview(video._id, video.isFreePreview || false)}
-                          disabled={togglingPreview === video._id}
-                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors duration-200 ${
-                            video.isFreePreview 
-                              ? 'text-green-400 hover:text-green-300 hover:bg-green-500/20' 
-                              : 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/20'
-                          } ${togglingPreview === video._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title={video.isFreePreview ? 'Remove from free preview' : 'Mark as free preview'}
-                        >
-                          {togglingPreview === video._id ? (
-                            <div className="h-3 w-3 sm:h-4 sm:w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            <div className="h-3 w-3 sm:h-4 sm:w-4 mr-1">
-                              {video.isFreePreview ? '🔓' : '🔒'}
-                            </div>
-                          )}
-                          <span className="hidden sm:inline">{video.isFreePreview ? 'Free' : 'Locked'}</span>
-                          <span className="sm:hidden">{video.isFreePreview ? 'Free' : 'Locked'}</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete "${getEnglishText(video.title)}"? This action cannot be undone.`)) {
-                              deleteVideo(video._id);
-                            }
-                          }}
-                          className="inline-flex items-center px-2 py-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded text-xs font-medium transition-colors duration-200"
-                          title="Delete video"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          <span className="hidden sm:inline">Delete</span>
-                          <span className="sm:hidden">Delete</span>
-                        </button>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </div>
