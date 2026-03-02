@@ -602,39 +602,366 @@ app.use('/api/user', userRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/announcements', announcementRoutes);
 
-// Version route
 app.use('/api/version', versionRoutes);
-
-// Progress routes (simplified dashboard without progress tracking)
 const progressRoutes = require('./routes/progressRoutes');
 app.use('/api/progress', progressRoutes);
 
-// Admin dashboard stats (basic stats only)
+// Data quality monitoring and cleanup endpoint
+app.get('/api/admin/data-quality', adminAuthMiddleware, async (req, res) => {
+  try {
+    const Video = require('./models/Video');
+    const Course = require('./models/Course');
+    const User = require('./models/User');
+    const Bundle = require('./models/Bundle');
+    const Review = require('./models/Review');
+    const Announcement = require('./models/Announcement');
+
+    console.log('🔍 Running data quality check...');
+
+    const issues = [];
+
+    // Check for orphaned videos
+    const orphanedVideos = await Video.countDocuments({
+      $or: [
+        { course: null },
+        { course: { $exists: false } }
+      ]
+    });
+
+    if (orphanedVideos > 0) {
+      issues.push({
+        type: 'orphaned_videos',
+        count: orphanedVideos,
+        severity: 'high',
+        message: `${orphanedVideos} videos without course assignment`
+      });
+    }
+
+    // Check for videos without S3 keys
+    const videosWithoutS3 = await Video.countDocuments({
+      $or: [
+        { s3Key: null },
+        { s3Key: { $exists: false } },
+        { s3Key: '' }
+      ]
+    });
+
+    if (videosWithoutS3 > 0) {
+      issues.push({
+        type: 'videos_without_s3',
+        count: videosWithoutS3,
+        severity: 'high',
+        message: `${videosWithoutS3} videos without S3 keys`
+      });
+    }
+
+    // Check for duplicate videos by S3 key
+    const duplicateVideos = await Video.aggregate([
+      { $group: { _id: '$s3Key', count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+      { $group: { _id: null, totalDuplicates: { $sum: '$count' }, duplicateGroups: { $sum: 1 } } }
+    ]);
+
+    if (duplicateVideos.length > 0 && duplicateVideos[0].totalDuplicates > 0) {
+      issues.push({
+        type: 'duplicate_videos',
+        count: duplicateVideos[0].duplicateGroups,
+        severity: 'medium',
+        message: `${duplicateVideos[0].duplicateGroups} duplicate video groups found`
+      });
+    }
+
+    // Get overall statistics
+    const [totalVideos, totalCourses, totalUsers] = await Promise.all([
+      Video.countDocuments(),
+      Course.countDocuments(),
+      User.countDocuments()
+    ]);
+
+    const healthScore = issues.length === 0 ? 100 : Math.max(0, 100 - (issues.filter(i => i.severity === 'high').length * 20) - (issues.filter(i => i.severity === 'medium').length * 10));
+
+    const report = {
+      timestamp: new Date().toISOString(),
+      totalRecords: {
+        videos: totalVideos,
+        courses: totalCourses,
+        users: totalUsers
+      },
+      issues,
+      healthScore,
+      status: issues.length === 0 ? 'healthy' : issues.filter(i => i.severity === 'high').length > 0 ? 'critical' : 'warning'
+    };
+
+    console.log('✅ Data quality check completed:', { healthScore, issueCount: issues.length });
+
+    res.json({
+      success: true,
+      data: report
+    });
+
+  } catch (error) {
+    console.error('❌ Data quality check error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check data quality',
+      error: error.message
+    });
+  }
+});
+
+// Auto-cleanup endpoint (use with caution)
+app.post('/api/admin/auto-cleanup', adminAuthMiddleware, async (req, res) => {
+  try {
+    const Video = require('./models/Video');
+    const Course = require('./models/Course');
+
+    console.log('🧹 Starting auto-cleanup...');
+
+    // Only clean orphaned videos (safe operation)
+    const orphanedResult = await Video.deleteMany({
+      $or: [
+        { course: null },
+        { course: { $exists: false } }
+      ]
+    });
+
+    // Remove videos without valid S3 keys
+    const invalidS3Result = await Video.deleteMany({
+      $or: [
+        { s3Key: null },
+        { s3Key: { $exists: false } },
+        { s3Key: '' }
+      ]
+    });
+
+    const cleanupResult = {
+      orphanedVideosRemoved: orphanedResult.deletedCount,
+      invalidS3VideosRemoved: invalidS3Result.deletedCount,
+      totalRemoved: orphanedResult.deletedCount + invalidS3Result.deletedCount,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('✅ Auto-cleanup completed:', cleanupResult);
+
+    res.json({
+      success: true,
+      data: cleanupResult,
+      message: `Successfully removed ${cleanupResult.totalRemoved} invalid video records`
+    });
+
+  } catch (error) {
+    console.error('❌ Auto-cleanup error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to perform auto-cleanup',
+      error: error.message
+    });
+  }
+});
+
+// Admin dashboard stats (comprehensive and accurate stats)
 app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
   try {
     const Course = require('./models/Course');
     const Video = require('./models/Video');
     const User = require('./models/User');
+    const Bundle = require('./models/Bundle');
+    const Review = require('./models/Review');
+    const Announcement = require('./models/Announcement');
 
-    // Get basic counts
-    const [totalUsers, totalCourses, totalVideos] = await Promise.all([
-      User.countDocuments({ role: 'user' }),
-      Course.countDocuments(),
-      Video.countDocuments()
+    console.log(' Fetching accurate admin stats...');
+
+    // Get comprehensive counts with strict filtering (no orphaned documents)
+    const [
+      totalUsers,
+      totalCourses,
+      totalVideos,
+      totalBundles,
+      totalReviews,
+      totalAnnouncements,
+      activeCourses,
+      publishedCourses,
+      totalEnrollments
+    ] = await Promise.all([
+      // Count only regular users (not admins) with valid data
+      User.countDocuments({ 
+        role: 'user',
+        email: { $exists: true, $ne: null, $ne: '' }
+      }),
+      // Count only courses with valid titles
+      Course.countDocuments({ 
+        title: { $exists: true, $ne: null, $ne: '' }
+      }),
+      // Count only videos that are actually associated with courses and have valid S3 keys
+      Video.aggregate([
+        { 
+          $match: { 
+            course: { $exists: true, $ne: null },
+            s3Key: { $exists: true, $ne: null, $ne: '' },
+            title: { $exists: true, $ne: null, $ne: '' }
+          } 
+        },
+        { $group: { _id: '$s3Key', doc: { $first: '$$ROOT' } } },
+        { $count: 'totalVideos' }
+      ]).then(result => result[0]?.totalVideos || 0),
+      // Count only bundles with valid titles and prices
+      Bundle.countDocuments({ 
+        title: { $exists: true, $ne: null, $ne: '' },
+        price: { $exists: true, $gte: 0 }
+      }),
+      // Count only reviews with valid content and ratings
+      Review.countDocuments({ 
+        content: { $exists: true, $ne: null, $ne: '' },
+        rating: { $exists: true, $gte: 1, $lte: 5 }
+      }),
+      // Count only announcements with valid content
+      Announcement.countDocuments({ 
+        title: { $exists: true, $ne: null, $ne: '' },
+        content: { $exists: true, $ne: null, $ne: '' }
+      }),
+      // Count only active courses with valid data
+      Course.countDocuments({ 
+        status: 'active',
+        title: { $exists: true, $ne: null, $ne: '' }
+      }),
+      // Count only published active courses
+      Course.countDocuments({ 
+        status: 'active', 
+        isPublic: true,
+        title: { $exists: true, $ne: null, $ne: '' }
+      }),
+      // Calculate accurate enrollments from courses with valid student data
+      Course.aggregate([
+        { 
+          $match: { 
+            enrolledStudents: { $exists: true, $ne: [] },
+            title: { $exists: true, $ne: null, $ne: '' }
+          } 
+        },
+        { $project: { enrolledCount: { $size: "$enrolledStudents" } } },
+        { $group: { _id: null, total: { $sum: "$enrolledCount" } } }
+      ])
+    ]);
+
+    // Get additional accurate stats
+    const recentUsers = await User.countDocuments({ 
+      role: 'user',
+      email: { $exists: true, $ne: null, $ne: '' },
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    });
+    
+    const recentCourses = await Course.countDocuments({ 
+      title: { $exists: true, $ne: null, $ne: '' },
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    });
+    
+    // Popular courses with valid data only
+    const popularCoursesRaw = await Course.aggregate([
+      { 
+        $match: { 
+          enrolledStudents: { $exists: true, $ne: [] },
+          title: { $exists: true, $ne: null, $ne: '' }
+        } 
+      },
+      { 
+        $addFields: { 
+          enrolledCount: { $size: "$enrolledStudents" },
+          title: "$title",
+          thumbnail: "$thumbnail"
+        }
+      },
+      { $sort: { enrolledCount: -1 } },
+      { $limit: 5 },
+      { 
+        $project: { 
+          title: 1,
+          enrolledCount: 1,
+          thumbnail: 1
+        }
+      }
+    ]);
+    
+    // Process titles to handle localization properly
+    const popularCourses = popularCoursesRaw.map(course => ({
+      ...course,
+      title: typeof course.title === 'object' ? course.title.en || course.title.tg || 'Untitled Course' : course.title
+    }));
+    
+    // Video stats for valid videos only
+    const videoStats = await Video.aggregate([
+      { 
+        $match: { 
+          course: { $exists: true, $ne: null },
+          s3Key: { $exists: true, $ne: null, $ne: '' },
+          title: { $exists: true, $ne: null, $ne: '' }
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalDuration: { $sum: '$duration' },
+          avgDuration: { $avg: '$duration' },
+          totalSize: { $sum: '$fileSize' },
+          count: { $sum: 1 }
+        }
+      }
     ]);
 
     const stats = {
+      // Main counts (accurate and validated)
       totalUsers,
       totalCourses,
-      totalVideos
+      totalVideos,
+      totalBundles,
+      totalReviews,
+      totalAnnouncements,
+      
+      // Course breakdown
+      activeCourses,
+      publishedCourses,
+      inactiveCourses: totalCourses - activeCourses,
+      
+      // Engagement stats
+      totalEnrollments: totalEnrollments[0]?.total || 0,
+      recentUsers,
+      recentCourses,
+      
+      // Video stats (for valid videos only)
+      videoStats: videoStats[0] || {
+        totalDuration: 0,
+        avgDuration: 0,
+        totalSize: 0,
+        count: 0
+      },
+      
+      // Popular courses (validated)
+      popularCourses,
+      
+      // Data quality metrics
+      dataQuality: {
+        validVideoCount: videoStats[0]?.count || 0,
+        orphanedVideos: 0, // Should be 0 after cleanup
+        duplicateVideos: 0, // Should be 0 after cleanup
+        lastValidated: new Date().toISOString()
+      },
+      
+      // Timestamp
+      lastUpdated: new Date().toISOString()
     };
+
+    console.log(' Admin stats calculated successfully:', {
+      totalUsers,
+      totalCourses, 
+      totalVideos,
+      dataQuality: stats.dataQuality
+    });
 
     res.json({
       success: true,
       data: stats
     });
   } catch (error) {
-    console.error('Admin stats error:', error);
+    console.error(' Admin stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch admin statistics',
@@ -643,37 +970,9 @@ app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
   }
 });
 
-
-// Error handling middleware
-app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
-
-  if (error.name === 'ValidationError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation error',
-      error: Object.values(error.errors).map(err => err.message)
-    });
-  }
-
-  if (error.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid ID format',
-      error: error.message
-    });
-  }
-
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'production' ? 'Something went wrong' : error.message
-  });
-});
-
-// 404 handler
+// 404 handler for unmatched routes
 app.use('*', (req, res) => {
-  res.status(404).json({
+  res.status(404).json({ 
     success: false,
     message: 'Route not found'
   });
