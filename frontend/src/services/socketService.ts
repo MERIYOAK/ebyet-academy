@@ -29,6 +29,25 @@ class SocketService {
   }
 
   /**
+   * Get server URL based on environment
+   */
+  private getServerUrl(): string {
+    // Check for existing API base URL environment variable
+    if (import.meta.env.VITE_API_BASE_URL) {
+      return import.meta.env.VITE_API_BASE_URL;
+    }
+
+    // Production: use current domain for same-origin requests
+    if (import.meta.env.PROD) {
+      // If frontend and backend are on same domain
+      return window.location.origin;
+    }
+
+    // Development: fallback to localhost
+    return 'http://localhost:5000';
+  }
+
+  /**
    * Connect to Socket.IO server
    */
   connect(userData?: UserData): Promise<void> {
@@ -45,7 +64,8 @@ class SocketService {
 
       this.isConnecting = true;
 
-      const serverUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      // Dynamic server URL for production/development
+      const serverUrl = this.getServerUrl();
       
       this.socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
