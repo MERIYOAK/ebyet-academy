@@ -237,6 +237,10 @@ const SortableVideoItem: React.FC<{
             <span className="hidden sm:inline">Order:</span>
             <span>{video.order || index + 1}</span>
           </div>
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-400">
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+          </div>
           <div className="flex items-center space-x-1 sm:space-x-2">
             <button
               onClick={() => onStartEdit(video)}
@@ -703,16 +707,6 @@ const AdminCourseVideosPage: React.FC = () => {
         descriptionTg = video.description.tg || '';
       }
     }
-    
-    // Populate the edit form with the extracted values
-    setEditForm({
-      titleEn,
-      titleTg,
-      descriptionEn,
-      descriptionTg,
-      order: video.order || 1,
-      duration: formatDuration(video.duration) // Convert seconds back to MM:SS format
-    });
     
     console.log('📝 [startEditing] Extracted video data:', {
       videoId: video._id,

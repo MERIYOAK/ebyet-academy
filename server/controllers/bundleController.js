@@ -13,11 +13,6 @@ const {
   getThumbnailUrl
 } = require('../utils/s3CourseManager');
 
-// Get socket service from app
-const getSocketService = (req) => {
-  return req.app.get('socketService');
-};
-
 /**
  * Create a new bundle
  */
@@ -101,20 +96,6 @@ const createBundle = async (req, res) => {
 
     const bundleTitleDisplay = typeof bundle.title === 'string' ? bundle.title : (bundle.title?.en || bundle.title?.tg || '');
     console.log(`✅ Bundle created: ${bundleTitleDisplay} (ID: ${bundle._id}) by ${adminEmail}`);
-
-    // Emit Socket.IO event for real-time update
-    const socketService = getSocketService(req);
-    if (socketService) {
-      socketService.notifyNewBundle({
-        id: bundle._id,
-        title: bundle.title,
-        description: bundle.description,
-        price: bundle.price,
-        originalValue: bundle.originalValue,
-        thumbnail: bundle.thumbnail,
-        isPublic: bundle.isPublic
-      });
-    }
 
     res.status(201).json({
       success: true,
@@ -686,21 +667,6 @@ const updateBundle = async (req, res) => {
     await bundle.save();
 
     console.log(`✅ Bundle updated: ${bundle.title} by ${adminEmail}`);
-
-    // Emit Socket.IO event for real-time update
-    const socketService = getSocketService(req);
-    if (socketService) {
-      socketService.notifyBundleUpdate({
-        id: bundle._id,
-        title: bundle.title,
-        description: bundle.description,
-        price: bundle.price,
-        originalValue: bundle.originalValue,
-        thumbnail: bundle.thumbnail,
-        isPublic: bundle.isPublic,
-        status: bundle.status
-      });
-    }
 
     res.json({
       success: true,

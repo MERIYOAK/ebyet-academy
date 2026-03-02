@@ -5,15 +5,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Upload, Video, Clock, User, Save, X } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { getEnglishText } from '../utils/bilingualHelper';
-import { xhrUpload } from '../utils/uploadUtils';
 
 interface Course {
   _id: string;
   title: string | { en: string; tg: string };
   description: string | { en: string; tg: string };
   videos?: any[];
-  currentVersion?: number;
-  version?: number;
 }
 
 const AdminVideoUploadPage: React.FC = () => {
@@ -109,9 +106,9 @@ const AdminVideoUploadPage: React.FC = () => {
         return;
       }
       
-             // Validate file size (max 1GB)
-       if (file.size > 1024 * 1024 * 1024) {
-         setError('Video file size must be less than 1GB');
+             // Validate file size (max 500MB)
+       if (file.size > 500 * 1024 * 1024) {
+         setError('Video file size must be less than 500MB');
          return;
        }
 
@@ -130,7 +127,7 @@ const AdminVideoUploadPage: React.FC = () => {
     }
   };
 
-  // Handle form submission with new presigned URL flow
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -140,7 +137,7 @@ const AdminVideoUploadPage: React.FC = () => {
       progress: 0,
       status: 'loading',
       title: 'Uploading Video',
-      message: 'Preparing upload...'
+      message: 'Validating video information...'
     });
     
     // Validate required fields with user-friendly messages
@@ -158,36 +155,9 @@ const AdminVideoUploadPage: React.FC = () => {
     if (!formData.descriptionTg.trim()) {
       validationErrors.push('Video description (Tigrinya) is required');
     }
-    if (!formData.duration || formData.duration.trim() === '') {
-      validationErrors.push('Video duration is required. Please enter duration in MM:SS or HH:MM:SS format.');
-    }
-    
-    // Validate video file format
-    if (formData.file) {
-      const validFormats = [
-        'video/mp4', 'video/webm', 'video/avi', 'video/mov', 'video/wmv', 
-        'video/ogg', 'video/flv', 'video/mkv', 'video/quicktime'
-      ];
-      const fileName = formData.file.name.toLowerCase();
-      const hasValidExtension = fileName.endsWith('.mp4') || fileName.endsWith('.webm') || 
-                           fileName.endsWith('.avi') || fileName.endsWith('.mov') || 
-                           fileName.endsWith('.wmv') || fileName.endsWith('.ogg') || 
-                           fileName.endsWith('.flv') || fileName.endsWith('.mkv') ||
-                           fileName.endsWith('.qt');
-      
-      if (!validFormats.includes(formData.file.type) && !hasValidExtension) {
-        validationErrors.push('Invalid video format. Please upload a valid video file (MP4, AVI, MOV, WMV, WebM, OGG, FLV, MKV).');
-      }
-      
-      // Check file size (1GB limit)
-      const maxSize = 1024 * 1024 * 1024; // 1GB in bytes
-      if (formData.file.size > maxSize) {
-        validationErrors.push('Video file is too large. Maximum size is 1GB.');
-      }
-    } else {
+    if (!formData.file) {
       validationErrors.push('Video file is required');
     }
-
     if (formData.order < 1) {
       validationErrors.push('Order must be at least 1');
     }
@@ -208,146 +178,202 @@ const AdminVideoUploadPage: React.FC = () => {
       setUploading(true);
       setError(null);
       
+      // Update progress - preparing upload
+      setProgressOverlay(prev => ({
+        ...prev,
+        progress: 10,
+        message: 'Preparing video for upload...'
+      }));
+      
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) {
         throw new Error('Admin token not found');
       }
+
+      // Update progress - creating form data
+      setProgressOverlay(prev => ({
+        ...prev,
+        progress: 20,
+        message: 'Preparing upload data...'
+      }));
 
       // Validate required fields
       if (!formData.duration || formData.duration.trim() === '') {
         throw new Error('Video duration is required. Please enter duration in MM:SS or HH:MM:SS format.');
       }
 
-      // Step 1: Request presigned URL from backend
-      setProgressOverlay(prev => ({
-        ...prev,
-        message: 'Getting upload URL from server...'
+      const videoFormData = new FormData();
+      // Send bilingual format for video title and description
+      videoFormData.append('title', JSON.stringify({ 
+        en: formData.titleEn.trim(), 
+        tg: formData.titleTg.trim() 
       }));
-
-      const presignedUrlResponse = await fetch(buildApiUrl('/api/videos/presigned-url'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          courseId,
-          fileName: formData.file!.name,
-          fileSize: formData.file!.size,
-          mimeType: formData.file!.type,
-          version: course?.currentVersion || course?.version || 1
-        })
+      videoFormData.append('description', JSON.stringify({ 
+        en: formData.descriptionEn.trim(), 
+        tg: formData.descriptionTg.trim() 
+      }));
+      videoFormData.append('order', formData.order.toString());
+      videoFormData.append('courseId', courseId!);
+      // Get version from course (currentVersion or default to 1)
+      const version = course?.currentVersion || course?.version || 1;
+      videoFormData.append('version', version.toString());
+      videoFormData.append('isFreePreview', formData.isFreePreview ? 'true' : 'false');
+      videoFormData.append('duration', formData.duration);
+      videoFormData.append('file', formData.file!);
+      
+      console.log('Uploading video with data:', {
+        courseId,
+        version,
+        title: { en: formData.titleEn, tg: formData.titleTg },
+        order: formData.order,
+        duration: formData.duration,
+        fileName: formData.file?.name
       });
 
-      if (!presignedUrlResponse.ok) {
-        const errorData = await presignedUrlResponse.json();
-        throw new Error(errorData.message || 'Failed to get upload URL');
-      }
-
-      const { data: presignedData } = await presignedUrlResponse.json();
-      const { uploadUrl, s3Key } = presignedData;
-
-      console.log('🔗 Got presigned URL:', { uploadUrl: uploadUrl.substring(0, 100) + '...', s3Key });
-
-      // Step 2: Upload file directly to S3
+      // Update progress - starting upload
       setProgressOverlay(prev => ({
         ...prev,
-        progress: 0,
-        message: 'Starting video upload...'
+        progress: 5,
+        message: `Starting upload: ${formData.file?.name}...`
       }));
 
-      await xhrUpload({
-        url: uploadUrl,
-        method: 'PUT',
-        file: formData.file!,
-        headers: { 'Content-Type': formData.file!.type },
-        timeoutMs: 30 * 60 * 1000, // 30 minutes for large file uploads
-        onProgress: (loaded, total) => {
-          const videoUploadPercent = Math.round((loaded / total) * 100);
-          // Use direct upload progress (0% to 100%)
+      // Upload via XHR to track progress
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const httpProgress = Math.round((event.loaded / event.total) * 100);
+          const loadedMB = (event.loaded / (1024 * 1024)).toFixed(1);
+          const totalMB = (event.total / (1024 * 1024)).toFixed(1);
+          
+          // HTTP upload is 30% of total process (server will handle the remaining 70%)
+          const overallProgress = Math.min(Math.round(httpProgress * 0.3), 30); // Cap at 30%
+          
           setProgressOverlay(prev => ({
             ...prev,
-            progress: videoUploadPercent,
-            message: `Uploading video: ${videoUploadPercent}%`
+            progress: Math.min(Math.max(prev.progress, overallProgress), 30), // Don't go backwards, cap at 30%
+            message: `Uploading to server: ${httpProgress}% (${loadedMB}MB / ${totalMB}MB)`
           }));
-          console.debug('[UI] video upload progress:', { loaded, total, videoUploadPercent });
         }
-      });
+      };
 
-      console.log('✅ S3 upload completed successfully');
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          console.log('Upload response status:', xhr.status);
+          console.log('Upload response:', xhr.responseText);
+          
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // Parse response if available
+            let responseData = null;
+            try {
+              responseData = JSON.parse(xhr.responseText);
+              console.log('Upload successful, response data:', responseData);
+            } catch (e) {
+              console.log('Response is not JSON, treating as success');
+            }
+            
+            // Show server processing message - start from 30% and progress to 100%
+            setProgressOverlay(prev => ({
+              ...prev,
+              progress: 30,
+              message: 'Processing on server...'
+            }));
 
-      // Step 3: Save video metadata to backend
-      setProgressOverlay(prev => ({
-        ...prev,
-        progress: 100,
-        message: 'Saving video information...'
-      }));
+            // Simulate server processing with gradual progress
+            let processingProgress = 30;
+            const processingInterval = setInterval(() => {
+              processingProgress += 10;
+              if (processingProgress <= 100) {
+                setProgressOverlay(prev => ({
+                  ...prev,
+                  progress: processingProgress,
+                  message: processingProgress < 100 
+                    ? `Processing on server... ${processingProgress}%`
+                    : 'Finalizing upload...'
+                }));
+              } else {
+                clearInterval(processingInterval);
+                setProgressOverlay({
+                  isVisible: true,
+                  progress: 100,
+                  status: 'success',
+                  title: 'Video Uploaded Successfully',
+                  message: 'Video uploaded successfully! Redirecting to videos page...'
+                });
+                
+                // Auto-navigate after a short delay
+                setTimeout(() => {
+                  navigate(`/admin/courses/${courseId}/videos`);
+                }, 1500);
+              }
+            }, 200); // Update every 200ms for smooth progress
+            
+            setSuccess('Video uploaded successfully! Redirecting...');
+            
+            // Reset form
+            setFormData({
+              titleEn: '',
+              titleTg: '',
+              descriptionEn: '',
+              descriptionTg: '',
+              order: (course?.videos?.length || 0) + 2,
+              duration: '',
+              file: null,
+              isFreePreview: false
+            });
+          } else {
+            let errorMessage = 'Failed to upload video';
+            let errorDetails = '';
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              errorMessage = errorData.message || errorData.error || errorMessage;
+              // Include additional error details if available
+              if (errorData.details) {
+                errorDetails = `\n\nDetails: ${errorData.details}`;
+              }
+            } catch (parseError) {
+              // If response is not JSON, use status text or default message
+              errorMessage = xhr.statusText || `Server error (${xhr.status})`;
+              // Try to extract error message from response text
+              if (xhr.responseText && xhr.responseText.length < 500) {
+                errorDetails = `\n\nResponse: ${xhr.responseText}`;
+              }
+            }
+            console.error('Upload failed:', {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              response: xhr.responseText
+            });
+            setProgressOverlay({
+              isVisible: true,
+              progress: 100,
+              status: 'error',
+              title: 'Upload Failed',
+              message: errorMessage + errorDetails
+            });
+            setError(errorMessage + errorDetails);
+          }
+          setUploading(false);
+        }
+      };
 
-      const metadataResponse = await fetch(buildApiUrl('/api/videos/save-metadata'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          courseId,
-          title: JSON.stringify({ 
-            en: formData.titleEn.trim(), 
-            tg: formData.titleTg.trim() 
-          }),
-          description: JSON.stringify({ 
-            en: formData.descriptionEn.trim(), 
-            tg: formData.descriptionTg.trim() 
-          }),
-          s3Key,
-          order: formData.order,
-          duration: formData.duration,
-          version: course?.currentVersion || course?.version || 1,
-          fileSize: formData.file!.size,
-          mimeType: formData.file!.type,
-          originalName: formData.file!.name,
-          isFreePreview: formData.isFreePreview
-        })
-      });
+      xhr.onerror = () => {
+        setProgressOverlay({
+          isVisible: true,
+          progress: 100,
+          status: 'error',
+          title: 'Upload Failed',
+          message: 'Network error during upload'
+        });
+        setError('Network error during upload');
+        setUploading(false);
+      };
 
-      if (!metadataResponse.ok) {
-        const errorData = await metadataResponse.json();
-        throw new Error(errorData.message || 'Failed to save video metadata');
-      }
-
-      const { data: metadataData } = await metadataResponse.json();
-      console.log('✅ Video metadata saved:', metadataData);
-
-      // Show success
-      setProgressOverlay({
-        isVisible: true,
-        progress: 100,
-        status: 'success',
-        title: 'Video Uploaded Successfully',
-        message: 'Video uploaded successfully! Redirecting to videos page...'
-      });
-      
-      setSuccess('Video uploaded successfully! Redirecting...');
-      
-      // Reset form
-      setFormData({
-        titleEn: '',
-        titleTg: '',
-        descriptionEn: '',
-        descriptionTg: '',
-        order: (course?.videos?.length || 0) + 2,
-        duration: '',
-        file: null,
-        isFreePreview: false
-      });
-      
-      // Auto-navigate after a short delay
-      setTimeout(() => {
-        navigate(`/admin/courses/${courseId}/videos`);
-      }, 1500);
+      xhr.open('POST', buildApiUrl('/api/videos/upload'));
+      xhr.setRequestHeader('Authorization', `Bearer ${adminToken}`);
+      xhr.send(videoFormData);
 
     } catch (err) {
-      console.error('Upload error:', err);
       setProgressOverlay({
         isVisible: true,
         progress: 100,
@@ -356,7 +382,6 @@ const AdminVideoUploadPage: React.FC = () => {
         message: err instanceof Error ? err.message : 'Failed to upload video'
       });
       setError(err instanceof Error ? err.message : 'Failed to upload video');
-    } finally {
       setUploading(false);
     }
   };
@@ -633,7 +658,7 @@ const AdminVideoUploadPage: React.FC = () => {
                   </div>
                 )}
                 <p className="mt-1 text-sm text-gray-400">
-                  Supported formats: MP4, AVI, MOV, WMV, WebM, OGG, FLV, MKV. Max size: 1GB. Duration must be entered manually. Files are uploaded directly to cloud storage for better performance.
+                  Supported formats: MP4, AVI, MOV, WMV, WebM, OGG, FLV, MKV. Max size: 500MB. Duration must be entered manually.
                 </p>
               </div>
 

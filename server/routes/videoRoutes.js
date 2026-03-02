@@ -4,348 +4,84 @@ const videoController = require('../controllers/videoController');
 const auth = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuthMiddleware');
 const adminAuthMiddleware = require('../middleware/adminAuthMiddleware');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure upload directory exists
+const uploadDir = '/tmp/uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for video uploads
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, '/tmp/uploads'); // Use temporary directory
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  }),
+  limits: {
+    fileSize: 1000 * 1024 * 1024, // 1GB limit for large videos
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only video files are allowed'), false);
+    }
+  }
+});
+
+// Error handling middleware for multer
+const handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 500MB.'
+      });
+    }
+  }
+  if (error.message.includes('Only video files')) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+  next(error);
+};
+
+// Apply error handling middleware
+router.use(handleMulterError);
 
 // ========================================
 // ADMIN ROUTES (Require admin authentication)
 // ========================================
 
 /**
- * Generate presigned URL for direct S3 video upload
- * POST /api/videos/presigned-url
- * Body: { courseId, fileName, fileSize, mimeType, version }
+ * Upload video for a course version
+ * POST /api/videos/upload
+ * Body: { courseId, version, title, order, file }
  */
-router.post('/presigned-url', auth, adminAuthMiddleware, async (req, res) => {
-  try {
-    const { courseId, fileName, fileSize, mimeType, version = 1 } = req.body;
-    
-    // Validate required fields
-    if (!courseId || !fileName || !fileSize || !mimeType) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: courseId, fileName, fileSize, mimeType'
-      });
-    }
-    
-    // Validate file type (video only)
-    if (!mimeType.startsWith('video/')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Only video files are allowed'
-      });
-    }
-    
-    // Validate file size (1GB max)
-    if (fileSize > 1024 * 1024 * 1024) {
-      return res.status(400).json({
-        success: false,
-        message: 'File size exceeds maximum allowed size of 1GB'
-      });
-    }
-    
-    // Get course details for folder organization
-    const Course = require('../models/Course');
-    const course = await Course.findById(courseId);
-    if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: 'Course not found'
-      });
-    }
-    
-    // Generate S3 key using existing utility
-    const { generateCourseFileKey } = require('../utils/s3CourseManager');
-    const courseTitleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || '');
-    const s3Key = generateCourseFileKey('video', fileName, courseTitleString, version);
-    
-    // Generate presigned URL for upload
-    const { getSignedUrlForFile } = require('../utils/s3CourseManager');
-    const { PutObjectCommand } = require('@aws-sdk/client-s3');
-    const { createS3Client } = require('../utils/s3CourseManager');
-    const s3Client = createS3Client();
-    
-    if (!s3Client) {
-      return res.status(500).json({
-        success: false,
-        message: 'S3 not configured'
-      });
-    }
-    
-    const command = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET,
-      Key: s3Key,
-      ContentType: mimeType,
-      Metadata: {
-        originalName: fileName,
-        courseName: courseTitleString.replace(/[^a-zA-Z0-9\s-]/g, '_').replace(/\s+/g, '_'),
-        version: version.toString(),
-        fileType: 'video',
-        uploadedAt: new Date().toISOString()
-      }
-    });
-    
-    // Generate presigned URL valid for 1 hour
-    const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-    
-    console.log(`🔗 [presigned-url] Generated for course: ${courseId}, file: ${fileName}, key: ${s3Key}`);
-    
-    res.json({
-      success: true,
-      data: {
-        uploadUrl,
-        s3Key,
-        expiresIn: 3600
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ [presigned-url] Error generating presigned URL:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate upload URL',
-      error: error.message
-    });
-  }
-});
+router.post('/upload', auth, adminAuthMiddleware, upload.single('file'), videoController.uploadVideo);
 
 /**
- * Save video metadata after successful S3 upload
- * POST /api/videos/save-metadata
- * Body: { courseId, title, description, s3Key, order, duration, version, fileSize, mimeType, originalName, isFreePreview }
- */
-router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
-  try {
-    const { 
-      courseId, 
-      title, 
-      description, 
-      s3Key, 
-      order, 
-      duration, 
-      version = 1, 
-      fileSize, 
-      mimeType, 
-      originalName, 
-      isFreePreview = false 
-    } = req.body;
-    
-    // Validate required fields
-    if (!courseId || !title || !s3Key || !duration) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: courseId, title, s3Key, duration'
-      });
-    }
-    
-    // Parse bilingual title and description if they come as JSON strings
-    let parsedTitle = title;
-    let parsedDescription = description;
-    
-    console.log('[save-metadata] Raw title type:', typeof title, 'value:', title);
-    console.log('[save-metadata] Raw description type:', typeof description, 'value:', description);
-    
-    try {
-      if (typeof title === 'string' && title.startsWith('{')) {
-        parsedTitle = JSON.parse(title);
-      }
-      if (typeof description === 'string' && description.startsWith('{')) {
-        parsedDescription = JSON.parse(description);
-      }
-    } catch (e) {
-      console.log('[save-metadata] Title/description not JSON, using as string');
-      // Keep the original values if JSON parsing fails
-      if (typeof title === 'string') {
-        parsedTitle = title;
-      }
-      if (typeof description === 'string') {
-        parsedDescription = description;
-      }
-    }
-    
-    console.log('[save-metadata] Parsed title:', parsedTitle);
-    console.log('[save-metadata] Parsed description:', parsedDescription);
-    
-    const adminEmail = req.admin?.email || req.user?.email || 'admin';
-    
-    console.log('[save-metadata] courseId:', courseId, 'title:', parsedTitle, 's3Key:', s3Key, 'version:', version);
-    
-    // Get course and version info
-    const Course = require('../models/Course');
-    const Video = require('../models/Video');
-    
-    const course = await Course.findById(courseId);
-    if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: 'Course not found'
-      });
-    }
-    
-    // Parse duration from MM:SS or HH:MM:SS format to seconds
-    const parseDurationToSeconds = (durationStr) => {
-      if (!durationStr || typeof durationStr !== 'string') {
-        return 0;
-      }
-      
-      const parts = durationStr.trim().split(':');
-      
-      if (parts.length === 2) {
-        // MM:SS format
-        const minutes = parseInt(parts[0], 10);
-        const seconds = parseInt(parts[1], 10);
-        return (minutes * 60) + seconds;
-      } else if (parts.length === 3) {
-        // HH:MM:SS format
-        const hours = parseInt(parts[0], 10);
-        const minutes = parseInt(parts[1], 10);
-        const seconds = parseInt(parts[2], 10);
-        return (hours * 3600) + (minutes * 60) + seconds;
-      } else {
-        throw new Error(`Invalid duration format: ${durationStr}. Use MM:SS or HH:MM:SS`);
-      }
-    };
-    
-    let detectedDuration = 0;
-    try {
-      detectedDuration = parseDurationToSeconds(duration);
-      console.log(`✅ [save-metadata] Duration parsed: ${duration} = ${detectedDuration} seconds`);
-    } catch (error) {
-      console.error(`❌ [save-metadata] Duration parsing failed:`, error);
-      return res.status(400).json({
-        success: false,
-        message: `Invalid duration format: ${duration}. Please use MM:SS or HH:MM:SS format.`
-      });
-    }
-    
-    // Create video record without versioning
-    const video = await Video.create({ 
-      title: parsedTitle, 
-      description: parsedDescription || '',
-      s3Key, 
-      courseId, 
-      duration: detectedDuration,
-      order: order ? parseInt(order) : 0,
-      fileSize: fileSize || 0,
-      mimeType: mimeType || 'video/mp4',
-      originalName: originalName || 'video.mp4',
-      uploadedBy: adminEmail,
-      isFreePreview: isFreePreview === 'true' || isFreePreview === true,
-      status: 'active'
-    });
-    
-    console.log('[save-metadata] created video:', video._id, 'with duration:', video.duration, 'seconds');
-    
-    // Add video directly to course
-    course.videos.push(video._id);
-    course.lastModifiedBy = adminEmail;
-    await course.save();
-    
-    res.status(201).json({
-      success: true,
-      message: `Video metadata saved successfully${isFreePreview ? ' as free preview' : ''}`,
-      data: {
-        video: {
-          id: video._id,
-          title: video.title,
-          description: video.description,
-          s3Key: video.s3Key,
-          order: video.order,
-          courseVersion: video.courseVersion,
-          duration: video.duration,
-          formattedDuration: video.formattedDuration,
-          isFreePreview: video.isFreePreview
-        }
-      }
-    });
-  } catch (error) {
-    console.error('[save-metadata] error:', error?.message || error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to save video metadata', 
-      error: error.message 
-    });
-  }
-});
-
-/**
- * Update video (preserve old video in S3) - LEGACY - kept for backward compatibility
+ * Update video (preserve old video in S3)
  * PUT /api/videos/:videoId
  * Body: { title, duration, order, file? }
  */
-router.put('/:videoId', auth, adminAuthMiddleware, videoController.updateVideo);
+router.put('/:videoId', auth, adminAuthMiddleware, upload.single('file'), videoController.updateVideo);
 
 /**
- * Delete video (permanent deletion from database and S3)
+ * Archive video (soft delete)
  * DELETE /api/videos/:videoId
  */
-router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
-  try {
-    const { videoId } = req.params;
-    const adminEmail = req.admin?.email || req.user?.email || 'admin';
-    
-    console.log(`🗑️ [deleteVideo] Starting deletion of video: ${videoId} by ${adminEmail}`);
-    
-    const Video = require('../models/Video');
-    const Course = require('../models/Course');
-    const { deleteFileFromS3 } = require('../utils/s3CourseManager');
-    
-    // Find video
-    const video = await Video.findById(videoId);
-    if (!video) {
-      return res.status(404).json({
-        success: false,
-        message: 'Video not found'
-      });
-    }
-    
-    console.log(`📹 [deleteVideo] Found video: ${video.title}`);
-    console.log(`   - S3 Key: ${video.s3Key}`);
-    console.log(`   - Course ID: ${video.courseId}`);
-    
-    // Delete from S3
-    if (video.s3Key) {
-      try {
-        await deleteFileFromS3(video.s3Key);
-        console.log(`✅ [deleteVideo] Deleted from S3: ${video.s3Key}`);
-      } catch (s3Error) {
-        console.error(`❌ [deleteVideo] Failed to delete from S3:`, s3Error);
-        // Continue with database deletion even if S3 deletion fails
-      }
-    }
-    
-    // Remove video from course
-    const course = await Course.findById(video.courseId);
-    if (course) {
-      course.videos = course.videos.filter(vid => vid.toString() !== videoId);
-      course.lastModifiedBy = adminEmail;
-      await course.save();
-      console.log(`✅ [deleteVideo] Removed video from course: ${course.title}`);
-    }
-    
-    // Delete from database
-    await Video.findByIdAndDelete(videoId);
-    console.log(`✅ [deleteVideo] Deleted from database: ${video.title}`);
-    
-    res.json({
-      success: true,
-      message: 'Video deleted successfully',
-      data: {
-        videoId: video._id,
-        title: video.title
-      }
-    });
-    
-    console.log(`✅ [deleteVideo] Video deletion completed: ${video.title} by ${adminEmail}`);
-    
-  } catch (error) {
-    console.error('❌ [deleteVideo] Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete video',
-      error: error.message
-    });
-  }
-});
+router.delete('/:videoId', auth, adminAuthMiddleware, videoController.deleteVideo);
 
 /**
  * Restore archived video

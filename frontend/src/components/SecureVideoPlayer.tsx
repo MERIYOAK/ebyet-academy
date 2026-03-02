@@ -461,7 +461,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     let focusChangeCount = 0;
     handleFocusChange = () => {
       clearTimeout(focusChangeTimeout);
-      focusChangeTimeout = window.setTimeout(() => {
+      focusChangeTimeout = setTimeout(() => {
         // Only trigger after multiple rapid focus changes
         if (document.hidden) {
           focusChangeCount++;
@@ -626,7 +626,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     });
 
     // Method 12: Periodic comprehensive checks
-    periodicChecks = window.setInterval(() => {
+    periodicChecks = setInterval(() => {
       detectScreenRecording();
       detectExtensions();
       detectGameBarElements();
@@ -1351,10 +1351,10 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Keyboard Shortcuts Hint - Hidden on mobile */}
+      {/* Keyboard Shortcuts Hint */}
       {controlsVisible && showKeyboardHints && (
         <div 
-          className="absolute top-4 right-4 bg-black bg-opacity-75 text-white text-xs p-3 rounded opacity-75 hover:opacity-100 transition-opacity duration-200 cursor-pointer max-w-xs hidden sm:block"
+          className="absolute top-4 right-4 bg-black bg-opacity-75 text-white text-xs p-3 rounded opacity-75 hover:opacity-100 transition-opacity duration-200 cursor-pointer max-w-xs"
           onClick={() => setShowKeyboardHints(false)}
           title="Click to hide"
         >

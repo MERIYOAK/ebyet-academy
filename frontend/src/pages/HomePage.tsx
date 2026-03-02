@@ -178,7 +178,11 @@ const HomePage = () => {
           console.log(`🔍 [HomePage] Featured course ${index + 1}:`, {
             id: c._id,
             title: c.title,
-            isPurchased: c.isPurchased
+            isPurchased: c.isPurchased,
+            progress: c.progress,
+            totalLessons: c.totalLessons,
+            completedLessons: c.completedLessons,
+            isCompleted: c.isCompleted
           });
           
           return (
@@ -195,6 +199,12 @@ const HomePage = () => {
             instructor={t('brand.name')}
             tags={c.tags || []}
             isPurchased={c.isPurchased || false}
+            progress={c.progress}
+            totalLessons={c.totalLessons}
+            completedLessons={c.completedLessons}
+            lastWatched={c.lastWatched}
+            videos={c.videos}
+            isCompleted={c.isCompleted}
           />
         );})}
       </div>
@@ -490,26 +500,26 @@ const HomePage = () => {
 
       {/* Investing Quotes Slideshow */}
       <section 
-        className="relative w-full overflow-hidden py-4 tiny:py-6 xs:py-8 sm:py-10 md:py-12 bg-gray-50 dark:bg-gray-900"
+        className="relative w-full overflow-hidden py-6 tiny:py-8 xs:py-10 sm:py-12 md:py-16 bg-gray-50 dark:bg-gray-900"
         onMouseEnter={() => setIsQuoteAutoPlaying(false)}
         onMouseLeave={() => setIsQuoteAutoPlaying(true)}
       >
         <div className="max-w-4xl mx-auto px-2 tiny:px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
-          <div className="relative min-h-[60px] tiny:min-h-[80px] xs:min-h-[100px] sm:min-h-[120px] md:min-h-[150px] lg:min-h-[180px]">
+          <div className="relative min-h-[80px] tiny:min-h-[100px] xs:min-h-[120px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[200px]">
             {investingQuotes.map((quote, index) => (
               <div
                 key={index}
-                className={`text-center transition-opacity duration-1000 ease-in-out absolute inset-0 flex flex-col items-center justify-center gap-1 tiny:gap-2 xs:gap-3 sm:gap-4 md:gap-5 ${
+                className={`text-center transition-opacity duration-1000 ease-in-out absolute inset-0 flex flex-col items-center justify-center gap-2 tiny:gap-3 xs:gap-4 sm:gap-5 md:gap-6 ${
                   index === currentQuoteIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
                 style={{
                   willChange: index === currentQuoteIndex ? 'opacity' : 'auto',
                 }}
               >
-                <blockquote className="text-xs tiny:text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-semibold text-gray-900 dark:text-white leading-relaxed px-2 tiny:px-3 xs:px-4 sm:px-6">
+                <blockquote className="text-sm tiny:text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-gray-900 dark:text-white leading-relaxed px-2 tiny:px-3 xs:px-4 sm:px-6">
                   "{quote.en}"
                 </blockquote>
-                <blockquote className="text-[10px] tiny:text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl font-medium text-gray-700 dark:text-white/80 leading-relaxed px-2 tiny:px-3 xs:px-4 sm:px-6 italic">
+                <blockquote className="text-xs tiny:text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-gray-700 dark:text-white/80 leading-relaxed px-2 tiny:px-3 xs:px-4 sm:px-6 italic">
                   "{quote.tg}"
                 </blockquote>
               </div>
@@ -517,7 +527,7 @@ const HomePage = () => {
           </div>
           
           {/* Quote indicators */}
-          <div className="hidden sm:flex justify-center gap-1 tiny:gap-1.5 xs:gap-2 mt-2 tiny:mt-3 xs:mt-4 sm:mt-6 md:mt-8">
+          <div className="flex justify-center gap-1.5 tiny:gap-2 mt-3 tiny:mt-4 xs:mt-5 sm:mt-6 md:mt-8">
             {investingQuotes.map((_, index) => (
               <button
                 key={index}
@@ -528,7 +538,7 @@ const HomePage = () => {
                 }}
                 className={`h-1 tiny:h-1.5 xs:h-2 rounded-full transition-all duration-300 ${
                   index === currentQuoteIndex 
-                    ? 'w-4 tiny:w-5 xs:w-6 bg-cyan-500 dark:bg-white' 
+                    ? 'w-5 tiny:w-6 xs:w-8 bg-cyan-500 dark:bg-white' 
                     : 'w-1 tiny:w-1.5 xs:w-2 bg-cyan-500/40 dark:bg-white/40 hover:bg-cyan-500/60 dark:hover:bg-white/60'
                 }`}
                 aria-label={`Go to quote ${index + 1}`}

@@ -83,9 +83,9 @@ const CookieConsent: React.FC<CookieConsentProps> = ({ measurementId = config.GA
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-[12vh] min-h-[100px] w-full flex justify-center px-3 xs:pb-4 pb-2">
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-[15vh] min-h-[80px] w-full flex justify-center px-4 xs:pb-4 pb-2">
       <div className="bg-gray-900/95 backdrop-blur-xl border-t border-x border-cyan-800/50 xs:border-transparent h-full shadow-2xl shadow-cyan-500/20 w-full max-w-6xl rounded-t-2xl">
-        <div className="h-full flex flex-col items-center justify-between px-2 py-2 xs:px-3 xs:py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-3 lg:flex-row lg:px-6 lg:py-3">
+        <div className="h-full flex flex-col items-center justify-between px-2 py-2 xs:px-3 xs:py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 lg:flex-row lg:px-8 lg:py-4">
           {/* Top section - Icon and Title */}
           <div className="flex items-center gap-2 xs:gap-3 mb-2 lg:mb-0 lg:flex-1">
             {/* Icon */}

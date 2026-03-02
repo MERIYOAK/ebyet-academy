@@ -11,11 +11,6 @@ const {
 } = require('../utils/s3CourseManager');
 const { uploadToS3 } = require('../utils/s3');
 
-// Get socket service from app
-const getSocketService = (req) => {
-  return req.app.get('socketService');
-};
-
 /**
  * Upload material for a course version
  */
@@ -68,6 +63,164 @@ exports.uploadMaterial = async (req, res) => {
 
     // IMPORTANT: Always use the current version, not the requested version
     // This ensures we're always modifying the current version and creating a new one
+    const currentVersionNumber = course.currentVersion || course.version || 1;
+    console.log(`🔍 [uploadMaterial] Course currentVersion: ${currentVersionNumber}, requestedVersion: ${requestedVersion}`);
+    
+    // Use a mutable variable for version number - start with current version
+    let versionNumber = currentVersionNumber;
+
+    // Get course version for the current version
+    let courseVersion = await CourseVersion.findOne({ 
+      courseId, 
+      versionNumber: versionNumber 
+    });
+
+    if (!courseVersion) {
+      return res.status(404).json({ 
+        success: false,
+        message: `Course version ${versionNumber} not found` 
+      });
+    }
+
+    console.log(`🔍 [uploadMaterial] Found courseVersion ${versionNumber}, course.currentVersion: ${course.currentVersion || course.version || 1}`);
+
+    // Check if this is initial upload (course has no enrollments)
+    // During initial upload, all content goes to version 1
+    // After enrollments exist, any changes create new versions
+    const hasEnrollments = course.enrolledStudents && course.enrolledStudents.length > 0;
+    const isInitialUpload = !hasEnrollments;
+    
+    console.log(`🔍 [uploadMaterial] Course has ${course.enrolledStudents?.length || 0} enrollments. Is initial upload: ${isInitialUpload}`);
+    
+    // Only create a new version if:
+    // 1. Course has enrollments (not initial upload) AND
+    // 2. We're modifying the current version
+    // During initial upload, all content goes to version 1
+    const shouldCreateNewVersion = !isInitialUpload && currentVersionNumber === versionNumber;
+    
+    console.log(`🔍 [uploadMaterial] Should create new version: ${shouldCreateNewVersion} (hasEnrollments: ${hasEnrollments}, isInitialUpload: ${isInitialUpload})`);
+    
+    if (shouldCreateNewVersion) {
+      // Get existing materials and videos for the current version
+      const existingMaterials = await Material.find({ 
+        courseId: courseId.toString(), 
+        courseVersion: versionNumber,
+        status: 'active'
+      }).lean();
+      
+      // Get existing videos for the current version (Video already required above)
+      const existingVideos = await Video.find({ 
+        courseId: courseId.toString(), 
+        courseVersion: versionNumber,
+        status: { $ne: 'deleted' }
+      }).lean();
+      
+      console.log(`🔍 [uploadMaterial] Found ${existingMaterials.length} materials and ${existingVideos.length} videos in version ${versionNumber}`);
+      
+      // Always create a new version when modifying the current version
+      // This ensures version history is preserved
+      console.log(`🔄 [uploadMaterial] Adding material to current version, creating new version...`);
+      
+      const latestVersion = await CourseVersion.findOne({ 
+        courseId 
+      }).sort({ versionNumber: -1 });
+      
+      // If latestVersion exists, increment it. Otherwise, use current version + 1
+      const newVersionNumber = latestVersion ? latestVersion.versionNumber + 1 : (versionNumber + 1);
+    
+      // Create new version with existing content
+      const newVersion = new CourseVersion({
+        courseId,
+        versionNumber: newVersionNumber,
+        title: courseVersion.title,
+        description: courseVersion.description,
+        price: courseVersion.price,
+        category: courseVersion.category,
+        level: courseVersion.level,
+        thumbnailURL: courseVersion.thumbnailURL,
+        thumbnailS3Key: courseVersion.thumbnailS3Key,
+        s3FolderPath: getCourseFolderPath(typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || ''), newVersionNumber),
+        createdBy: adminEmail,
+        changeLog: `Version ${newVersionNumber} created: Material added`,
+        videos: [], // Will be populated after copying videos
+        materials: [], // Will be populated after copying materials
+        status: courseVersion.status,
+        isPublic: courseVersion.isPublic
+      });
+      
+      await newVersion.save();
+      
+      // Copy existing videos to the new version FIRST
+      if (existingVideos.length > 0) {
+        console.log(`🎬 [uploadMaterial] Copying ${existingVideos.length} videos to new version v${newVersionNumber}...`);
+        const videoCopyPromises = existingVideos.map(v => {
+          return Video.create({
+            title: v.title,
+            description: v.description,
+            s3Key: v.s3Key,
+            courseId: v.courseId,
+            courseVersion: newVersionNumber,
+            duration: v.duration,
+            order: v.order,
+            fileSize: v.fileSize,
+            mimeType: v.mimeType,
+            originalName: v.originalName,
+            uploadedBy: v.uploadedBy,
+            isFreePreview: v.isFreePreview || false,
+            status: v.status || 'active'
+          });
+        });
+        const copiedVideos = await Promise.all(videoCopyPromises);
+        // Update the new version's videos array with the copied video IDs
+        newVersion.videos = copiedVideos.map(v => v._id);
+        await newVersion.save();
+        console.log(`✅ [uploadMaterial] Copied ${copiedVideos.length} videos to version v${newVersionNumber}`);
+      }
+      
+      // Copy existing materials to the new version
+      if (existingMaterials.length > 0) {
+        console.log(`📦 [uploadMaterial] Copying ${existingMaterials.length} materials to new version v${newVersionNumber}...`);
+        const materialUpdatePromises = existingMaterials.map(material => {
+          // Create a new material record for the new version (copy the material)
+          return Material.create({
+            title: material.title,
+            description: material.description,
+            s3Key: material.s3Key, // Same S3 file, just new database record
+            courseId: material.courseId,
+            courseVersion: newVersionNumber, // New version
+            order: material.order,
+            fileSize: material.fileSize,
+            mimeType: material.mimeType,
+            originalName: material.originalName,
+            fileExtension: material.fileExtension,
+            uploadedBy: material.uploadedBy,
+            status: 'active'
+          });
+        });
+        const copiedMaterials = await Promise.all(materialUpdatePromises);
+        // Update the new version's materials array with the copied material IDs
+        newVersion.materials = copiedMaterials.map(m => m._id);
+        await newVersion.save();
+        console.log(`✅ [uploadMaterial] Copied ${copiedMaterials.length} materials to version v${newVersionNumber}`);
+      }
+      
+      // Update statistics for the new version (after copying videos and materials)
+      await newVersion.updateStatistics();
+      console.log(`📊 [uploadMaterial] Statistics updated for version v${newVersionNumber}`);
+      
+      // Update course to point to new version
+      course.currentVersion = newVersionNumber;
+      course.version = newVersionNumber;
+      course.lastModifiedBy = adminEmail;
+      await course.save();
+      
+      // Use the new version for adding the material
+      courseVersion = newVersion;
+      versionNumber = newVersionNumber;
+      
+      console.log(`✅ [uploadMaterial] Created new version v${newVersionNumber} and set as current`);
+    }
+
     // Validate file size (max 100MB for materials)
     validateFile(req.file, [
       'application/pdf',
@@ -96,8 +249,9 @@ exports.uploadMaterial = async (req, res) => {
     const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
     const courseTitleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || '');
     
-    console.log(`📁 [uploadMaterial] Uploading to S3 with courseId: ${courseId}`);
-    const s3Key = `${S3_ROOT_PREFIX}/courses/${courseTitleString.replace(/[^a-zA-Z0-9\s-]/g, '_').replace(/\s+/g, '_')}/materials/${Date.now()}_${req.file.originalname}`;
+    // IMPORTANT: Use the updated versionNumber (which may have been changed to newVersionNumber above)
+    console.log(`📁 [uploadMaterial] Uploading to S3 with versionNumber: ${versionNumber}, courseId: ${courseId}`);
+    const s3Key = `${S3_ROOT_PREFIX}/courses/${courseTitleString.replace(/[^a-zA-Z0-9\s-]/g, '_').replace(/\s+/g, '_')}/v${versionNumber}/materials/${Date.now()}_${req.file.originalname}`;
     console.log(`📁 [uploadMaterial] Generated S3 key: ${s3Key}`);
     
     const s3UploadResult = await uploadToS3(req.file, s3Key, 'private');
@@ -122,48 +276,36 @@ exports.uploadMaterial = async (req, res) => {
     // Get file extension
     const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase() || '';
 
-    // Create material record (no versioning)
+    // Create material record
     const material = await Material.create({ 
       title: title || req.file.originalname, 
       description: description || '',
       s3Key: uploadResult.s3Key, 
       courseId, 
+      courseVersion: versionNumber,
       order: order ? parseInt(order) : 0,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       originalName: req.file.originalname,
       fileExtension: fileExtension,
-      uploadedBy: adminEmail,
-      status: 'active'
+      uploadedBy: adminEmail
     });
     
-    console.log(`✅ [uploadMaterial] Material created: ${material._id}`);
+    console.log('[uploadMaterial] created material:', material._id);
     
-    // Add material to course directly (no versioning)
-    await Course.findByIdAndUpdate(courseId, {
-      $push: { materials: material._id }
-    });
-    
-    console.log(`✅ [uploadMaterial] Material added to course ${courseId}`);
-    
-    // Emit Socket.IO event for real-time update
-    const socketService = getSocketService(req);
-    if (socketService) {
-      socketService.notifyCourseMaterialsUpdated({
-        id: course._id,
-        title: course.title,
-        material: {
-          id: material._id,
-          title: material.title,
-          description: material.description,
-          order: material.order,
-          fileSize: material.fileSize,
-          mimeType: material.mimeType,
-          originalName: material.originalName
-        }
-      });
+    // Add material to CourseVersion.materials array
+    if (!courseVersion.materials) {
+      courseVersion.materials = [];
     }
+    courseVersion.materials.push(material._id);
+    await courseVersion.save();
+    console.log(`✅ [uploadMaterial] Added material ${material._id} to CourseVersion.materials array`);
     
+    // Update version statistics if method exists
+    if (courseVersion.updateStatistics) {
+      await courseVersion.updateStatistics();
+    }
+
     res.status(201).json({
       success: true,
       message: 'Material uploaded successfully',
@@ -174,29 +316,30 @@ exports.uploadMaterial = async (req, res) => {
           description: material.description,
           s3Key: material.s3Key,
           order: material.order,
+          courseVersion: material.courseVersion,
           fileSize: material.fileSize,
-          mimeType: material.mimeType,
-          originalName: material.originalName
+          fileExtension: material.fileExtension,
+          mimeType: material.mimeType
         }
       }
     });
-  } catch (error) {
-    console.error('❌ [uploadMaterial] error:', error?.message || error);
+  } catch (err) {
+    console.error('[uploadMaterial] error:', err?.message || err);
     
-    // Clean up temporary file on error
-    if (req.file?.path) {
+    // Clean up temporary file if it exists
+    if (req.file && req.file.path) {
       try {
         require('fs').unlinkSync(req.file.path);
         console.log('🧹 [uploadMaterial] Temporary file cleaned up on error:', req.file.path);
-      } catch (err) {
-        console.error('❌ [uploadMaterial] Error deleting temp file on error:', err);
+      } catch (error) {
+        console.error('❌ [uploadMaterial] Error deleting temp file:', error);
       }
     }
     
     res.status(500).json({ 
       success: false,
-      message: 'Failed to upload material', 
-      error: error.message 
+      message: 'Upload failed', 
+      error: err.message 
     });
   }
 };
@@ -598,24 +741,6 @@ exports.updateMaterial = async (req, res) => {
     }
     
     await material.save();
-    
-    // Emit Socket.IO event for real-time update
-    const socketService = getSocketService(req);
-    if (socketService) {
-      socketService.notifyCourseMaterialsUpdated({
-        id: material.courseId,
-        title: material.title,
-        material: {
-          id: material._id,
-          title: material.title,
-          description: material.description,
-          order: material.order,
-          fileSize: material.fileSize,
-          mimeType: material.mimeType,
-          originalName: material.originalName
-        }
-      });
-    }
     
     res.json({
       success: true,

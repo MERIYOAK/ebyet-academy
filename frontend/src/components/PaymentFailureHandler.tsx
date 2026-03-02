@@ -27,23 +27,25 @@ const PaymentFailureHandler = () => {
       }
 
       // Check if we should start monitoring for payment status
-      // Only start monitoring if we're coming from checkout or have recent checkout activity
-      const checkoutStartTime = sessionStorage.getItem('checkoutStartTime');
-      const pendingCourseId = sessionStorage.getItem('pendingCourseId');
-      const isRecentCheckout = checkoutStartTime && (Date.now() - parseInt(checkoutStartTime)) < 5 * 60 * 1000; // 5 minutes
-      
       if (paymentService.shouldStartMonitoring() && 
-          isRecentCheckout &&
           !location.pathname.includes('/checkout/success') && 
           !location.pathname.includes('/checkout/cancel') &&
           !location.pathname.includes('/checkout/failure')) {
         
-        console.log('🔍 Starting payment monitoring for course:', pendingCourseId);
-        paymentService.startPaymentMonitoring(pendingCourseId!, sessionStorage.getItem('stripeSessionId') || undefined);
+        const pendingCourseId = sessionStorage.getItem('pendingCourseId');
+        const storedSessionId = sessionStorage.getItem('stripeSessionId');
+        
+        if (pendingCourseId) {
+          console.log('🔍 Starting payment monitoring for course:', pendingCourseId);
+          paymentService.startPaymentMonitoring(pendingCourseId, storedSessionId || undefined);
+        }
       }
 
-      // Check for timeout scenarios - only if we have recent checkout activity
-      if (checkoutStartTime && pendingCourseId && isRecentCheckout) {
+      // Check for timeout scenarios
+      const checkoutStartTime = sessionStorage.getItem('checkoutStartTime');
+      const pendingCourseId = sessionStorage.getItem('pendingCourseId');
+      
+      if (checkoutStartTime && pendingCourseId) {
         const currentTime = Date.now();
         const startTime = parseInt(checkoutStartTime);
         const timeElapsed = currentTime - startTime;
@@ -57,14 +59,6 @@ const PaymentFailureHandler = () => {
           navigate(`/checkout/failure?courseId=${pendingCourseId}`, { replace: true });
           return;
         }
-      }
-      
-      // Clean up old session data if checkout is not recent
-      if (!isRecentCheckout && pendingCourseId) {
-        console.log('🧹 Cleaning up old checkout session data');
-        sessionStorage.removeItem('pendingCourseId');
-        sessionStorage.removeItem('checkoutStartTime');
-        sessionStorage.removeItem('stripeSessionId');
       }
     };
 

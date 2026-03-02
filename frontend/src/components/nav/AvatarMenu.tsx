@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, LayoutDashboard, Upload } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, Upload, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 
@@ -105,7 +105,10 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ variant, profileImageUrl }) => 
                 <Link to="/profile" className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200">
                   <User className="h-4 w-4 mr-3" /> {t('navbar.profile')}
                 </Link>
-                </>
+                <Link to="/certificates" className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200">
+                  <Award className="h-4 w-4 mr-3" /> {t('navbar.my_certificates')}
+                </Link>
+              </>
             )}
             <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
             <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200">

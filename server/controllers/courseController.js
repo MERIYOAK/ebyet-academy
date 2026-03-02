@@ -7,11 +7,6 @@ const { uploadToS3, deleteFromS3, deleteFileFromS3 } = require('../utils/s3');
 const { uploadCourseFile, getPublicUrl } = require('../utils/s3CourseManager');
 const { getThumbnailPublicUrl } = require('../utils/s3Enhanced');
 
-// Get socket service from app
-const getSocketService = (req) => {
-  return req.app.get('socketService');
-};
-
 // Helper function to ensure thumbnail is publicly accessible
 const ensureThumbnailPublic = async (course) => {
   console.log(`\n🔧 [LEGACY] ensureThumbnailPublic called for course: "${course.title}"`);

@@ -62,10 +62,30 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
       {/* Header - Hidden on mobile overlay since it's in the overlay header */}
       <div className="hidden md:block p-4 xxs:p-6 border-b border-gray-700">
         <h3 className="font-bold text-base xxs:text-lg text-white mb-2">{t('course_detail.course_content', 'Course Content')}</h3>
+        <div className="flex items-center justify-between text-xs xxs:text-sm text-gray-300 mb-2 xxs:mb-3">
+          <span>{completedCount}/{videos.length} {t('course_detail.completed', 'completed')}</span>
+          <span>{Math.round(progressPercentage)}% {t('course_detail.done', 'done')}</span>
+        </div>
+        <div className="bg-gray-700 rounded-full h-2">
+          <div
+            className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
       </div>
 
       {/* Mobile Progress Header - Only shown in mobile overlay */}
       <div className="md:hidden p-3 xxs:p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between text-xs xxs:text-sm text-gray-300 mb-2">
+          <span>{completedCount}/{videos.length} {t('course_detail.completed', 'completed')}</span>
+          <span>{Math.round(progressPercentage)}% {t('course_detail.done', 'done')}</span>
+        </div>
+        <div className="bg-gray-700 rounded-full h-1.5 xxs:h-2">
+          <div
+            className="bg-gradient-to-r from-cyan-500 to-blue-500 h-1.5 xxs:h-2 rounded-full transition-all duration-500"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
       </div>
 
       {/* Video List */}
