@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { buildApiUrl } from '../../config/environment';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Shield, Globe, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Menu, X, Globe, ChevronDown, Sun, Moon } from 'lucide-react';
 import AvatarMenu from './AvatarMenu';
 import { getCurrentLanguage, changeLanguage } from '../../i18n';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -341,13 +341,6 @@ const UserNavbar: React.FC = () => {
               >
                 {t('navbar.profile')}
               </Link>
-              <Link
-                to="/certificates"
-                onClick={handleLinkClick}
-                className="block text-base xs:text-lg sm:text-xl font-semibold text-white/90 hover:text-white transition-colors py-2"
-              >
-                {t('navbar.my_certificates')}
-              </Link>
               <button
                 onClick={() => {
                   localStorage.removeItem('token');
@@ -373,14 +366,6 @@ const UserNavbar: React.FC = () => {
                 {item.name}
               </Link>
             ))}
-            <Link
-              to="/verify-certificate"
-              onClick={handleLinkClick}
-              className="flex items-center gap-2 text-sm xs:text-base text-white/70 hover:text-white transition-colors"
-            >
-              <Shield className="h-3.5 w-3.5 xs:h-4 xs:w-4 flex-shrink-0" />
-              {t('footer.verify_certificate')}
-            </Link>
           </nav>
         </div>
       </div>

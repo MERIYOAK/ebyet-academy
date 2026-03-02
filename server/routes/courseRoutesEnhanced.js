@@ -15,7 +15,7 @@ const {
   createCourse,
   uploadThumbnail,
   uploadVideo,
-  createNewVersion,
+  markCourseComplete,
   updateCourse,
   archiveCourse,
   unarchiveCourse,
@@ -27,8 +27,7 @@ const {
   getFeaturedCourses,
   getUserPurchasedCourses,
   getCourseById,
-  enrollStudent,
-  updateStudentProgress
+  enrollStudent
 } = require('../controllers/courseControllerEnhanced');
 
 // Configure multer for file uploads
@@ -43,7 +42,7 @@ const upload = multer({
     }
   }),
   limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB limit
+    fileSize: 1024 * 1024 * 1024, // 1GB limit
   },
   fileFilter: (req, file, cb) => {
     // Allow video files
@@ -66,7 +65,7 @@ const handleMulterError = (error, req, res, next) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File too large. Maximum size is 500MB.'
+        message: 'File too large. Maximum size is 1GB.'
       });
     }
   }
@@ -108,11 +107,10 @@ router.put('/thumbnail/:courseId', adminAuthMiddleware, upload.single('file'), u
 router.post('/video', adminAuthMiddleware, upload.single('file'), uploadVideo);
 
 /**
- * Create a new version of an existing course
- * POST /api/courses/:courseId/versions
- * Body: { changeLog }
+ * Mark course as complete and make it public
+ * POST /api/courses/:id/complete
  */
-router.post('/:courseId/versions', adminAuthMiddleware, createNewVersion);
+router.post('/:id/complete', adminAuthMiddleware, markCourseComplete);
 
 /**
  * Update course metadata
@@ -178,8 +176,9 @@ router.get('/featured', getFeaturedCourses);
 /**
  * Get course by ID with version information
  * GET /api/courses/:id?version=2
+ * Supports both admin and regular user access
  */
-router.get('/:id', getCourseById);
+router.get('/:id', require('../middleware/optionalAuthMiddleware'), getCourseById);
 
 // ========================================
 // USER ROUTES (Require user authentication)
@@ -190,13 +189,6 @@ router.get('/:id', getCourseById);
  * POST /api/courses/:courseId/enroll
  */
 router.post('/:courseId/enroll', authMiddleware, enrollStudent);
-
-/**
- * Update student progress
- * PUT /api/courses/:courseId/progress
- * Body: { progress, completedVideos }
- */
-router.put('/:courseId/progress', authMiddleware, updateStudentProgress);
 
 // ========================================
 // ADMIN-ONLY COURSE MANAGEMENT ROUTES

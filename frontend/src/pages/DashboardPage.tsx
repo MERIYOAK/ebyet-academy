@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Search, Trophy, TrendingUp, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { buildApiUrl } from '../config/environment';
@@ -26,14 +26,15 @@ interface Course {
   category: string;
   rating: number;
   enrolledStudents: number;
+  tags?: string[];
 }
 
 interface EnrolledCourse extends Course {
-  progress: number;
-  completedLessons: number;
-  isCompleted: boolean;
-  lastWatched?: string | null;
-  videos?: any[];
+  category: string;
+  level: string;
+  status: string;
+  thumbnailURL?: string;
+  isPublic?: boolean;
 }
 
 const DashboardPage = () => {
@@ -59,7 +60,7 @@ const DashboardPage = () => {
     return 'Learner';
   }, [userData?.name, userData?.email]);
 
-  // Fetch user data and enrolled courses with progress
+  // Fetch user data and enrolled courses
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -100,14 +101,13 @@ const DashboardPage = () => {
         const progressResult = await progressResponse.json();
         const courses = Array.isArray(progressResult?.data?.courses) ? progressResult.data.courses : [];
         
-        // Debug: Log course progress data
-        console.log('📊 [Dashboard] Course progress data:', courses.map(c => ({
+        // Debug: Log course data (simplified without progress tracking)
+        console.log('📊 [Dashboard] Course data:', courses.map((c: any) => ({
           id: c._id,
           title: c.title,
-          progress: c.progress,
-          totalLessons: c.totalLessons,
-          completedLessons: c.completedLessons,
-          isCompleted: c.isCompleted
+          category: c.category,
+          level: c.level,
+          status: c.status
         })));
         
         setEnrolledCourses(courses);
@@ -123,35 +123,20 @@ const DashboardPage = () => {
     fetchDashboardData();
   }, [navigate]);
 
-  // Filter courses based on search term and status
+  // Filter courses based on search term only (progress tracking removed)
   const filteredCourses = useMemo(() => {
     let filtered = enrolledCourses;
 
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(course =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+        course.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    // Filter by status
-    switch (filterStatus) {
-      case 'in-progress':
-        filtered = filtered.filter(course => {
-          const isCompletedLike = course.isCompleted || course.progress >= 90;
-          return !isCompletedLike && course.progress > 0;
-        });
-        break;
-      case 'completed':
-        filtered = filtered.filter(course => course.isCompleted || course.progress >= 90);
-        break;
-      default:
-        // 'all' - no additional filtering
-        break;
-    }
-
+    // Status filtering removed - no progress tracking
     return filtered;
-  }, [enrolledCourses, searchTerm, filterStatus]);
+  }, [enrolledCourses, searchTerm]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -163,25 +148,6 @@ const DashboardPage = () => {
   const startIndex = (currentPage - 1) * coursesPerPage;
   const endIndex = startIndex + coursesPerPage;
   const currentCourses = filteredCourses.slice(startIndex, endIndex);
-
-  // Calculate dashboard statistics
-  const dashboardStats = useMemo(() => {
-    const totalCourses = enrolledCourses.length;
-    const completedCourses = enrolledCourses.filter(course => course.isCompleted || course.progress >= 90).length;
-    const inProgressCourses = enrolledCourses.filter(course => course.progress > 0 && !(course.isCompleted || course.progress >= 90)).length;
-    const notStartedCourses = enrolledCourses.filter(course => course.progress === 0).length;
-    const averageProgress = totalCourses > 0 
-      ? Math.round(enrolledCourses.reduce((sum, course) => sum + course.progress, 0) / totalCourses)
-      : 0;
-
-    return {
-      totalCourses,
-      completedCourses,
-      inProgressCourses,
-      notStartedCourses,
-      averageProgress
-    };
-  }, [enrolledCourses]);
 
   if (loading) {
     return (
@@ -255,41 +221,6 @@ const DashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 xxs:px-4 sm:px-6 lg:px-8 py-6 xxs:py-8 sm:py-12">
-        {/* Dashboard Statistics - Top Layout */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 xxs:gap-6 mb-8 xxs:mb-12">
-          <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl p-5 xxs:p-6 shadow-2xl border border-blue-200 dark:border-gray-700/50">
-            <div className="flex items-center justify-center p-3 xxs:p-4 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl mb-4">
-              <BookOpen className="h-8 w-8 xxs:h-10 xxs:w-10 text-white" />
-            </div>
-            <p className="text-xs xxs:text-sm font-medium text-blue-600 dark:text-gray-400 text-center mb-2">{t('dashboard.course_stats.total_courses')}</p>
-            <p className="text-3xl xxs:text-4xl font-bold text-blue-700 dark:text-white text-center">{dashboardStats.totalCourses}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl p-5 xxs:p-6 shadow-2xl border border-green-200 dark:border-gray-700/50">
-            <div className="flex items-center justify-center p-3 xxs:p-4 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl mb-4">
-              <Trophy className="h-8 w-8 xxs:h-10 xxs:w-10 text-white" />
-            </div>
-            <p className="text-xs xxs:text-sm font-medium text-green-600 dark:text-gray-400 text-center mb-2">{t('dashboard.course_stats.completed_courses')}</p>
-            <p className="text-3xl xxs:text-4xl font-bold text-green-600 dark:text-green-400 text-center">{dashboardStats.completedCourses}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl p-5 xxs:p-6 shadow-2xl border border-orange-200 dark:border-gray-700/50">
-            <div className="flex items-center justify-center p-3 xxs:p-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl mb-4">
-              <TrendingUp className="h-8 w-8 xxs:h-10 xxs:w-10 text-white" />
-            </div>
-            <p className="text-xs xxs:text-sm font-medium text-orange-600 dark:text-gray-400 text-center mb-2">{t('dashboard.course_stats.in_progress')}</p>
-            <p className="text-3xl xxs:text-4xl font-bold text-orange-600 dark:text-orange-400 text-center">{dashboardStats.inProgressCourses}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-900 rounded-3xl p-5 xxs:p-6 shadow-2xl border border-purple-200 dark:border-gray-700/50">
-            <div className="flex items-center justify-center p-3 xxs:p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
-              <Clock className="h-8 w-8 xxs:h-10 xxs:w-10 text-white" />
-            </div>
-            <p className="text-xs xxs:text-sm font-medium text-purple-600 dark:text-gray-400 text-center mb-2">{t('dashboard.progress')}</p>
-            <p className="text-3xl xxs:text-4xl font-bold text-purple-600 dark:text-purple-400 text-center">{dashboardStats.averageProgress}%</p>
-          </div>
-        </div>
-
         {/* Main Content Area */}
         <div className="space-y-6 xxs:space-y-8 min-w-0">
             {/* Search and Filter - Modern Design */}
@@ -359,19 +290,14 @@ const DashboardPage = () => {
                           id={course._id}
                           title={course.title}
                           description={course.description}
-                          thumbnail={course.thumbnail}
+                          thumbnail={course.thumbnailURL || course.thumbnail}
                           price={course.price}
                           duration={course.duration}
                           students={course.enrolledStudents || 0}
                           lessons={course.totalLessons || 0}
                           instructor={course.instructor || ''}
+                          tags={course.tags || []}
                           isPurchased={true}
-                          progress={course.progress || 0}
-                          totalLessons={course.totalLessons || 0}
-                          completedLessons={course.completedLessons || 0}
-                          lastWatched={course.lastWatched}
-                          videos={course.videos}
-                          isCompleted={course.isCompleted}
                         />
                       </div>
                     ))}

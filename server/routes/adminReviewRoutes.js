@@ -5,6 +5,11 @@ const Course = require('../models/Course');
 const User = require('../models/User');
 const adminAuthMiddleware = require('../middleware/adminAuthMiddleware');
 
+// Get socket service from app
+const getSocketService = (req) => {
+  return req.app.get('socketService');
+};
+
 // GET /api/admin/reviews - Get all reviews with filtering
 router.get('/', adminAuthMiddleware, async (req, res) => {
   try {
@@ -92,6 +97,25 @@ router.patch('/:id/approve', adminAuthMiddleware, async (req, res) => {
       });
     }
 
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('REVIEW_APPROVED', {
+        review: {
+          id: review._id,
+          rating: review.rating,
+          title: review.title,
+          comment: review.comment,
+          courseId: review.courseId._id,
+          courseTitle: review.courseId.title,
+          userId: review.userId._id,
+          userName: review.userId.name,
+          status: review.status
+        },
+        message: `Review for "${review.courseId.title}" has been approved`
+      });
+    }
+
     res.json({
       success: true,
       message: 'Review approved successfully',
@@ -127,6 +151,25 @@ router.patch('/:id/reject', adminAuthMiddleware, async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Review not found'
+      });
+    }
+
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('REVIEW_REJECTED', {
+        review: {
+          id: review._id,
+          rating: review.rating,
+          title: review.title,
+          comment: review.comment,
+          courseId: review.courseId._id,
+          courseTitle: review.courseId.title,
+          userId: review.userId._id,
+          userName: review.userId.name,
+          status: review.status
+        },
+        message: `Review for "${review.courseId.title}" has been rejected`
       });
     }
 
@@ -362,6 +405,26 @@ router.patch('/:id/reply', adminAuthMiddleware, async (req, res) => {
     }
     
     console.log('✅ Admin reply added to review:', reviewId);
+    
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('REVIEW_REPLY_ADDED', {
+        review: {
+          id: updatedReview._id,
+          rating: updatedReview.rating,
+          title: updatedReview.title,
+          comment: updatedReview.comment,
+          adminReply: updatedReview.adminReply,
+          adminReplyAt: updatedReview.adminReplyAt,
+          courseId: updatedReview.courseId._id,
+          courseTitle: updatedReview.courseId.title,
+          userId: updatedReview.userId._id,
+          userName: updatedReview.userId.name
+        },
+        message: `Admin replied to review for "${updatedReview.courseId.title}"`
+      });
+    }
     
     res.json({
       success: true,

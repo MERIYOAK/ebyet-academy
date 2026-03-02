@@ -66,8 +66,14 @@ export const useCourses = (filters: CourseFilters = {}): UseQueryResult<CoursesR
       if (filters.level) queryParams.append('level', filters.level);
       if (filters.tag) queryParams.append('tag', filters.tag);
       if (filters.priceRange) queryParams.append('priceRange', filters.priceRange);
+      
+      // Always request only public courses for regular users
+      queryParams.append('isPublic', 'true');
+      // Ensure we only get active courses for regular users
+      queryParams.append('includeInactive', 'false');
 
       const url = buildApiUrl(`/api/courses?${queryParams.toString()}`);
+      console.log('🔍 User courses API call:', queryParams.toString());
       const response = await fetch(url, { headers });
 
       if (!response.ok) {
@@ -76,6 +82,14 @@ export const useCourses = (filters: CourseFilters = {}): UseQueryResult<CoursesR
       }
 
       const data = await response.json();
+      
+      console.log('🔍 User courses API response:', data);
+      console.log('🔍 User courses returned:', data.data?.courses?.length || data.courses?.length || 0);
+      if (data.data?.courses) {
+        data.data.courses.forEach((course: any, index: number) => {
+          console.log(`   ${index + 1}. "${course.title}" - Status: "${course.status}"`);
+        });
+      }
       
       // Handle different response formats
       let result: CoursesResponse;

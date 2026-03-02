@@ -299,7 +299,7 @@ exports.uploadVideo = async (req, res) => {
     }
     
     // Validate file size
-    validateFile(req.file, ['video/mp4', 'video/webm', 'video/ogg'], 500 * 1024 * 1024); // 500MB max
+    validateFile(req.file, ['video/mp4', 'video/webm', 'video/ogg'], 1024 * 1024 * 1024); // 1GB max
     
     console.log('🎬 [uploadVideo] Processing duration from form input...');
     
@@ -360,8 +360,8 @@ exports.uploadVideo = async (req, res) => {
         setTimeout(() => {
           const uploadTime = Date.now() - uploadStartTime;
           console.log('🔧 [uploadVideo] uploadToS3 timeout after', uploadTime, 'ms');
-          reject(new Error('AWS SDK v2 upload timeout after 30 minutes'));
-        }, 30 * 60 * 1000) // 30 minutes for large files
+          reject(new Error('AWS SDK v2 upload timeout after 60 minutes'));
+        }, 60 * 60 * 1000) // 60 minutes for large files
       )
     ]);
     
