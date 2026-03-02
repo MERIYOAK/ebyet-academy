@@ -3,6 +3,8 @@
  * Detects when new code is deployed and notifies users
  */
 
+import { config } from '../config/environment';
+
 interface VersionInfo {
   version: string;
   buildTime: string;
@@ -27,12 +29,15 @@ class VersionService {
     try {
       // Try to load from generated version file first
       const response = await fetch('/version.json');
+      if (!response.ok) {
+        throw new Error(`Version file not found: ${response.status}`);
+      }
       const versionFile = await response.json();
       this.currentVersion = versionFile;
       console.log('📋 Loaded version from version.json:', this.currentVersion);
     } catch (error) {
       // Fallback to environment variables
-      console.warn('⚠️ Could not load version.json, falling back to environment variables');
+      console.warn('⚠️ Could not load version.json, falling back to environment variables:', error);
       this.currentVersion = {
         version: import.meta.env.VITE_APP_VERSION || '1.0.0',
         buildTime: import.meta.env.VITE_BUILD_TIME || new Date().toISOString(),
@@ -85,8 +90,15 @@ class VersionService {
         return;
       }
 
-      const response = await fetch('/api/version');
-      if (!response.ok) return;
+      // Use absolute URL to ensure we hit the backend API
+      const versionUrl = `${config.API_BASE_URL}/api/version`;
+      console.log('🔍 Checking version at:', versionUrl);
+      
+      const response = await fetch(versionUrl);
+      if (!response.ok) {
+        console.warn('⚠️ Version check failed - response not OK:', response.status, response.statusText);
+        return;
+      }
 
       const serverResponse = await response.json();
       console.log('📡 Server version response:', serverResponse);
