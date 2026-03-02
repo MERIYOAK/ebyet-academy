@@ -456,23 +456,38 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       return false;
     };
 
-    // Method 3: Window focus/blur detection (less aggressive)
+    // Method 3: Window focus/blur detection (very relaxed - only for obvious recording software)
     let focusChangeTimeout: number;
     let focusChangeCount = 0;
+    let lastFocusTime = 0;
     handleFocusChange = () => {
+      // Completely ignore focus changes when video is paused - users often switch tabs when paused
+      if (!isPlaying) {
+        return;
+      }
+      
+      const now = Date.now();
       clearTimeout(focusChangeTimeout);
+      
+      // Only track extremely rapid focus changes (less than 500ms apart - indicates automated software)
+      if (now - lastFocusTime < 500) {
+        focusChangeCount++;
+      } else {
+        focusChangeCount = 1; // Reset count if it's been a while
+      }
+      lastFocusTime = now;
+      
       focusChangeTimeout = window.setTimeout(() => {
-        // Only trigger after multiple rapid focus changes
+        // Only trigger after MANY extremely rapid focus changes (clearly automated behavior)
         if (document.hidden) {
-          focusChangeCount++;
           setTimeout(() => {
-            if (!document.hidden && focusChangeCount >= 3) {
-              detectRecordingAttempt('Window Focus Change', 'Multiple rapid focus changes detected');
+            if (!document.hidden && focusChangeCount >= 15) { // Increased from 8 to 15
+              detectRecordingAttempt('Window Focus Change', 'Automated focus changes detected (possible recording software)');
               focusChangeCount = 0; // Reset counter
             }
-          }, 200);
+          }, 1000); // Increased from 500ms to 1000ms
         }
-      }, 100);
+      }, 500); // Increased from 200ms to 500ms
     };
 
     // Method 4: Performance monitoring for recording indicators
@@ -554,22 +569,27 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       }
     };
 
-    // Method 10: Less aggressive polling for Game Bar elements
+    // Method 10: Very relaxed polling for Game Bar elements
     const aggressiveGameBarDetection = () => {
       let detectionCount = 0;
-      const maxDetections = 5; // Increased threshold
+      const maxDetections = 20; // Much higher threshold from 10 to 20
       
       const checkForGameBar = () => {
+        // Skip Game Bar detection when video is paused
+        if (!isPlaying) {
+          return;
+        }
+        
         if (detectGameBarElements() || detectGameBarStorage()) {
           detectionCount++;
           if (detectionCount >= maxDetections) {
-            detectRecordingAttempt('Game Bar Detection', `Game Bar detected ${detectionCount} times`);
+            detectRecordingAttempt('Game Bar Detection', `Game Bar detected ${detectionCount} times (only when video playing)`);
           }
         }
       };
       
-      // Check every 2 seconds instead of 100ms for less aggressive detection
-      const interval = setInterval(checkForGameBar, 2000);
+      // Check every 5 seconds instead of 3 seconds for much less aggressive detection
+      const interval = setInterval(checkForGameBar, 5000);
       return () => clearInterval(interval);
     };
     
@@ -577,24 +597,25 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     stopAggressiveDetection = aggressiveGameBarDetection();
 
     // Initialize all detection methods
-    console.log('🔒 Initializing enhanced recording detection...');
+    console.log('🔒 Initializing relaxed recording detection optimized for trader audience...');
     
-    // Initial checks
-      detectScreenRecording();
-      detectExtensions();
+    // Initial checks - only run the most reliable ones
+    detectScreenRecording();
     detectGameBarElements();
-    detectGameBarStorage();
-    detectPerformanceAnomalies();
-    detectMediaStreams();
-    detectWebRTCStreams();
-    detectCanvasRecording();
+    // Skip aggressive initial checks for trader audience:
+    // detectExtensions(); - Can cause false positives
+    // detectGameBarStorage(); - Too aggressive
+    // detectPerformanceAnomalies(); - Unreliable
+    // detectMediaStreams(); - Can trigger false positives
+    // detectWebRTCStreams(); - Too aggressive for normal users
+    // detectCanvasRecording(); - Can interfere with legitimate canvas use
     
     // Set up event listeners
     window.addEventListener('focus', handleFocusChange);
     window.addEventListener('blur', handleFocusChange);
     document.addEventListener('visibilitychange', handleFocusChange);
     
-    // Method 11: DOM mutation observer for Game Bar elements
+    // Method 11: Relaxed DOM mutation observer - only for obvious Game Bar elements
     observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
@@ -604,15 +625,24 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
               const className = element.className?.toString().toLowerCase() || '';
               const id = element.id?.toLowerCase() || '';
               
-              if (className.includes('gamebar') || 
-                  className.includes('xbox') || 
-                  className.includes('recording') ||
-                  className.includes('capture') ||
-                  id.includes('gamebar') || 
-                  id.includes('xbox') ||
-                  id.includes('recording') ||
-                  id.includes('capture')) {
-                detectRecordingAttempt('DOM Mutation', `Game Bar element added to DOM: ${element.tagName}`);
+              // Only trigger for very specific Game Bar patterns (much more strict)
+              const isObviousGameBar = (
+                (className.includes('gamebar') && className.includes('overlay')) ||
+                (id.includes('gamebar') && id.includes('overlay')) ||
+                className.includes('xbox-gamebar') ||
+                id.includes('xbox-gamebar')
+              );
+              
+              // Skip generic terms that can cause false positives
+              const hasGenericTerms = (
+                className.includes('recording') && !className.includes('gamebar') ||
+                className.includes('capture') && !className.includes('gamebar') ||
+                id.includes('recording') && !id.includes('gamebar') ||
+                id.includes('capture') && !id.includes('gamebar')
+              );
+              
+              if (isObviousGameBar && !hasGenericTerms && isPlaying) {
+                detectRecordingAttempt('DOM Mutation', `Obvious Game Bar element detected: ${element.tagName}`);
               }
             }
           });
@@ -625,36 +655,43 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       subtree: true
     });
 
-    // Method 12: Periodic comprehensive checks
+    // Method 12: Relaxed periodic comprehensive checks (much less frequent)
     periodicChecks = window.setInterval(() => {
-      detectScreenRecording();
-      detectExtensions();
-      detectGameBarElements();
-      detectGameBarStorage();
-      detectPerformanceAnomalies();
-      detectMediaStreams();
-    }, 1000); // Check every second
+      // Only run comprehensive checks when video is playing
+      if (isPlaying) {
+        // Only run the most important and reliable checks
+        detectScreenRecording();
+        detectGameBarElements();
+        // Skip these less reliable checks for trader audience:
+        // detectExtensions(); - Can trigger false positives
+        // detectGameBarStorage(); - Too aggressive
+        // detectPerformanceAnomalies(); - Unreliable indicator
+        // detectMediaStreams(); - Can trigger false positives
+      }
+    }, 5000); // Reduced from 2000ms to 5000ms (every 5 seconds)
 
-    // Method 13: High-priority Windows key blocking during playback
+    // Method 13: Relaxed Windows key blocking - only block obvious recording shortcuts
     handleKeyDownHighPriority = (e: KeyboardEvent) => {
-      // Block ALL Windows key combinations when video is playing
-      if (isPlaying && e.metaKey) {
+      // Only block specific recording-related shortcuts, not all Windows keys
+      const isRecordingShortcut = (
+        // Win+Alt+R (Start/Stop recording) - PRIMARY TARGET
+        (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) ||
+        // Win+Alt+G (Record last 30 seconds)
+        (e.metaKey && e.altKey && (e.key === 'g' || e.key === 'G')) ||
+        // Win+G (Open Game Bar)
+        (e.metaKey && (e.key === 'g' || e.key === 'G'))
+      );
+      
+      if (isRecordingShortcut && isPlaying) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        console.warn('🚫 HIGH PRIORITY: Windows key blocked during playback:', e.key);
-        detectRecordingAttempt('High Priority Windows Key Block', `Windows key blocked: ${e.key}`);
+        console.warn('🚫 Recording shortcut blocked:', e.key);
+        detectRecordingAttempt('Recording Shortcut Block', `Recording shortcut blocked: ${e.key}`);
         return false;
       }
       
-      // Specifically target Win+Alt+R (even when paused)
-      if (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        detectRecordingAttempt('High Priority Keyboard', 'Win+Alt+R detected');
-        return false;
-      }
+      // Allow all other Windows key combinations for normal user activity
     };
 
     // Add high priority event listener
@@ -679,7 +716,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         document.removeEventListener('keydown', handleKeyDownHighPriority, true);
       }
     };
-  }, [drmEnabled, drmService, detectRecordingAttempt]);
+  }, [drmEnabled, drmService, detectRecordingAttempt, isPlaying]);
 
   // Video event handlers
   const handleLoadedData = () => {
