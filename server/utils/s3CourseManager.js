@@ -30,10 +30,10 @@ const createS3Client = () => {
 const s3Client = createS3Client();
 
 /**
- * Generate course folder path for versioning
+ * Generate course folder path without versioning
  * Handles both string and bilingual object {en, tg} inputs
  */
-const getCourseFolderPath = (courseName, version = 1) => {
+const getCourseFolderPath = (courseName) => {
   // Extract string from bilingual object or use string directly
   let courseNameString = courseName;
   if (typeof courseName === 'object' && courseName !== null) {
@@ -43,7 +43,7 @@ const getCourseFolderPath = (courseName, version = 1) => {
     courseNameString = String(courseNameString);
   }
   const sanitizedCourseName = courseNameString.replace(/[^a-zA-Z0-9.-]/g, '_');
-  return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}`;
+  return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}`;
 };
 
 /**
@@ -77,40 +77,38 @@ const getArchiveFolderPath = (courseName, version = 1) => {
  * Note: Thumbnails are NON-VERSIONED (shared across all versions)
  *       Videos and Materials are VERSIONED (stored per version)
  */
-const generateCourseFileKey = (fileType, fileName, courseName, version = 1) => {
+const generateCourseFileKey = (fileType, fileName, courseName) => {
   const timestamp = Date.now();
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
   const sanitizedCourseName = courseName.replace(/[^a-zA-Z0-9.-]/g, '_');
   
   switch (fileType) {
     case 'thumbnail':
-      // Thumbnails are stored OUTSIDE version folder (non-versioned approach)
-      // This means: one thumbnail per course, shared across all versions
-      // Path: courses/{courseName}/thumbnails/ (version parameter is ignored)
+      // Thumbnails are stored in thumbnails folder
       return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/thumbnails/${timestamp}_${sanitizedFileName}`;
     case 'video':
-      // Videos are versioned: courses/{courseName}/v{version}/videos/
-      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/videos/${timestamp}_${sanitizedFileName}`;
+      // Videos are stored in videos folder (no versioning)
+      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/videos/${timestamp}_${sanitizedFileName}`;
     case 'material':
-      // Materials are versioned: courses/{courseName}/v{version}/materials/
-      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/materials/${timestamp}_${sanitizedFileName}`;
+      // Materials are stored in materials folder (no versioning)
+      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/materials/${timestamp}_${sanitizedFileName}`;
     default:
-      // Other files are versioned: courses/{courseName}/v{version}/misc/
-      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/v${version}/misc/${timestamp}_${sanitizedFileName}`;
+      // Other files are stored in misc folder (no versioning)
+      return `${S3_ROOT_PREFIX}/courses/${sanitizedCourseName}/misc/${timestamp}_${sanitizedFileName}`;
   }
 };
 
 /**
  * Upload course file to S3
  */
-const uploadCourseFile = async (file, fileType, courseName, version = 1) => {
+const uploadCourseFile = async (file, fileType, courseName) => {
   if (!s3Client) {
     throw new Error('S3 client not available');
   }
 
   try {
     console.log('🔧 [S3] Starting upload process...');
-    const s3Key = generateCourseFileKey(fileType, file.originalname, courseName, version);
+    const s3Key = generateCourseFileKey(fileType, file.originalname, courseName);
     // Generated S3 key
     
     // Sanitize course name for metadata (remove invalid characters for HTTP headers)
@@ -422,5 +420,6 @@ module.exports = {
   getCourseFolderPath,
   getArchiveFolderPath,
   generateCourseFileKey,
-  listCourseVersionFiles
+  listCourseVersionFiles,
+  createS3Client
 }; 

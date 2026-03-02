@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { buildApiUrl } from '../config/environment';
 
 import { Link } from 'react-router-dom';
-import { Plus, Eye, Edit, Trash2, Upload, Filter, BookOpen, X } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Upload, Filter, BookOpen, X, RefreshCw } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Toast from '../components/Toast';
 import useCourseDeletion from '../hooks/useCourseDeletion';
@@ -24,11 +24,10 @@ interface Course {
 const AdminCoursesPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,6 +42,9 @@ const AdminCoursesPage: React.FC = () => {
   const [deletionSummary, setDeletionSummary] = useState<any>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Debounced search
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch deletion summary when delete button is clicked
   const handleDeleteClick = async (course: Course) => {
@@ -66,7 +68,18 @@ const AdminCoursesPage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setDeletionSummary(data.data.summary);
+        // Map backend response to frontend expected format
+        const summary = {
+          videos: data.data.videoCount || 0,
+          materials: data.data.materialCount || 0,
+          certificates: 0,
+          versions: 0,
+          progressRecords: 0,
+          usersAffected: 0,
+          bundlesAffected: 0,
+          s3Files: data.data.videos ? data.data.videos.length : 0
+        };
+        setDeletionSummary(summary);
       } else {
         console.error('Failed to fetch deletion summary');
       }
@@ -142,26 +155,39 @@ const AdminCoursesPage: React.FC = () => {
   };
 
   // Fetch courses from API
-  const fetchCourses = async (page: number = currentPage, limit: number = itemsPerPage) => {
+  const fetchCourses = async (page: number = currentPage, limit: number = itemsPerPage, isFiltering: boolean = false, overrideStatus?: string) => {
     try {
-      setLoading(true);
+      // Use different loading states
+      if (isFiltering) {
+        setFiltering(true);
+      } else {
+        setLoading(true);
+      }
+      
       const adminToken = localStorage.getItem('adminToken');
       
       if (!adminToken) {
         throw new Error('Admin token not found');
       }
 
+      // Use overrideStatus if provided, otherwise use current statusFilter
+      const currentStatus = overrideStatus || statusFilter;
+
       // Build query parameters
       const queryParams = new URLSearchParams({
-        status: statusFilter === 'all' ? 'all' : statusFilter,
+        status: currentStatus === 'all' ? 'all' : currentStatus,
         page: page.toString(),
         limit: limit.toString(),
-        sortBy: sortBy,
-        sortOrder: sortOrder
+        includeInactive: 'true', // Include inactive courses for admin management
+        search: searchTerm // Add search term to query parameters
       });
 
+      console.log('🔍 Frontend sending query:', queryParams.toString());
+      console.log('🔍 Status filter value:', currentStatus);
+      console.log('🔍 Override status:', overrideStatus);
 
-      const response = await fetch(buildApiUrl(`/api/courses?${queryParams.toString()}`), {
+
+      const response = await fetch(buildApiUrl(`/api/courses?${queryParams.toString()}&_t=${Date.now()}`), {
         headers: {
           'Authorization': `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
@@ -173,53 +199,97 @@ const AdminCoursesPage: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log('📊 Frontend received data:', data);
+      console.log('📊 Courses count:', data.data?.courses?.length);
+      console.log('📊 Pagination:', data.data?.pagination);
+      console.log('📊 Current statusFilter:', statusFilter);
+      console.log('📊 Received courses with statuses:');
+      data.data?.courses?.forEach((course: any, index: number) => {
+        const title = typeof course.title === 'object' ? course.title.en || course.title.tg || 'Untitled' : course.title;
+        console.log(`   ${index + 1}. "${title}" - Status: "${course.status}"`);
+      });
       setCourses(data.data.courses || []);
       
       // Update pagination info
       if (data.data.pagination) {
-        setTotalPages(data.data.pagination.pages);
-        setTotalItems(data.data.pagination.total);
-        setCurrentPage(data.data.pagination.page);
+        setTotalPages(data.data.pagination.totalPages);
+        setTotalItems(data.data.pagination.totalCourses);
+        setCurrentPage(data.data.pagination.currentPage);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
     } finally {
       setLoading(false);
+      setFiltering(false);
     }
   };
 
   // Handle pagination changes
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchCourses(page, itemsPerPage);
+    fetchCourses(page, itemsPerPage, true); // Use filtering state for pagination
   };
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page
-    fetchCourses(1, newItemsPerPage);
+    fetchCourses(1, newItemsPerPage, true); // Use filtering state
   };
 
-  // Handle search and filter changes
+  // Handle search and filter changes with debouncing
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1); // Reset to first page
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchCourses(1, itemsPerPage, true); // Use filtering state
+    }, 500); // 500ms debounce delay
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCurrentPage(1);
+    // Trigger immediate fetch
+    setTimeout(() => {
+      fetchCourses(1, itemsPerPage, true);
+    }, 100);
   };
 
   const handleStatusFilterChange = (newStatusFilter: string) => {
+    console.log('🔄 Status filter changing from', statusFilter, 'to', newStatusFilter);
     setStatusFilter(newStatusFilter);
     setCurrentPage(1); // Reset to first page
+    // Set filtering state immediately to prevent "No courses found" message
+    setFiltering(true);
+    // Clear courses immediately to prevent showing stale data
+    setCourses([]);
+    // Trigger immediate fetch with the new status directly
+    setTimeout(() => {
+      console.log('🔄 Triggering fetch with new status:', newStatusFilter);
+      fetchCourses(1, itemsPerPage, true, newStatusFilter);
+    }, 100);
   };
 
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  // Filter and sort change effect
+  // Cleanup function to clear timeout on unmount
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page when filters or sort change
-    fetchCourses(1, itemsPerPage);
-  }, [statusFilter, sortBy, sortOrder]);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Use courses directly since filtering is now handled server-side
   const displayedCourses = courses;
@@ -258,7 +328,7 @@ const AdminCoursesPage: React.FC = () => {
         <div className="text-center px-4">
           <p className="text-cyan-400 mb-4 text-sm xxs:text-base">{error}</p>
           <button 
-            onClick={fetchCourses}
+            onClick={() => fetchCourses()}
             className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-3 xxs:px-4 py-2 rounded-lg hover:from-cyan-500 hover:to-blue-500 text-sm xxs:text-base"
           >
             Retry
@@ -318,12 +388,57 @@ const AdminCoursesPage: React.FC = () => {
                     <span>Clear filters</span>
                   </button>
                 )}
+                {(searchTerm || statusFilter !== 'all') && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="flex items-center space-x-1 xxs:space-x-2 px-2 xxs:px-3 py-1 xxs:py-1.5 text-xs xxs:text-sm text-gray-400 hover:text-red-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                    title="Clear all filters and reset to default"
+                  >
+                    <RefreshCw className="h-3 w-3 xxs:h-4 xxs:w-4" />
+                    <span>Reset all</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           {/* Filter Options */}
           <div className="p-3 xxs:p-4 sm:p-6">
+            {/* Search Bar */}
+            <div className="mb-4 xxs:mb-6">
+              <label className="block text-xs xxs:text-sm font-semibold text-gray-300 mb-2">
+                Search Courses
+                {searchTerm && (
+                  <span className="ml-2 text-cyan-400">
+                    ({displayedCourses.length} results)
+                  </span>
+                )}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search by title, description, or tags..."
+                  className="w-full px-3 xxs:px-4 py-2 xxs:py-3 pl-10 xxs:pl-12 pr-10 xxs:pr-12 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 text-sm xxs:text-base placeholder-gray-400"
+                />
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 xxs:pl-4 pointer-events-none">
+                  <svg className="h-4 w-4 xxs:h-5 xxs:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                {searchTerm && (
+                  <button
+                    onClick={() => handleSearchChange('')}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 xxs:pr-4 text-gray-400 hover:text-white transition-colors"
+                    title="Clear search"
+                  >
+                    <X className="h-4 w-4 xxs:h-5 xxs:w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 gap-3 xxs:gap-4 sm:gap-6">
               {/* Status Filter */}
               <div className="space-y-2">
@@ -340,39 +455,6 @@ const AdminCoursesPage: React.FC = () => {
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                     <option value="archived">Archived</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="h-4 w-4 xxs:h-5 xxs:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sort */}
-              <div className="space-y-2">
-                <label className="block text-xs xxs:text-sm font-semibold text-gray-300">
-                  Sort By
-                </label>
-                <div className="relative">
-                  <select
-                    value={`${sortBy}-${sortOrder}`}
-                    onChange={(e) => {
-                      const [field, order] = e.target.value.split('-');
-                      setSortBy(field);
-                      setSortOrder(order as 'asc' | 'desc');
-                      setCurrentPage(1); // Reset to first page when sort changes
-                    }}
-                    className="w-full px-3 xxs:px-4 py-2 xxs:py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none text-sm xxs:text-base"
-                  >
-                    <option value="createdAt-desc">Newest First</option>
-                    <option value="createdAt-asc">Oldest First</option>
-                    <option value="title-asc">Title A-Z</option>
-                    <option value="title-desc">Title Z-A</option>
-                    <option value="price-desc">Price High-Low</option>
-                    <option value="price-asc">Price Low-High</option>
-                    <option value="totalEnrollments-desc">Most Enrolled</option>
-
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                     <svg className="h-4 w-4 xxs:h-5 xxs:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,9 +487,63 @@ const AdminCoursesPage: React.FC = () => {
         </div>
 
         {/* Courses Grid */}
-        <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xxs:gap-4 sm:gap-6 mt-4 xxs:mt-6 sm:mt-8">
-          {displayedCourses.map((course) => (
-            <div key={course._id} className="bg-gray-900/80 rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+        <div className="relative">
+          {/* Loading Skeleton Cards for Filtering */}
+          {filtering && (
+            <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xxs:gap-4 sm:gap-6 mt-4 xxs:mt-6 sm:mt-8">
+              {[...Array(6)].map((_, index) => (
+                <div key={`skeleton-${index}`} className="bg-gray-900/80 rounded-lg shadow-sm border overflow-hidden flex flex-col">
+                  {/* Skeleton Image */}
+                  <div className="aspect-video bg-gray-800 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse"></div>
+                  </div>
+                  
+                  {/* Skeleton Content */}
+                  <div className="p-3 xxs:p-4 sm:p-6 flex flex-col flex-grow">
+                    {/* Skeleton Title */}
+                    <div className="h-6 xxs:h-7 bg-gray-800 rounded animate-pulse mb-2"></div>
+                    
+                    {/* Skeleton Description Lines */}
+                    <div className="space-y-2 mb-3 xxs:mb-4 flex-grow">
+                      <div className="h-3 bg-gray-800 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-800 rounded animate-pulse w-5/6"></div>
+                      <div className="h-3 bg-gray-800 rounded animate-pulse w-4/6"></div>
+                    </div>
+
+                    {/* Skeleton Stats */}
+                    <div className="flex items-center justify-between mb-3 xxs:mb-4">
+                      <div className="h-4 bg-gray-800 rounded animate-pulse w-12"></div>
+                      <div className="h-4 bg-gray-800 rounded animate-pulse w-16"></div>
+                    </div>
+
+                    {/* Skeleton Checkbox */}
+                    <div className="flex items-center space-x-2 mb-3 xxs:mb-4">
+                      <div className="h-4 w-4 bg-gray-800 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-800 rounded animate-pulse w-32"></div>
+                    </div>
+
+                    {/* Skeleton Action Buttons */}
+                    <div className="flex flex-col xxs:flex-row space-y-2 xxs:space-y-0 xxs:space-x-2 mt-auto">
+                      <div className="flex-1 h-8 xxs:h-9 bg-gray-800 rounded animate-pulse"></div>
+                      <div className="flex-1 h-8 xxs:h-9 bg-gray-800 rounded animate-pulse"></div>
+                      <div className="flex-1 h-8 xxs:h-9 bg-gray-800 rounded animate-pulse"></div>
+                    </div>
+
+                    {/* Skeleton Date */}
+                    <div className="mt-3 xxs:mt-4 pt-3 xxs:pt-4 border-t border-gray-700">
+                      <div className="h-3 bg-gray-800 rounded animate-pulse w-24"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Actual Courses Grid - Hidden during filtering */}
+          {!filtering && (
+            <div className="grid grid-cols-1 xxs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xxs:gap-4 sm:gap-6 mt-4 xxs:mt-6 sm:mt-8">
+            {displayedCourses.map((course) => (
+              <div key={course._id} className="bg-gray-900/80 rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
               {/* Course Image */}
               <div className="aspect-video bg-gray-200 relative overflow-hidden">
                 {course.thumbnailURL ? (
@@ -530,6 +666,8 @@ const AdminCoursesPage: React.FC = () => {
               </div>
             </div>
           ))}
+          </div>
+          )}
         </div>
 
         {/* Pagination Controls */}
@@ -653,7 +791,7 @@ const AdminCoursesPage: React.FC = () => {
         )}
 
         {/* Empty State */}
-        {displayedCourses.length === 0 && (
+        {displayedCourses.length === 0 && !filtering && !loading && (
           <div className="text-center py-8 xxs:py-12">
             <div className="mx-auto h-10 w-10 xxs:h-12 xxs:w-12 text-gray-400">
               <BookOpen className="h-10 w-10 xxs:h-12 xxs:w-12" />

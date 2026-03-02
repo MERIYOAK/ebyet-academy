@@ -4,11 +4,15 @@ import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
 import { useCourses, CourseFilters, ApiCourse } from '../hooks/useCourses';
+import { useSocketNotifications } from '../hooks/useSocketNotifications';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
 
 const CoursesPage: React.FC = () => {
   const { t } = useTranslation();
+  
+  // Enable real-time updates for courses
+  useSocketNotifications();
   
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -240,7 +244,38 @@ const CoursesPage: React.FC = () => {
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 tiny:gap-4 xs:gap-6 sm:gap-8">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="animate-pulse bg-gray-800 rounded-2xl shadow-lg p-3 tiny:p-4 sm:p-6 h-56 tiny:h-64 sm:h-72 border border-gray-700" />
+              <div key={i} className={`bg-gray-100 dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col w-full shadow-gray-200/40 dark:shadow-gray-900/40 border border-gray-200/50 dark:border-gray-700/50 ring-1 ring-gray-200/50 dark:ring-gray-700/50`}>
+                {/* Skeleton Image */}
+                <div className="relative overflow-hidden h-36 xxs:h-40 sm:h-44 shadow-inner">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 dark:from-gray-700 via-gray-300 dark:via-gray-600 to-gray-200 dark:to-gray-700 animate-pulse"></div>
+                </div>
+
+                {/* Skeleton Content */}
+                <div className="p-3 xxs:p-4 pb-2 xxs:pb-3 flex flex-col flex-grow bg-gray-100 dark:bg-gray-800 sm:bg-gradient-to-b sm:from-gray-100 sm:to-gray-50 dark:sm:from-gray-800 dark:sm:to-gray-900/30">
+                  {/* Skeleton Title */}
+                  <div className="h-10 xxs:h-12 sm:h-14 bg-gray-300 dark:bg-gray-700 rounded animate-pulse mb-1.5"></div>
+                  
+                  {/* Skeleton Description Lines */}
+                  <div className="space-y-1.5 mb-3 xxs:mb-3.5 flex-grow min-h-[2.5rem] xxs:min-h-[3rem]">
+                    <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded animate-pulse w-5/6"></div>
+                    <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded animate-pulse w-4/6"></div>
+                  </div>
+
+                  {/* Skeleton Tags */}
+                  <div className="flex flex-wrap gap-1 xxs:gap-2 mb-3 xxs:mb-3.5">
+                    <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse w-16"></div>
+                    <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse w-20"></div>
+                    <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse w-14"></div>
+                  </div>
+
+                  {/* Skeleton Stats */}
+                  <div className="flex items-center justify-between mb-2 xxs:mb-2.5 mt-auto">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse w-12"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse w-16"></div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -293,10 +328,6 @@ const CoursesPage: React.FC = () => {
             tags={c.tags || []}
             onPurchaseSuccess={handlePurchaseSuccess}
             isPurchased={c.isPurchased || false}
-            progress={c.isPurchased ? (c.progress || 0) : undefined}
-            totalLessons={c.isPurchased ? (c.totalLessons || (c.videos || []).length) : undefined}
-            completedLessons={c.isPurchased ? (c.completedLessons || 0) : undefined}
-            isCompleted={c.isPurchased ? (c.isCompleted || false) : undefined}
           />
         );})}
       </div>

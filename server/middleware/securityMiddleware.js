@@ -30,7 +30,7 @@ class SecurityMiddleware {
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", "data:", "https:"],
           mediaSrc: ["'self'", "blob:"],
-          connectSrc: ["'self'", "https:"],
+          connectSrc: ["'self'", "https:", "ws:", "wss:"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           frameSrc: ["'none'"],

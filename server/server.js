@@ -4,6 +4,8 @@ const cors = require('cors');
 const path = require('path');
 const session = require('express-session');
 const multer = require('multer');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Import Passport configuration
@@ -11,6 +13,7 @@ const passport = require('./config/passport');
 
 // Import services
 const emailService = require('./services/emailService');
+const socketService = require('./services/socketService');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -24,12 +27,11 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const adminReviewRoutes = require('./routes/adminReviewRoutes');
-const progressRoutes = require('./routes/progressRoutes');
-const certificateRoutes = require('./routes/certificateRoutes');
 const drmVideoRoutes = require('./routes/drmVideoRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const bundleRoutes = require('./routes/bundleRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
+const versionRoutes = require('./routes/versionRoutes');
 
 // Import controllers for fallback routes
 const authController = require('./controllers/authController');
@@ -125,7 +127,7 @@ app.use((req, res, next) => {
     // Skip JSON parsing for webhook route - let the route handle raw body
     next();
   } else {
-    express.json({ limit: '10mb' })(req, res, next);
+    express.json({ limit: '1.1gb' })(req, res, next);
   }
 });
 
@@ -135,7 +137,7 @@ app.use((req, res, next) => {
     // Skip URL parsing for webhook route
     next();
   } else {
-    express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+    express.urlencoded({ extended: true, limit: '1.1gb' })(req, res, next);
   }
 });
 
@@ -545,8 +547,6 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/my-courses', myCoursesRoutes);
-app.use('/api/progress', progressRoutes);
-app.use('/api/certificates', certificateRoutes);
 app.use('/api/reviews', require('./routes/reviewRoutes.js')); 
 app.use('/api/admin/reviews', adminReviewRoutes);
 
@@ -601,6 +601,13 @@ app.use('/api/user', userRoutes);
 // Contact routes
 app.use('/api/contact', contactRoutes);
 app.use('/api/announcements', announcementRoutes);
+
+// Version route
+app.use('/api/version', versionRoutes);
+
+// Progress routes (simplified dashboard without progress tracking)
+const progressRoutes = require('./routes/progressRoutes');
+app.use('/api/progress', progressRoutes);
 
 // Admin dashboard stats (basic stats only)
 app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
@@ -772,9 +779,55 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
+// Start server with Socket.IO
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Configure Socket.IO with CORS
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Store connected users
+const connectedUsers = new Map();
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log(`🔌 User connected: ${socket.id}`);
+  
+  // Handle user authentication
+  socket.on('authenticate', (userData) => {
+    connectedUsers.set(socket.id, {
+      userId: userData.userId,
+      role: userData.role,
+      socketId: socket.id
+    });
+    console.log(`👤 User authenticated: ${userData.userId} (${userData.role})`);
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log(`🔌 User disconnected: ${socket.id}`);
+    connectedUsers.delete(socket.id);
+  });
+});
+
+// Make io instance available to routes
+app.set('io', io);
+app.set('connectedUsers', connectedUsers);
+
+// Initialize socket service
+socketService.initialize(io);
+socketService.setConnectedUsers(connectedUsers);
+
+// Make socket service available to routes
+app.set('socketService', socketService);
+
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);

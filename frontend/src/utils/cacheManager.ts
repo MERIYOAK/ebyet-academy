@@ -17,6 +17,54 @@ export class CacheManager {
     }
   }
 
+  // Comprehensive cache refresh for major changes
+  static refreshAllContentCache(): void {
+    try {
+      console.log('🔄 Refreshing all content cache due to major change');
+      
+      // Invalidate all content-related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.featured() });
+      queryClient.invalidateQueries({ queryKey: ['bundles'] });
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      
+      // Clear persistent cache patterns
+      this.clearCacheByPattern('course');
+      this.clearCacheByPattern('video');
+      this.clearCacheByPattern('bundle');
+      this.clearCacheByPattern('announcement');
+      this.clearCacheByPattern('material');
+      this.clearCacheByPattern('review');
+      
+      // Save updated cache state
+      this.saveCacheState();
+      
+      console.log('✅ All content cache refreshed successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to refresh content cache:', error);
+    }
+  }
+
+  // Save current cache state to persistent storage
+  static saveCacheState(): void {
+    try {
+      const cache = queryClient.getQueryCache();
+      const queries = cache.getAll();
+      const cacheData: Record<string, any> = {};
+
+      queries.forEach(query => {
+        if (query.state.data && query.state.status === 'success') {
+          cacheData[JSON.stringify(query.queryKey)] = query.state.data;
+        }
+      });
+
+      cachePersister.set('queries', cacheData);
+      console.log('💾 Cache state saved to persistent storage');
+    } catch (error) {
+      console.warn('⚠️ Failed to save cache state:', error);
+    }
+  }
+
   // Clear specific cache by key pattern
   static clearCacheByPattern(pattern: string): void {
     try {

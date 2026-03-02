@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:version && vite build",
+    "build:version": "npm run generate:version",
+    "generate:version": "node -e \"const fs = require('fs'); const { execSync } = require('child_process'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); const buildHash = execSync('git rev-parse --short HEAD').toString().trim(); const buildTime = new Date().toISOString(); const versionInfo = { version: pkg.version, buildHash, buildTime }; fs.writeFileSync('src/version.json', JSON.stringify(versionInfo, null, 2)); console.log('✅ Version info generated:', versionInfo);\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },

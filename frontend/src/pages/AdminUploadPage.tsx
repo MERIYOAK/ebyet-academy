@@ -3,6 +3,7 @@ import { buildApiUrl } from '../config/environment';
 
 import { Plus, Upload, X, FileText } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
+import { xhrUpload } from '../utils/uploadUtils';
 
 interface Video {
   id: string;
@@ -46,41 +47,6 @@ const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit & { 
   } finally {
     clearTimeout(timeout);
   }
-};
-
-// Upload via XHR to get upload progress events
-const xhrUpload = (options: {
-  url: string;
-  method?: 'POST' | 'PUT';
-  formData: FormData;
-  headers?: Record<string, string>;
-  timeoutMs?: number;
-  onProgress?: (loaded: number, total: number) => void;
-}): Promise<{ status: number; responseText: string }> => {
-  const { url, method = 'POST', formData, headers = {}, timeoutMs = 10 * 60 * 1000, onProgress } = options;
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(method, url, true);
-    Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
-    xhr.timeout = timeoutMs;
-    xhr.upload.onprogress = (evt) => {
-      if (evt.lengthComputable && onProgress) {
-        onProgress(evt.loaded, evt.total);
-      }
-    };
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve({ status: xhr.status, responseText: xhr.responseText });
-        } else {
-          reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}`));
-        }
-      }
-    };
-    xhr.ontimeout = () => reject(new Error('Upload timed out'));
-    xhr.onerror = () => reject(new Error('Network error during upload'));
-    xhr.send(formData);
-  });
 };
 
 const AdminUploadPage = () => {
@@ -352,7 +318,7 @@ const AdminUploadPage = () => {
 
       const courseData = await courseResponse.json();
       console.debug('[UI] course creation response:', courseData);
-      const courseId = courseData.data?.course?.id || courseData._id;
+      const courseId = courseData.data?.courseId || courseData.data?.course?.id || courseData._id;
       console.debug('[UI] created courseId:', courseId);
 
       if (!courseId) {
@@ -361,11 +327,11 @@ const AdminUploadPage = () => {
       }
 
       // Step 2: Upload thumbnail if provided
-      if (course.thumbnail) {
+      if (course.thumbnail && course.thumbnail.name) {
         setProgressOverlay(prev => ({
           ...prev,
           progress: Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100),
-          message: `Uploading thumbnail: ${course.thumbnail.name}...`
+          message: `Uploading thumbnail: ${course.thumbnail?.name || 'thumbnail'}...`
         }));
         
         console.debug('[UI] upload thumbnail start:', course.thumbnail.name);
@@ -398,63 +364,100 @@ const AdminUploadPage = () => {
       // Step 3: Upload videos
       for (let i = 0; i < course.videos.length; i++) {
         const video = course.videos[i];
-        if (video.file && video.title) {
+        if (video.file && video.file.name && video.title) {
           setProgressOverlay(prev => ({
             ...prev,
             progress: Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100),
-            message: `Uploading video ${i + 1}/${course.videos.length}: ${video.file.name}...`
+            message: `Uploading video ${i + 1}/${course.videos.length}: ${video.file?.name || 'video'}...`
           }));
           
           console.debug('[UI] upload video start:', video.file.name);
-          const videoFormData = new FormData();
-          videoFormData.append('title', JSON.stringify(video.title));
-          videoFormData.append('description', JSON.stringify(video.description));
-          videoFormData.append('courseId', courseId);
-          videoFormData.append('order', (i + 1).toString());
-          videoFormData.append('isFreePreview', video.isFreePreview ? 'true' : 'false');
-          if (video.duration) {
-            videoFormData.append('duration', video.duration);
+
+          const presignedUrlResponse = await fetchWithTimeout(buildApiUrl('/api/videos/presigned-url'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminToken}`
+            },
+            body: JSON.stringify({
+              courseId,
+              fileName: video.file.name,
+              fileSize: video.file.size,
+              mimeType: video.file.type,
+              version: 1 // Default to version 1 for new course uploads
+            })
+          });
+
+          if (!presignedUrlResponse.ok) {
+            const errorData = await presignedUrlResponse.json();
+            throw new Error(errorData.message || 'Failed to get upload URL');
           }
-          videoFormData.append('file', video.file);
+
+          const presignedData = await presignedUrlResponse.json();
+          console.log('[UI] Presigned URL response:', presignedData);
+          const { uploadUrl, s3Key } = presignedData.data || presignedData;
+
+          if (!uploadUrl) {
+            throw new Error('Upload URL is missing from server response');
+          }
+
+          setProgressOverlay(prev => ({
+            ...prev,
+            message: `Uploading video ${i + 1}/${course.videos.length} to cloud storage...`
+          }));
 
           await xhrUpload({
-            url: buildApiUrl('/api/videos/upload'),
-            method: 'POST',
-            formData: videoFormData,
-            headers: { 'Authorization': `Bearer ${adminToken}` },
-            timeoutMs: 35 * 60 * 1000, // 35 minutes for large files
+            url: uploadUrl,
+            method: 'PUT',
+            file: video.file!,
+            headers: { 'Content-Type': video.file.type },
+            timeoutMs: 30 * 60 * 1000, // 30 minutes for large file uploads
             onProgress: (loaded, total) => {
               if (totalBytesToUpload > 0) {
-                // Calculate progress more accurately
-                const httpUploadPercent = Math.round((loaded / total) * 100);
-                const currentVideoProgress = Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100);
-                
-                // Show HTTP upload progress for current video, but don't let total progress exceed realistic bounds
-                // HTTP upload typically completes quickly, so we cap the progress to show server processing time
-                const httpUploadWeight = 0.3; // HTTP upload is only 30% of the total process
-                const serverProcessingWeight = 0.7; // Server processing is 70% of the total process
-                
-                const httpProgress = Math.round((httpUploadPercent / 100) * httpUploadWeight * 100);
-                const totalProgress = Math.min(
-                  currentVideoProgress + httpProgress,
-                  currentVideoProgress + Math.round(httpUploadWeight * 100) // Cap at HTTP upload completion
-                );
-                
+                const currentPercent = Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100);
+                const videoUploadPercent = Math.round((loaded / total) * 100);
                 setProgressOverlay(prev => ({
                   ...prev,
-                  progress: Math.max(prev.progress, totalProgress), // Don't go backwards
-                  message: `Uploading video ${i + 1}/${course.videos.length}: ${httpUploadPercent}% (Sending to server...)`
+                  progress: currentPercent,
+                  message: `Uploading video ${i + 1}/${course.videos.length}: ${videoUploadPercent}%`
                 }));
               }
-              console.debug('[UI] video progress:', { 
-                index: i, 
-                loaded, 
-                total, 
-                httpUploadPercent: Math.round((loaded / total) * 100),
-                totalProgress: Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100) 
-              });
+              console.debug('[UI] video upload progress:', { loaded, total, currentPercent: Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100) });
             }
           });
+
+          console.debug('[UI] video upload done:', video.file.name);
+
+          setProgressOverlay(prev => ({
+            ...prev,
+            message: `Saving video metadata ${i + 1}/${course.videos.length}...`
+          }));
+
+          const metadataResponse = await fetchWithTimeout(buildApiUrl('/api/videos/save-metadata'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminToken}`
+            },
+            body: JSON.stringify({
+              courseId,
+              title: JSON.stringify(video.title),
+              description: JSON.stringify(video.description),
+              s3Key,
+              order: i + 1,
+              duration: video.duration || '00:00',
+              fileSize: video.file.size,
+              mimeType: video.file.type,
+              originalName: video.file.name,
+              isFreePreview: video.isFreePreview ? 'true' : 'false'
+            }),
+            timeoutMs: 5 * 60 * 1000 // 5 minutes for metadata save
+          });
+
+          if (!metadataResponse.ok) {
+            const errorData = await metadataResponse.json();
+            throw new Error(errorData.message || 'Failed to save video metadata');
+          }
           console.debug('[UI] upload video done:', video.file.name);
           
           // Show server processing message
@@ -482,13 +485,13 @@ const AdminUploadPage = () => {
         for (let i = 0; i < course.materials.length; i++) {
           const material = course.materials[i];
           // Check all required fields are present
-          if (material.file && 
+          if (material.file && material.file.name && 
               material.title.en?.trim() && material.title.tg?.trim() &&
               material.description.en?.trim() && material.description.tg?.trim()) {
             setProgressOverlay(prev => ({
               ...prev,
               progress: Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100),
-              message: `Uploading material ${i + 1}/${course.materials.length}: ${material.file.name}...`
+              message: `Uploading material ${i + 1}/${course.materials.length}: ${material.file?.name || 'material'}...`
             }));
             
             console.debug('[UI] upload material start:', material.file.name);
@@ -1047,6 +1050,9 @@ const AdminUploadPage = () => {
                         </span>
                       </label>
                     </div>
+                    <p className="mt-2 text-xs text-gray-400">
+                      Supported formats: MP4, AVI, MOV, WMV, WebM, OGG, FLV, MKV. Max size: 1GB. Duration must be entered manually. Files are uploaded directly to cloud storage for better performance.
+                    </p>
                   </div>
 
                   {/* Free Preview Toggle */}

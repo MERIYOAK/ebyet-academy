@@ -1,5 +1,10 @@
 const Announcement = require('../models/Announcement');
 
+// Get socket service from app
+const getSocketService = (req) => {
+  return req.app.get('socketService');
+};
+
 // Get all active announcements (public)
 exports.getActiveAnnouncements = async (req, res) => {
   try {
@@ -114,6 +119,18 @@ exports.createAnnouncement = async (req, res) => {
 
     await announcement.save();
 
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyNewAnnouncement({
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        date: announcement.date,
+        isActive: announcement.isActive
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Announcement created successfully',
@@ -160,6 +177,18 @@ exports.updateAnnouncement = async (req, res) => {
     if (order !== undefined) announcement.order = order;
 
     await announcement.save();
+
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyAnnouncementUpdate({
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        date: announcement.date,
+        isActive: announcement.isActive
+      });
+    }
 
     res.json({
       success: true,
