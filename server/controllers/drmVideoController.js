@@ -218,11 +218,8 @@ exports.validateDRMSession = async (req, res) => {
 exports.getCourseVideosWithDRM = async (req, res) => {
   try {
     const { courseId } = req.params;
-    let { version } = req.query;
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const isAdmin = req.user?.role === 'admin';
-
-    console.log(`[getCourseVideosWithDRM] courseId: ${courseId}, userId: ${userId}, version: ${version}`);
 
     // Get course details
     const course = await Course.findById(courseId);
@@ -233,30 +230,9 @@ exports.getCourseVideosWithDRM = async (req, res) => {
       });
     }
 
-    // Determine which version to use
-    // If version is explicitly provided, use it
-    // Otherwise, if user has purchased, use their purchased version
-    // Otherwise, use version 1 (default)
-    let versionToUse;
-    if (version) {
-      versionToUse = parseInt(version);
-    } else if (userId) {
-      const { getUserPurchasedVersion } = require('../utils/purchaseUtils');
-      const purchasedVersion = await getUserPurchasedVersion(userId, courseId);
-      if (purchasedVersion) {
-        versionToUse = purchasedVersion;
-        console.log(`📦 [getCourseVideosWithDRM] User ${userId} purchased version ${purchasedVersion} of course ${courseId}`);
-      } else {
-        versionToUse = 1; // Default for non-purchased users
-      }
-    } else {
-      versionToUse = 1; // Default for public users
-    }
-
-    // Get videos for the course version
+    // Get all videos for the course (versioning system removed)
     const videos = await Video.find({ 
-      courseId: courseId,
-      courseVersion: versionToUse
+      courseId: courseId
     }).sort({ order: 1 });
 
     if (!videos || videos.length === 0) {

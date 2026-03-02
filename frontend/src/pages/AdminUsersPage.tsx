@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Toast from '../components/Toast';
-import { useAdminAuth } from '../contexts/AdminAuthContext';
 
 interface User {
   _id: string;
@@ -51,8 +50,7 @@ interface Pagination {
   hasPrevPage: boolean;
 }
 
-const AdminUsersPage = () => {
-  const { adminUser } = useAdminAuth();
+const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,27 +70,6 @@ const AdminUsersPage = () => {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  
-  // Helper function to check if current admin can manage a specific user
-  const canManageUser = (user: User) => {
-    // Can't manage yourself
-    if (adminUser && user.email === adminUser.email) {
-      return false;
-    }
-    
-    // Super admin logic: if current admin is super admin, can manage everyone
-    // Regular admin logic: can manage regular users but not other admins
-    // For now, we'll allow admins to manage other admins (except themselves)
-    return true;
-  };
-
-  // Helper function to get management status text
-  const getManagementStatusText = (user: User) => {
-    if (adminUser && user.email === adminUser.email) {
-      return 'Your Account';
-    }
-    return '';
-  };
   
   // Course access management
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -673,44 +650,38 @@ const AdminUsersPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
-                            {canManageUser(user) ? (
-                              <>
-                                <button
-                                  onClick={() => handleOpenCourseAccess(user)}
-                                  className="text-cyan-600 hover:text-cyan-500 transition-colors duration-200 text-sm font-medium mr-2"
-                                  title="Manage Course Access"
-                                >
-                                  Manage Access
-                                </button>
-                                {user.status === 'active' && (
-                                  <button
-                                    onClick={() => {
-                                      setUserToDeactivate(user);
-                                      setShowDeactivateModal(true);
-                                    }}
-                                    className="text-orange-600 hover:text-orange-900 transition-colors duration-200 text-sm font-medium"
-                                    title="Deactivate Account"
-                                  >
-                                    Deactivate
-                                  </button>
-                                )}
-                                {user.status === 'inactive' && (
-                                  <button
-                                    onClick={() => {
-                                      setUserToReactivate(user);
-                                      setShowReactivateModal(true);
-                                    }}
-                                    className="text-green-600 hover:text-green-900 transition-colors duration-200 text-sm font-medium"
-                                    title="Reactivate Account"
-                                  >
-                                    Reactivate
-                                  </button>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-gray-400 text-xs italic">
-                                {getManagementStatusText(user)}
-                              </span>
+                            {user.role !== 'admin' && (
+                              <button
+                                onClick={() => handleOpenCourseAccess(user)}
+                                className="text-cyan-600 hover:text-cyan-500 transition-colors duration-200 text-sm font-medium mr-2"
+                                title="Manage Course Access"
+                              >
+                                Manage Access
+                              </button>
+                            )}
+                            {user.role !== 'admin' && user.status === 'active' && (
+                              <button
+                                onClick={() => {
+                                  setUserToDeactivate(user);
+                                  setShowDeactivateModal(true);
+                                }}
+                                className="text-orange-600 hover:text-orange-900 transition-colors duration-200 text-sm font-medium"
+                                title="Deactivate Account"
+                              >
+                                Deactivate
+                              </button>
+                            )}
+                            {user.role !== 'admin' && user.status === 'inactive' && (
+                              <button
+                                onClick={() => {
+                                  setUserToReactivate(user);
+                                  setShowReactivateModal(true);
+                                }}
+                                className="text-green-600 hover:text-green-900 transition-colors duration-200 text-sm font-medium"
+                                title="Reactivate Account"
+                              >
+                                Reactivate
+                              </button>
                             )}
                           </div>
                         </td>
@@ -743,44 +714,38 @@ const AdminUsersPage = () => {
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="text-sm xxs:text-base font-medium text-white truncate">{user.name}</h3>
                           <div className="flex items-center space-x-1 xxs:space-x-2">
-                            {canManageUser(user) ? (
-                              <>
-                                <button
-                                  onClick={() => handleOpenCourseAccess(user)}
-                                  className="text-cyan-600 hover:text-cyan-500 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1 mr-1"
-                                  title="Manage Course Access"
-                                >
-                                  Access
-                                </button>
-                                {user.status === 'active' && (
-                                  <button
-                                    onClick={() => {
-                                      setUserToDeactivate(user);
-                                      setShowDeactivateModal(true);
-                                    }}
-                                    className="text-orange-600 hover:text-orange-900 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1"
-                                    title="Deactivate Account"
-                                  >
-                                    Deactivate
-                                  </button>
-                                )}
-                                {user.status === 'inactive' && (
-                                  <button
-                                    onClick={() => {
-                                      setUserToReactivate(user);
-                                      setShowReactivateModal(true);
-                                    }}
-                                    className="text-green-600 hover:text-green-900 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1"
-                                    title="Reactivate Account"
-                                  >
-                                    Reactivate
-                                  </button>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-gray-400 text-xs italic">
-                                {getManagementStatusText(user)}
-                              </span>
+                            {user.role !== 'admin' && (
+                              <button
+                                onClick={() => handleOpenCourseAccess(user)}
+                                className="text-cyan-600 hover:text-cyan-500 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1 mr-1"
+                                title="Manage Course Access"
+                              >
+                                Access
+                              </button>
+                            )}
+                            {user.role !== 'admin' && user.status === 'active' && (
+                              <button
+                                onClick={() => {
+                                  setUserToDeactivate(user);
+                                  setShowDeactivateModal(true);
+                                }}
+                                className="text-orange-600 hover:text-orange-900 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1"
+                                title="Deactivate Account"
+                              >
+                                Deactivate
+                              </button>
+                            )}
+                            {user.role !== 'admin' && user.status === 'inactive' && (
+                              <button
+                                onClick={() => {
+                                  setUserToReactivate(user);
+                                  setShowReactivateModal(true);
+                                }}
+                                className="text-green-600 hover:text-green-900 transition-colors duration-200 text-xs xxs:text-sm font-medium px-2 py-1"
+                                title="Reactivate Account"
+                              >
+                                Reactivate
+                              </button>
                             )}
                           </div>
                         </div>

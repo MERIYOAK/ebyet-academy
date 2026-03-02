@@ -6,8 +6,6 @@ import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { BookOpen, Users, Play, Plus, ArrowRight, Package, Megaphone, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import socketService from '../services/socketService';
-import Toast from '../components/Toast';
-import { toastService } from '../services/toastService';
 
 interface AdminUser {
   email: string;
@@ -47,7 +45,6 @@ const AdminDashboardPage = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
   const loadStats = async () => {
     try {
@@ -61,23 +58,11 @@ const AdminDashboardPage = () => {
       if (response.ok) {
         const data = await response.json();
         setStats(data.data);
-        setToast({
-          message: 'Dashboard statistics updated successfully',
-          type: 'success'
-        });
       } else {
         console.error('Failed to fetch admin stats');
-        setToast({
-          message: 'Failed to load dashboard statistics',
-          type: 'error'
-        });
       }
     } catch (error) {
       console.error('Error loading admin stats:', error);
-      setToast({
-        message: 'Network error while loading statistics',
-        type: 'error'
-      });
     } finally {
       setStatsLoading(false);
       setRefreshing(false);
@@ -408,18 +393,9 @@ const AdminDashboardPage = () => {
 
           </div>
         </section>
-
-        {/* Toast Notification */}
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
       </div>
     </div>
   );
 };
 
-export default AdminDashboardPage;
+export default AdminDashboardPage; 
