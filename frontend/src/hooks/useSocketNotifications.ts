@@ -34,6 +34,17 @@ export const useSocketNotifications = () => {
     const initializeSocket = async () => {
       try {
         isConnectingRef.current = true;
+        
+        // Add production debugging
+        console.log('🔍 Environment Info:', {
+          isProduction: import.meta.env.PROD,
+          mode: import.meta.env.MODE,
+          nodeEnv: import.meta.env.NODE_ENV,
+          apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+          currentOrigin: window.location.origin,
+          hostname: window.location.hostname
+        });
+        
         await socketService.connect(user ? {
           userId: user.id,
           role: user.role || 'user'

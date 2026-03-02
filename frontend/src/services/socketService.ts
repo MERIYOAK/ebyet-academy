@@ -38,7 +38,15 @@ class SocketService {
     }
 
     // Production: use current domain for same-origin requests
-    if (import.meta.env.PROD) {
+    // Check multiple production indicators
+    const isProduction = 
+      import.meta.env.PROD === true || 
+      import.meta.env.MODE === 'production' ||
+      import.meta.env.NODE_ENV === 'production' ||
+      window.location.hostname !== 'localhost' && 
+      window.location.hostname !== '127.0.0.1';
+    
+    if (isProduction) {
       // If frontend and backend are on same domain
       return window.location.origin;
     }

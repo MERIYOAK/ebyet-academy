@@ -72,8 +72,11 @@ const allowedOrigins = [
   normalizeUrl(process.env.FRONTEND_URL || 'http://localhost:5173'),
   normalizeUrl(process.env.CLIENT_URL || 'http://localhost:5173'),
   'http://127.0.0.1:5173', // Alternative localhost
-  'https://ebyet-academy-pink.vercel.app', // Production Vercel frontend
-  'https://www.ibyet.com', // Production website with HTTPS
+  'https://ebyet-academy.onrender.com', // Your Render domain
+  'https://ibyet.com', // Your main domain
+  'https://www.ibyet.com', // WWW version
+  'https://ebyet-academy.com', // Alternative domain
+  'https://www.ebyet-academy.com' // WWW alternative
 ].filter(Boolean); // Remove any undefined values
 
 // Apply security middleware
