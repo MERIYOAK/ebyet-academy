@@ -1,21 +1,24 @@
 /**
- * Hook to integrate Socket.IO with Toast notifications
- * Listens for content updates and displays appropriate toasts
+ * Hook to integrate Socket.IO with real-time updates
+ * Only handles cache invalidation and UI updates - no toast notifications
  */
 
 import { useEffect, useRef } from 'react';
-import { useToast } from '../components/ui/Toast';
-import socketService, { ContentUpdatePayload } from '../services/socketService';
 import { queryClient, queryKeys } from '../lib/queryClient';
 import { CacheManager } from '../utils/cacheManager';
 
+interface ContentUpdatePayload {
+  type: string;
+  data: any;
+  message?: string;
+}
+
 export const useSocketNotifications = () => {
-  const { showContentUpdateToast } = useToast();
   const isConnectingRef = useRef(false);
   const isConnectedRef = useRef(false);
 
   useEffect(() => {
-    // Check if user is admin - if so, don't show notifications
+    // Check if user is admin - if so, don't connect
     const userData = localStorage.getItem('user');
     const user = userData ? JSON.parse(userData) : null;
     
@@ -35,15 +38,8 @@ export const useSocketNotifications = () => {
       try {
         isConnectingRef.current = true;
         
-        // Add production debugging
-        console.log('🔍 Environment Info:', {
-          isProduction: import.meta.env.PROD,
-          mode: import.meta.env.MODE,
-          nodeEnv: import.meta.env.NODE_ENV,
-          apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
-          currentOrigin: window.location.origin,
-          hostname: window.location.hostname
-        });
+        // Dynamic import to avoid SSR issues
+        const { default: socketService } = await import('../services/socketService');
         
         await socketService.connect(user ? {
           userId: user.id,
@@ -51,46 +47,24 @@ export const useSocketNotifications = () => {
         } : undefined);
         
         isConnectedRef.current = true;
-        isConnectingRef.current = false;
-        console.log('🔌 Socket.IO initialized successfully in hook');
+        console.log('🔌 Socket.IO initialized successfully for real-time updates');
+        
       } catch (error) {
+        console.error('🔌 Failed to initialize Socket.IO:', error);
+      } finally {
         isConnectingRef.current = false;
-        console.error('🔌 Failed to initialize Socket.IO in hook:', error);
       }
     };
-    
+
     initializeSocket();
 
-    // Listen for content updates
+    // Listen for content updates (no toast notifications)
     const handleContentUpdate = (payload: ContentUpdatePayload) => {
       console.log('📢 Received content update:', payload);
       const { type, data } = payload;
-      const safeData = data || {};
-      
-      // Ensure message is always a string, handle localized content
-      let message = 'New content is available!';
-      if (safeData.message) {
-        if (typeof safeData.message === 'string') {
-          message = safeData.message;
-        } else if (typeof safeData.message === 'object' && safeData.message.en) {
-          message = safeData.message.en; // Use English version for localized content
-        } else if (safeData.title && typeof safeData.title === 'object' && safeData.title.en) {
-          message = `New announcement: ${safeData.title.en}`; // Handle announcement titles
-        }
-      }
-      
-      console.log('🔍 Processing content update:', {
-        type,
-        hasData: !!data,
-        message,
-        dataKeys: Object.keys(data || {})
-      });
       
       // Invalidate relevant cache based on content type
-      invalidateCacheForContentType(type, safeData);
-      
-      // Show appropriate toast notification
-      showContentUpdateToast(type, safeData, message);
+      invalidateCacheForContentType(type, data);
     };
 
     // Invalidate cache based on content type
@@ -106,7 +80,6 @@ export const useSocketNotifications = () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
             queryClient.invalidateQueries({ queryKey: queryKeys.courses.featured() });
             // Also invalidate specific course detail if we have the ID
-            // Handle both direct data and nested course data
             const courseId = data.id || data.course?.id;
             if (courseId) {
               queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(courseId) });
@@ -133,47 +106,50 @@ export const useSocketNotifications = () => {
           case 'BUNDLE_UPDATED':
             // Invalidate bundle-related queries
             console.log('🗑️ Invalidating bundle cache for:', type);
-            CacheManager.clearCacheByPattern('bundle');
-            // Also invalidate general content cache
             queryClient.invalidateQueries({ queryKey: ['bundles'] });
+            // Clear bundle-related persistent cache
+            CacheManager.clearCacheByPattern('bundle');
             break;
             
           case 'NEW_ANNOUNCEMENT':
           case 'ANNOUNCEMENT_UPDATED':
             // Invalidate announcement-related queries
             console.log('🗑️ Invalidating announcement cache for:', type);
-            CacheManager.clearCacheByPattern('announcement');
-            // Also invalidate general content cache
             queryClient.invalidateQueries({ queryKey: ['announcements'] });
-            break;
-            
-          case 'COURSE_MATERIALS_UPDATED':
-            // Invalidate course materials
-            console.log('🗑️ Invalidating materials cache for course:', data.courseId);
-            if (data.courseId) {
-              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
-              CacheManager.clearCacheByPattern('material');
-            }
-            break;
-            
-          case 'WHATSAPP_GROUP_UPDATED':
-            // Invalidate course details for WhatsApp group changes
-            console.log('🗑️ Invalidating WhatsApp group cache for course:', data.courseId);
-            if (data.courseId) {
-              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
-              CacheManager.clearCacheByPattern('whatsapp');
-            }
+            // Clear announcement-related persistent cache
+            CacheManager.clearCacheByPattern('announcement');
             break;
             
           case 'REVIEW_APPROVED':
           case 'REVIEW_REJECTED':
           case 'REVIEW_REPLY_ADDED':
             // Invalidate review-related cache
-            console.log('🗑️ Invalidating review cache for:', type);
             if (data.courseId) {
+              console.log('🗑️ Invalidating review cache for course:', data.courseId);
               queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
             }
+            // Clear review-related persistent cache
             CacheManager.clearCacheByPattern('review');
+            break;
+            
+          case 'COURSE_MATERIALS_UPDATED':
+            // Invalidate course materials
+            if (data.courseId) {
+              console.log('🗑️ Invalidating materials cache for course:', data.courseId);
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
+            }
+            // Clear materials-related persistent cache
+            CacheManager.clearCacheByPattern('material');
+            break;
+            
+          case 'WHATSAPP_GROUP_UPDATED':
+            // Invalidate WhatsApp group info
+            if (data.courseId) {
+              console.log('🗑️ Invalidating WhatsApp cache for course:', data.courseId);
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
+            }
+            // Clear WhatsApp-related persistent cache
+            CacheManager.clearCacheByPattern('whatsapp');
             break;
             
           default:
@@ -195,60 +171,93 @@ export const useSocketNotifications = () => {
     };
 
     // Register event listeners for different content types
-    socketService.addEventListener('NEW_COURSE', handleContentUpdate);
-    socketService.addEventListener('COURSE_UPDATED', handleContentUpdate);
-    socketService.addEventListener('NEW_VIDEO', handleContentUpdate);
-    socketService.addEventListener('VIDEO_UPDATED', handleContentUpdate);
-    socketService.addEventListener('NEW_BUNDLE', handleContentUpdate);
-    socketService.addEventListener('BUNDLE_UPDATED', handleContentUpdate);
-    socketService.addEventListener('NEW_ANNOUNCEMENT', handleContentUpdate);
-    socketService.addEventListener('ANNOUNCEMENT_UPDATED', handleContentUpdate);
-    
-    // Review-related events
-    socketService.addEventListener('REVIEW_APPROVED', handleContentUpdate);
-    socketService.addEventListener('REVIEW_REJECTED', handleContentUpdate);
-    socketService.addEventListener('REVIEW_REPLY_ADDED', handleContentUpdate);
-    
-    // Course materials and WhatsApp group events
-    socketService.addEventListener('COURSE_MATERIALS_UPDATED', handleContentUpdate);
-    socketService.addEventListener('WHATSAPP_GROUP_UPDATED', handleContentUpdate);
+    const registerEventListeners = (socketService: any) => {
+      // Course-related events
+      socketService.addEventListener('NEW_COURSE', handleContentUpdate);
+      socketService.addEventListener('COURSE_UPDATED', handleContentUpdate);
+      
+      // Video-related events
+      socketService.addEventListener('NEW_VIDEO', handleContentUpdate);
+      socketService.addEventListener('VIDEO_UPDATED', handleContentUpdate);
+      
+      // Bundle-related events
+      socketService.addEventListener('NEW_BUNDLE', handleContentUpdate);
+      socketService.addEventListener('BUNDLE_UPDATED', handleContentUpdate);
+      
+      // Announcement-related events
+      socketService.addEventListener('NEW_ANNOUNCEMENT', handleContentUpdate);
+      socketService.addEventListener('ANNOUNCEMENT_UPDATED', handleContentUpdate);
+      
+      // Review-related events
+      socketService.addEventListener('REVIEW_APPROVED', handleContentUpdate);
+      socketService.addEventListener('REVIEW_REJECTED', handleContentUpdate);
+      socketService.addEventListener('REVIEW_REPLY_ADDED', handleContentUpdate);
+      
+      // Course materials and WhatsApp group events
+      socketService.addEventListener('COURSE_MATERIALS_UPDATED', handleContentUpdate);
+      socketService.addEventListener('WHATSAPP_GROUP_UPDATED', handleContentUpdate);
+      
+      // Also listen to general content updates
+      socketService.addEventListener('contentUpdate', handleContentUpdate);
+    };
 
-    // Also listen to general content updates
-    socketService.addEventListener('contentUpdate', handleContentUpdate);
+    // Dynamic import and setup
+    const setupEventListeners = async () => {
+      try {
+        const { default: socketService } = await import('../services/socketService');
+        registerEventListeners(socketService);
+      } catch (error) {
+        console.error('🔌 Failed to setup socket event listeners:', error);
+      }
+    };
+
+    setupEventListeners();
 
     // Cleanup function
     return () => {
-      socketService.removeEventListener('NEW_COURSE', handleContentUpdate);
-      socketService.removeEventListener('COURSE_UPDATED', handleContentUpdate);
-      socketService.removeEventListener('NEW_VIDEO', handleContentUpdate);
-      socketService.removeEventListener('VIDEO_UPDATED', handleContentUpdate);
-      socketService.removeEventListener('NEW_BUNDLE', handleContentUpdate);
-      socketService.removeEventListener('BUNDLE_UPDATED', handleContentUpdate);
-      socketService.removeEventListener('NEW_ANNOUNCEMENT', handleContentUpdate);
-      socketService.removeEventListener('ANNOUNCEMENT_UPDATED', handleContentUpdate);
-      
-      // Review-related cleanup
-      socketService.removeEventListener('REVIEW_APPROVED', handleContentUpdate);
-      socketService.removeEventListener('REVIEW_REJECTED', handleContentUpdate);
-      socketService.removeEventListener('REVIEW_REPLY_ADDED', handleContentUpdate);
-      
-      // Course materials and WhatsApp group cleanup
-      socketService.removeEventListener('COURSE_MATERIALS_UPDATED', handleContentUpdate);
-      socketService.removeEventListener('WHATSAPP_GROUP_UPDATED', handleContentUpdate);
-      
-      socketService.removeEventListener('contentUpdate', handleContentUpdate);
-      
-      // Reset connection state
-      isConnectingRef.current = false;
-      isConnectedRef.current = false;
-      
-      // Disconnect socket when component unmounts
-      socketService.disconnect();
+      const cleanup = async () => {
+        try {
+          const { default: socketService } = await import('../services/socketService');
+          
+          // Remove all event listeners
+          socketService.removeEventListener('NEW_COURSE', handleContentUpdate);
+          socketService.removeEventListener('COURSE_UPDATED', handleContentUpdate);
+          socketService.removeEventListener('NEW_VIDEO', handleContentUpdate);
+          socketService.removeEventListener('VIDEO_UPDATED', handleContentUpdate);
+          socketService.removeEventListener('NEW_BUNDLE', handleContentUpdate);
+          socketService.removeEventListener('BUNDLE_UPDATED', handleContentUpdate);
+          socketService.removeEventListener('NEW_ANNOUNCEMENT', handleContentUpdate);
+          socketService.removeEventListener('ANNOUNCEMENT_UPDATED', handleContentUpdate);
+          socketService.removeEventListener('REVIEW_APPROVED', handleContentUpdate);
+          socketService.removeEventListener('REVIEW_REJECTED', handleContentUpdate);
+          socketService.removeEventListener('REVIEW_REPLY_ADDED', handleContentUpdate);
+          socketService.removeEventListener('COURSE_MATERIALS_UPDATED', handleContentUpdate);
+          socketService.removeEventListener('WHATSAPP_GROUP_UPDATED', handleContentUpdate);
+          socketService.removeEventListener('contentUpdate', handleContentUpdate);
+          
+          // Disconnect socket
+          socketService.disconnect();
+          
+          // Reset connection state
+          isConnectedRef.current = false;
+          isConnectingRef.current = false;
+          
+          console.log('🔌 Socket.IO disconnected and cleaned up');
+        } catch (error) {
+          console.error('🔌 Failed to cleanup socket:', error);
+        }
+      };
+
+      // Execute cleanup
+      cleanup();
     };
-  }, [showContentUpdateToast]);
+  }, []); // Empty dependency array - run once on mount
 
   return {
-    isConnected: socketService.isConnected(),
-    connectionStats: socketService.getConnectionStats()
+    isConnected: () => isConnectedRef.current,
+    connectionStats: () => ({
+      isConnecting: isConnectingRef.current,
+      isConnected: isConnectedRef.current
+    })
   };
 };

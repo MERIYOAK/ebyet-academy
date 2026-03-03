@@ -4,7 +4,6 @@ import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
 import { useCourses, CourseFilters, ApiCourse } from '../hooks/useCourses';
-import { useSocketNotifications } from '../hooks/useSocketNotifications';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
 
@@ -12,8 +11,7 @@ const CoursesPage: React.FC = () => {
   const { t } = useTranslation();
   
   // Enable real-time updates for courses
-  useSocketNotifications();
-  
+    
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');

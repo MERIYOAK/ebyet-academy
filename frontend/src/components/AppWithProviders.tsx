@@ -3,13 +3,12 @@
  * This ensures useSocketNotifications is called within ToastProvider
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from './ui/Toast';
-import versionService from '../services/versionService';
+import deploymentNotificationService from '../services/deploymentNotificationService';
 import { ThemeProvider } from '../contexts/ThemeContext';
-import { useSocketNotifications } from '../hooks/useSocketNotifications';
 import { queryClient, initializePersistentCache, saveCacheData } from '../lib/queryClient';
 import '../utils/cacheMigration';
 import '../utils/cacheTester';
@@ -22,9 +21,10 @@ import ScrollManager from './ScrollManager';
 import SessionMonitorWrapper from './SessionMonitorWrapper';
 import MetaTagsUpdater from './MetaTagsUpdater';
 import RateLimitOverlay from './RateLimitOverlay';
-import VersionUpdateNotification from './ui/VersionUpdateNotification';
 import { useRateLimit } from '../hooks/useRateLimit';
 import PaymentFailureHandler from './PaymentFailureHandler';
+// Import test utilities for development
+import '../utils/testDeploymentNotification';
 
 // Import layouts and pages
 import UserLayout from '../layouts/UserLayout';
@@ -69,39 +69,19 @@ import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
 import GoogleCallbackPage from '../pages/GoogleCallbackPage';
 import CompleteGoogleRegistrationPage from '../pages/CompleteGoogleRegistrationPage';
 
-interface VersionUpdate {
-  currentVersion: any;
-  newVersion: any;
-  message: string;
-}
-
 function AppWithProviders() {
   const { rateLimit, dismissRateLimit } = useRateLimit();
-  
-  // Initialize Socket.IO notifications (now within ToastProvider)
-  useSocketNotifications();
 
-  // State for version update notification
-  const [versionUpdate, setVersionUpdate] = useState<VersionUpdate | null>(null);
-
-  // Initialize persistent cache and version checking on app startup
+  // Initialize deployment notification service
   useEffect(() => {
     initializePersistentCache();
     
-    // Start version checking service
-    versionService.startVersionCheck();
-    
-    // Listen for version update events
-    const handleVersionUpdate = (event: any) => {
-      setVersionUpdate(event.detail);
-    };
-    
-    window.addEventListener('appUpdateAvailable', handleVersionUpdate);
+    // Start deployment notification service
+    deploymentNotificationService.startDeploymentCheck();
     
     // Cleanup function
     return () => {
-      window.removeEventListener('appUpdateAvailable', handleVersionUpdate);
-      versionService.stopVersionCheck();
+      deploymentNotificationService.stopDeploymentCheck();
     };
     
     // Start enhanced cache persistence monitoring
@@ -188,13 +168,6 @@ function AppWithProviders() {
         resetTime={rateLimit.resetTime}
         retryAfter={rateLimit.retryAfter}
       />
-      {versionUpdate && (
-        <VersionUpdateNotification
-          currentVersion={versionUpdate.currentVersion}
-          newVersion={versionUpdate.newVersion}
-          message={versionUpdate.message}
-        />
-      )}
     </Router>
   );
 }

@@ -1,4 +1,9 @@
 {
+  "toast": {
+    "updateAvailable": "Update Available",
+    "newUpdateDeployed": "A new update has been deployed.",
+    "refreshNow": "Refresh Now"
+  },
   "rate_limit": {
     "title": "Rate Limit Exceeded",
     "subtitle": "Too many requests",

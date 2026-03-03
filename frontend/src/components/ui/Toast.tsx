@@ -1,10 +1,12 @@
 /**
  * Toast Notification Component
- * Displays real-time content update notifications
+ * Only shows deployment update notifications
+ * No content updates, UI events, or manual triggers
  */
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { X, CheckCircle, Info, AlertCircle, Sparkles, BookOpen, Video, Package, Megaphone, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { X, CheckCircle, Info, AlertCircle, Sparkles } from 'lucide-react';
 
 interface Toast {
   id: string;
@@ -21,7 +23,7 @@ interface Toast {
 
 interface ToastContextType {
   showToast: (toast: Omit<Toast, 'id'>) => void;
-  showContentUpdateToast: (type: string, data: any, message: string) => void;
+  showDeploymentNotification: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ interface ToastProviderProps {
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const { t } = useTranslation();
 
   const showToast = (toast: Omit<Toast, 'id'>) => {
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -58,116 +61,51 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  const showContentUpdateToast = (type: string, data: any, message: string) => {
-    let icon = <Info className="w-5 h-5" />;
-    let toastType: Toast['type'] = 'info';
-    let title = 'New Content Available';
-
-    switch (type) {
-      case 'NEW_COURSE':
-        icon = <BookOpen className="w-5 h-5" />;
-        toastType = 'success';
-        title = 'New Course Available';
-        break;
-      case 'COURSE_UPDATED':
-        icon = <BookOpen className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'Course Updated';
-        break;
-      case 'NEW_VIDEO':
-        icon = <Video className="w-5 h-5" />;
-        toastType = 'success';
-        title = 'New Video Added';
-        break;
-      case 'VIDEO_UPDATED':
-        icon = <Video className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'Video Updated';
-        break;
-      case 'NEW_BUNDLE':
-        icon = <Package className="w-5 h-5" />;
-        toastType = 'success';
-        title = 'New Bundle Available';
-        break;
-      case 'BUNDLE_UPDATED':
-        icon = <Package className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'Bundle Updated';
-        break;
-      case 'NEW_ANNOUNCEMENT':
-        icon = <Megaphone className="w-5 h-5" />;
-        toastType = 'warning';
-        title = 'New Announcement';
-        break;
-      case 'ANNOUNCEMENT_UPDATED':
-        icon = <Megaphone className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'Announcement Updated';
-        break;
-      case 'REVIEW_APPROVED':
-        icon = <ThumbsUp className="w-5 h-5" />;
-        toastType = 'success';
-        title = 'Review Approved';
-        break;
-      case 'REVIEW_REJECTED':
-        icon = <ThumbsDown className="w-5 h-5" />;
-        toastType = 'warning';
-        title = 'Review Rejected';
-        break;
-      case 'REVIEW_REPLY_ADDED':
-        icon = <MessageSquare className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'Admin Reply Added';
-        break;
-      case 'COURSE_MATERIALS_UPDATED':
-        icon = <BookOpen className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'Course Materials Updated';
-        break;
-      case 'WHATSAPP_GROUP_UPDATED':
-        icon = <MessageSquare className="w-5 h-5" />;
-        toastType = 'info';
-        title = 'WhatsApp Group Updated';
-        break;
-      default:
-        icon = <Sparkles className="w-5 h-5" />;
-        title = 'Content Update';
-    }
-
+  const showDeploymentNotification = (message: string) => {
+    console.log('🔍 showDeploymentNotification called with message:', message);
+    console.log('🌍 Current language:', localStorage.getItem('i18nextLng'));
+    
+    const translatedTitle = t('toast.updateAvailable', 'Update Available');
+    const translatedMessage = message || t('toast.newUpdateDeployed', 'A new update has been deployed.');
+    const translatedButton = t('toast.refreshNow', 'Refresh Now');
+    
+    console.log('🔍 Translations:', {
+      title: translatedTitle,
+      message: translatedMessage,
+      button: translatedButton
+    });
+    
     showToast({
-      type: toastType,
-      title,
-      message,
-      icon,
-      duration: 6000,
-      action: data.id ? {
-        label: 'View Content',
+      type: 'info',
+      title: translatedTitle,
+      message: translatedMessage,
+      icon: <Sparkles className="w-5 h-5" />,
+      duration: 10000, // Show longer for deployment notifications
+      action: {
+        label: translatedButton,
         onClick: () => {
-          // Navigate to content based on type
-          const basePath = window.location.origin;
-          switch (type) {
-            case 'NEW_COURSE':
-            case 'COURSE_UPDATED':
-              window.location.href = `${basePath}/courses/${data.id}`;
-              break;
-            case 'NEW_BUNDLE':
-            case 'BUNDLE_UPDATED':
-              window.location.href = `${basePath}/bundles/${data.id}`;
-              break;
-            case 'NEW_ANNOUNCEMENT':
-            case 'ANNOUNCEMENT_UPDATED':
-              window.location.href = `${basePath}/announcements`;
-              break;
-            default:
-              window.location.reload();
-          }
+          window.location.reload();
         }
-      } : undefined
+      }
     });
   };
 
+  // Listen for deployment update events
+  useEffect(() => {
+    const handleDeploymentUpdate = (event: CustomEvent) => {
+      const { message } = event.detail;
+      showDeploymentNotification(message);
+    };
+
+    window.addEventListener('deploymentUpdate', handleDeploymentUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('deploymentUpdate', handleDeploymentUpdate as EventListener);
+    };
+  }, [showDeploymentNotification]);
+
   return (
-    <ToastContext.Provider value={{ showToast, showContentUpdateToast }}>
+    <ToastContext.Provider value={{ showToast, showDeploymentNotification }}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>
@@ -181,7 +119,7 @@ interface ToastContainerProps {
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => {
   return (
-    <div className="fixed top-16 right-2 left-2 sm:top-20 sm:right-4 sm:left-auto z-[9998] space-y-2 pointer-events-none">
+    <div className="fixed top-4 sm:top-6 right-4 left-4 sm:left-auto z-[9998] space-y-3 sm:space-y-4 pointer-events-none">
       {toasts.map(toast => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -209,7 +147,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   };
 
   const getToastStyles = () => {
-    const baseStyles = "transform transition-all duration-300 ease-in-out w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden sm:max-w-sm";
+    const baseStyles = "transform transition-all duration-300 ease-out w-full max-w-sm sm:max-w-md bg-white dark:bg-gray-800 shadow-xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 dark:ring-white dark:ring-opacity-10 overflow-hidden backdrop-blur-sm";
     const visibilityStyles = isVisible 
       ? "translate-x-0 opacity-100 scale-100" 
       : "translate-x-full opacity-0 scale-95";
@@ -220,14 +158,14 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   const getIconStyles = (type: Toast['type']) => {
     switch (type) {
       case 'success':
-        return 'text-green-500 bg-green-50';
+        return 'text-green-500 bg-green-50 dark:text-green-400 dark:bg-green-900/20';
       case 'warning':
-        return 'text-yellow-500 bg-yellow-50';
+        return 'text-yellow-500 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20';
       case 'error':
-        return 'text-red-500 bg-red-50';
+        return 'text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-900/20';
       case 'info':
       default:
-        return 'text-blue-500 bg-blue-50';
+        return 'text-blue-500 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20';
     }
   };
 
@@ -249,34 +187,34 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
 
   return (
     <div className={getToastStyles()}>
-      <div className="p-3 sm:p-4">
-        <div className="flex items-start">
-          <div className={`flex-shrink-0 p-1 rounded-full ${getIconStyles(toast.type)}`}>
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className={`flex-shrink-0 p-2 rounded-full ${getIconStyles(toast.type)}`}>
             {getIconComponent(toast.type)}
           </div>
-          <div className="ml-2 sm:ml-3 w-0 flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate mb-1">
               {toast.title}
             </p>
             {toast.message && (
-              <p className="mt-1 text-xs sm:text-sm text-gray-500 line-clamp-2">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
                 {toast.message}
               </p>
             )}
             {toast.action && (
-              <div className="mt-2 sm:mt-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={toast.action.onClick}
-                  className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  className="w-full sm:w-auto text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-all duration-200 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-4 py-2 sm:px-4 sm:py-2 rounded-lg border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 shadow-sm hover:shadow-md"
                 >
                   {toast.action.label}
                 </button>
               </div>
             )}
           </div>
-          <div className="ml-2 sm:ml-4 flex-shrink-0 flex">
+          <div className="flex-shrink-0 ml-2 sm:ml-3">
             <button
-              className="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors p-1"
+              className="inline-flex text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={handleRemove}
             >
               <span className="sr-only">Close</span>

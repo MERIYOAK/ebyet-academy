@@ -1,4 +1,9 @@
 {
+  "toast": {
+    "updateAvailable": "ገጻትና ተሓዲሱ ኣሎ!",
+    "newUpdateDeployed": "ሓደስቲ ነገራት ኣብ ወብሳይትና ትወሲኹ ኣሎ።",
+    "refreshNow": "ኣብዚ ጠውቕ"
+  },
   "rate_limit": {
     "title": "ልዕሊ ንቡር ተጠቃምነት ተረኺቡ",
     "subtitle": "ዝተጋነነ ቁጽሪ ጠለብ",
