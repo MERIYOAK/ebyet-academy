@@ -6,6 +6,7 @@ import { Upload, Video, Clock, User, Save, X } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { getEnglishText } from '../utils/bilingualHelper';
 import { xhrUpload } from '../utils/uploadUtils';
+import { validateBilingualLessonTitles, getLessonTitleHelperText } from '../utils/videoTitleValidation';
 
 interface Course {
   _id: string;
@@ -25,6 +26,7 @@ const AdminVideoUploadPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [titleErrors, setTitleErrors] = useState<{ en?: string; tg?: string }>({});
 
   // Progress overlay state
   const [progressOverlay, setProgressOverlay] = useState({
@@ -145,6 +147,13 @@ const AdminVideoUploadPage: React.FC = () => {
     
     // Validate required fields with user-friendly messages
     const validationErrors = [];
+    
+    // Validate lesson naming convention
+    const titleValidation = validateBilingualLessonTitles(formData.titleEn, formData.titleTg);
+    if (!titleValidation.isValid) {
+      if (titleValidation.errors.en) validationErrors.push(titleValidation.errors.en);
+      if (titleValidation.errors.tg) validationErrors.push(titleValidation.errors.tg);
+    }
     
     if (!formData.titleEn.trim()) {
       validationErrors.push('Video title (English) is required');
@@ -483,7 +492,7 @@ const AdminVideoUploadPage: React.FC = () => {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -505,11 +514,29 @@ const AdminVideoUploadPage: React.FC = () => {
                   type="text"
                   id="titleEn"
                   value={formData.titleEn}
-                  onChange={(e) => setFormData(prev => ({ ...prev, titleEn: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, titleEn: value }));
+                    
+                    // Clear error when user starts typing
+                    if (titleErrors.en) {
+                      setTitleErrors(prev => ({ ...prev, en: undefined }));
+                    }
+                  }}
                   required
-                  className="block w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                  className={`block w-full px-3 py-2 bg-gray-700 text-white border rounded-lg focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 ${
+                    titleErrors.en ? 'border-red-500' : 'border-gray-600'
+                  }`}
                   placeholder="Enter video title in English"
                 />
+                <p className="mt-1 text-xs text-gray-400">
+                  {getLessonTitleHelperText()}
+                </p>
+                {titleErrors.en && (
+                  <p className="mt-1 text-xs text-red-400">
+                    {titleErrors.en}
+                  </p>
+                )}
               </div>
 
               {/* Title (Tigrinya) */}
@@ -521,11 +548,29 @@ const AdminVideoUploadPage: React.FC = () => {
                   type="text"
                   id="titleTg"
                   value={formData.titleTg}
-                  onChange={(e) => setFormData(prev => ({ ...prev, titleTg: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, titleTg: value }));
+                    
+                    // Clear error when user starts typing
+                    if (titleErrors.tg) {
+                      setTitleErrors(prev => ({ ...prev, tg: undefined }));
+                    }
+                  }}
                   required
-                  className="block w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                  className={`block w-full px-3 py-2 bg-gray-700 text-white border rounded-lg focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 ${
+                    titleErrors.tg ? 'border-red-500' : 'border-gray-600'
+                  }`}
                   placeholder="Enter video title in Tigrinya"
                 />
+                <p className="mt-1 text-xs text-gray-400">
+                  {getLessonTitleHelperText()}
+                </p>
+                {titleErrors.tg && (
+                  <p className="mt-1 text-xs text-red-400">
+                    {titleErrors.tg}
+                  </p>
+                )}
               </div>
 
               {/* Description (English) */}

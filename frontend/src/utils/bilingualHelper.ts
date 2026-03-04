@@ -66,10 +66,15 @@ export const getLocalizedText = (
 ): string => {
   if (!text) return '';
   
+  // If it's already an object, extract the language
+  if (typeof text === 'object' && text !== null) {
+    return text[language] || text.en || '';
+  }
+  
   // If it's a string, check if it's a JSON string
   if (typeof text === 'string') {
-    // Check if it looks like a JSON string (starts with { or ")
-    if (text.trim().startsWith('{') || text.trim().startsWith('"')) {
+    // Check if it looks like a JSON string (starts with { or contains both en and tg)
+    if (text.trim().startsWith('{') || (text.includes('"en"') && text.includes('"tg"'))) {
       try {
         const parsed = JSON.parse(text);
         // If parsed successfully and it's an object with language keys
@@ -82,16 +87,12 @@ export const getLocalizedText = (
         }
       } catch (e) {
         // Not valid JSON, treat as plain string
+        console.warn('Failed to parse JSON text:', text, e);
         return text;
       }
     }
     // Plain string (legacy format), return as-is
     return text;
-  }
-  
-  // If it's already an object, extract the language
-  if (typeof text === 'object' && text !== null) {
-    return text[language] || text.en || '';
   }
   
   return '';

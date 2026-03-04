@@ -4,6 +4,7 @@ import { buildApiUrl } from '../config/environment';
 import { Plus, Upload, X, FileText } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { xhrUpload } from '../utils/uploadUtils';
+import { validateBilingualLessonTitles, getLessonTitleHelperText } from '../utils/videoTitleValidation';
 
 interface Video {
   id: string;
@@ -12,6 +13,7 @@ interface Video {
   file?: File;
   isFreePreview?: boolean;
   duration?: string; // Duration in MM:SS format
+  titleErrors?: { en?: string; tg?: string };
 }
 
 interface Material {
@@ -69,6 +71,7 @@ const AdminUploadPage = () => {
   const [uploadDetail, setUploadDetail] = useState<string>('');
   const [tagsInput, setTagsInput] = useState<string>(''); // Separate state for tags input
   const [error, setError] = useState<string | null>(null); // New state for error messages
+  const [videoTitleErrors, setVideoTitleErrors] = useState<{ [key: string]: { en?: string; tg?: string } }>({});
 
   // Progress overlay state
   const [progressOverlay, setProgressOverlay] = useState({
@@ -116,6 +119,23 @@ const AdminUploadPage = () => {
         v.id === videoId ? { ...v, ...updates } : v
       )
     }));
+    
+    // Clear title errors when user starts typing
+    if (updates.title?.en || updates.title?.tg) {
+      setVideoTitleErrors(prev => {
+        const newErrors = { ...prev };
+        if (updates.title?.en && newErrors[videoId]?.en) {
+          delete newErrors[videoId]?.en;
+        }
+        if (updates.title?.tg && newErrors[videoId]?.tg) {
+          delete newErrors[videoId]?.tg;
+        }
+        if (!newErrors[videoId]?.en && !newErrors[videoId]?.tg) {
+          delete newErrors[videoId];
+        }
+        return newErrors;
+      });
+    }
   };
 
   const addMaterial = () => {
@@ -233,6 +253,13 @@ const AdminUploadPage = () => {
         }
         if (!video.file) {
           validationErrors.push(`Video ${index + 1}: Video file is required`);
+        }
+        
+        // Validate lesson naming convention
+        const titleValidation = validateBilingualLessonTitles(video.title.en, video.title.tg);
+        if (!titleValidation.isValid) {
+          if (titleValidation.errors.en) validationErrors.push(`Video ${index + 1} (English): ${titleValidation.errors.en}`);
+          if (titleValidation.errors.tg) validationErrors.push(`Video ${index + 1} (Tigrinya): ${titleValidation.errors.tg}`);
         }
       });
       
@@ -965,9 +992,19 @@ const AdminUploadPage = () => {
                       required
                       value={video.title.en}
                       onChange={(e) => updateVideo(video.id, { title: { ...video.title, en: e.target.value } })}
-                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      className={`w-full px-4 py-3 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400 ${
+                        videoTitleErrors[video.id]?.en ? 'border-red-500' : 'border-gray-600'
+                      }`}
                       placeholder="Enter video title in English"
                     />
+                    <p className="mt-1 text-xs text-gray-400">
+                      {getLessonTitleHelperText()}
+                    </p>
+                    {videoTitleErrors[video.id]?.en && (
+                      <p className="mt-1 text-xs text-red-400">
+                        {videoTitleErrors[video.id]?.en}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -979,9 +1016,19 @@ const AdminUploadPage = () => {
                       required
                       value={video.title.tg}
                       onChange={(e) => updateVideo(video.id, { title: { ...video.title, tg: e.target.value } })}
-                      className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
+                      className={`w-full px-4 py-3 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400 ${
+                        videoTitleErrors[video.id]?.tg ? 'border-red-500' : 'border-gray-600'
+                      }`}
                       placeholder="Enter video title in Tigrinya"
                     />
+                    <p className="mt-1 text-xs text-gray-400">
+                      {getLessonTitleHelperText()}
+                    </p>
+                    {videoTitleErrors[video.id]?.tg && (
+                      <p className="mt-1 text-xs text-red-400">
+                        {videoTitleErrors[video.id]?.tg}
+                      </p>
+                    )}
                   </div>
 
                   <div>

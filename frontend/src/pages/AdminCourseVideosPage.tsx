@@ -8,6 +8,8 @@ import { Video, Edit, Trash2, Clock, User, Save, X, GripVertical, Check, AlertCi
 import ProgressOverlay from '../components/ProgressOverlay';
 import { formatDuration } from '../utils/durationFormatter';
 import { getEnglishText } from '../utils/bilingualHelper';
+import { validateBilingualLessonTitles, getLessonTitleHelperText } from '../utils/videoTitleValidation';
+import socketService from '../services/socketService';
 
 // DnD imports
 import {
@@ -56,6 +58,7 @@ const SortableVideoItem: React.FC<{
   index: number;
   editingVideo: string | null;
   editForm: any;
+  editTitleErrors: { en?: string; tg?: string };
   selectedVideos: string[];
   onToggleSelection: (id: string) => void;
   onStartEdit: (video: Video) => void;
@@ -75,6 +78,7 @@ const SortableVideoItem: React.FC<{
   index,
   editingVideo,
   editForm,
+  editTitleErrors,
   selectedVideos,
   onToggleSelection,
   onStartEdit,
@@ -143,16 +147,29 @@ const SortableVideoItem: React.FC<{
                 type="text"
                 value={editForm.titleEn}
                 onChange={(e) => onEditFormChange({ ...editForm, titleEn: e.target.value })}
-                className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                className={`w-full px-2 py-1 text-sm bg-gray-800 text-white border rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 ${
+                  editTitleErrors.en ? 'border-red-500' : 'border-gray-600'
+                }`}
                 placeholder="Video title (English) *"
               />
+              {editTitleErrors.en && (
+                <p className="text-xs text-red-400">{editTitleErrors.en}</p>
+              )}
               <input
                 type="text"
                 value={editForm.titleTg}
                 onChange={(e) => onEditFormChange({ ...editForm, titleTg: e.target.value })}
-                className="w-full px-2 py-1 text-sm bg-gray-800 text-white border border-gray-600 rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400"
+                className={`w-full px-2 py-1 text-sm bg-gray-800 text-white border rounded focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 ${
+                  editTitleErrors.tg ? 'border-red-500' : 'border-gray-600'
+                }`}
                 placeholder="Video title (Tigrinya) *"
               />
+              {editTitleErrors.tg && (
+                <p className="text-xs text-red-400">{editTitleErrors.tg}</p>
+              )}
+              <p className="text-xs text-gray-400">
+                {getLessonTitleHelperText()}
+              </p>
               <textarea
                 value={editForm.descriptionEn}
                 onChange={(e) => onEditFormChange({ ...editForm, descriptionEn: e.target.value })}
@@ -298,6 +315,7 @@ const AdminCourseVideosPage: React.FC = () => {
     order: 0,
     duration: ''
   });
+  const [editTitleErrors, setEditTitleErrors] = useState<{ en?: string; tg?: string }>({});
   
   // Bulk actions state
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
@@ -653,6 +671,7 @@ const AdminCourseVideosPage: React.FC = () => {
   // Start inline editing - extract both English and Tigrinya
   const startEditing = (video: Video) => {
     setEditingVideo(video._id);
+    setEditTitleErrors({}); // Clear any previous errors
     
     // Handle title - could be string, object, or JSON string
     let titleEn = '';
@@ -740,11 +759,19 @@ const AdminCourseVideosPage: React.FC = () => {
   const cancelEditing = () => {
     setEditingVideo(null);
     setEditForm({ titleEn: '', titleTg: '', descriptionEn: '', descriptionTg: '', order: 0, duration: '' });
+    setEditTitleErrors({});
   };
 
   // Save inline edits
   const saveEdit = async () => {
     if (!editingVideo) return;
+
+    // Validate lesson naming convention
+    const titleValidation = validateBilingualLessonTitles(editForm.titleEn, editForm.titleTg);
+    if (!titleValidation.isValid) {
+      setEditTitleErrors(titleValidation.errors);
+      return;
+    }
 
     try {
       // Show progress overlay
@@ -1114,6 +1141,7 @@ const AdminCourseVideosPage: React.FC = () => {
                         index={index}
                         editingVideo={editingVideo}
                         editForm={editForm}
+                        editTitleErrors={editTitleErrors}
                         selectedVideos={selectedVideos}
                         onToggleSelection={toggleVideoSelection}
                         onStartEdit={startEditing}
