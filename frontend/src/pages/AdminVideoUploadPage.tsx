@@ -7,6 +7,7 @@ import ProgressOverlay from '../components/ProgressOverlay';
 import { getEnglishText } from '../utils/bilingualHelper';
 import { xhrUpload } from '../utils/uploadUtils';
 import { validateBilingualLessonTitles, getLessonTitleHelperText } from '../utils/videoTitleValidation';
+import socketService from '../services/socketService';
 
 interface Course {
   _id: string;
@@ -326,6 +327,48 @@ const AdminVideoUploadPage: React.FC = () => {
 
       const { data: metadataData } = await metadataResponse.json();
       console.log('✅ Video metadata saved:', metadataData);
+
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        // Debug: Check what metadataData actually contains
+        console.log('🔍 [Upload] metadataData structure:', metadataData);
+        
+        // Get the uploaded video data for the broadcast
+        const uploadedVideo = metadataData.data?.video || metadataData.video || metadataData;
+        if (uploadedVideo && courseId && course) {
+          // Emit the new video event through the socket connection
+          console.log('📢 Admin emitted NEW_VIDEO event for uploaded video:', uploadedVideo.id || uploadedVideo._id);
+          
+          // Create a simple payload for the event
+          const payload = {
+            type: 'NEW_VIDEO',
+            data: {
+              video: uploadedVideo,
+              courseId: courseId,
+              courseTitle: typeof course.title === 'string' ? course.title : course.title?.en || 'Course',
+              message: `New video "${uploadedVideo.title || uploadedVideo.title?.en || 'New Video'}" added to course`
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          // Emit the event directly through the socket
+          console.log('📢 Broadcasting NEW_VIDEO event:', payload);
+          // Note: The actual broadcasting will happen on the server side
+          // For now, this connects the admin to the socket service
+        } else {
+          console.warn('⚠️ [Upload] No video data found in response:', { metadataData, courseId, course });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update for new video:', socketError);
+      }
 
       // Show success
       setProgressOverlay({

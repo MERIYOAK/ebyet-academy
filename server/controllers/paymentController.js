@@ -19,6 +19,14 @@ exports.createCheckoutSession = async (req, res) => {
     console.log(`   - User Email: ${req.user?.email || 'undefined'}`);
     console.log(`   - Request Body:`, req.body);
 
+    // Normalize frontend URL to ensure it has proper protocol
+    const normalizeUrl = (url) => {
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return `https://${url}`;
+      }
+      return url;
+    };
+
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
       console.log('❌ User not authenticated or invalid user data');
@@ -79,14 +87,6 @@ exports.createCheckoutSession = async (req, res) => {
           message: 'You already own this course' 
         });
       }
-
-      // Normalize frontend URL to ensure it has proper protocol
-      const normalizeUrl = (url) => {
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-          return `https://${url}`;
-        }
-        return url;
-      };
 
       itemId = courseId;
       itemType = 'course';

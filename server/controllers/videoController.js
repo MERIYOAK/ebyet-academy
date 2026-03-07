@@ -623,6 +623,21 @@ exports.updateVideo = async (req, res) => {
     
     await video.save();
     
+    // Emit real-time update to connected users
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        // Get course information for the broadcast
+        const course = await Course.findById(video.courseId);
+        const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+        
+        console.log('📢 [updateVideo] Emitting VIDEO_UPDATED event to connected users');
+        socketService.notifyVideoUpdate(video, courseTitle);
+      }
+    } catch (socketError) {
+      console.warn('⚠️ [updateVideo] Failed to emit Socket.IO update:', socketError);
+    }
+    
     res.json({
       success: true,
       message: 'Video updated successfully',
@@ -1298,6 +1313,22 @@ exports.toggleFreePreview = async (req, res) => {
     // Update free preview status
     video.isFreePreview = isFreePreview;
     await video.save();
+    
+    // Emit real-time update to connected users
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        // Get course information for the broadcast
+        const Course = require('../models/Course');
+        const course = await Course.findById(video.courseId);
+        const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+        
+        console.log('📢 [toggleFreePreview] Emitting VIDEO_UPDATED event to connected users');
+        socketService.notifyVideoUpdate(video, courseTitle);
+      }
+    } catch (socketError) {
+      console.warn('⚠️ [toggleFreePreview] Failed to emit Socket.IO update:', socketError);
+    }
     
     res.json({
       success: true,

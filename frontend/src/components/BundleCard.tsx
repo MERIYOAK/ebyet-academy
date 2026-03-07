@@ -176,7 +176,7 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
 
               {/* Buy/Continue Button */}
               {bundle.isPurchased ? (
-                <Link to="/dashboard" className="block w-full sm:w-auto">
+                <Link to={`/bundles/${bundle.id}`} className="block w-full sm:w-auto">
                   <button
                     className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 sm:py-2.5 px-5 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 text-sm sm:text-base border border-green-500 whitespace-nowrap"
                   >

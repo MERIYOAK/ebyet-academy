@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, BookOpen, Award, Users, Clock, Star, HelpCircle, Megaphone } from 'lucide-react';
@@ -10,6 +10,7 @@ import { useFeaturedCourses } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 import { useFeaturedBundles } from '../hooks/useBundles';
 import { buildApiUrl } from '../config/environment';
+import socketService from '../services/socketService';
 import heroImage from '../assets/images/hero-image.jpeg';
 
 // Import student images
@@ -46,6 +47,7 @@ const HomePage = () => {
   const [announcementsLoading, setAnnouncementsLoading] = useState(true);
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const [isAnnouncementAutoPlaying, setIsAnnouncementAutoPlaying] = useState(true);
+  const rotationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Quotes slideshow state
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
@@ -85,39 +87,121 @@ const HomePage = () => {
 
 
   // Fetch announcements from API
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-      try {
-        setAnnouncementsLoading(true);
-        const response = await fetch(buildApiUrl('/api/announcements/active'));
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch announcements');
-        }
+  const fetchAnnouncements = useCallback(async () => {
+    try {
+      setAnnouncementsLoading(true);
+      const response = await fetch(buildApiUrl('/api/announcements/active'));
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch announcements');
+      }
 
-        const data = await response.json();
-        const activeAnnouncements = (data.announcements || []).filter((a: Announcement) => a.isActive);
-        setAnnouncements(activeAnnouncements);
+      const data = await response.json();
+      const activeAnnouncements = (data.announcements || []).filter((a: Announcement) => a.isActive);
+      
+      // Preserve current index if possible during updates
+      setAnnouncements(prevAnnouncements => {
+        // If we had announcements before, try to maintain the current index
+        if (prevAnnouncements.length > 0 && activeAnnouncements.length > 0) {
+          console.log('🔄 Preserving announcement index during update');
+          return activeAnnouncements;
+        }
+        return activeAnnouncements;
+      });
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      setAnnouncements([]);
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
+
+  // Socket.IO event listeners for real-time announcement updates
+  useEffect(() => {
+    // Connect to socket service
+    const token = localStorage.getItem('token') || localStorage.getItem('userToken');
+    if (token) {
+      try {
+        const userData = { 
+          userId: JSON.parse(atob(token.split('.')[1])).userId || 'user',
+          role: 'user' 
+        };
+        socketService.connect(userData);
       } catch (error) {
-        console.error('Error fetching announcements:', error);
-        setAnnouncements([]);
-      } finally {
-        setAnnouncementsLoading(false);
+        console.warn('Failed to parse user token for socket connection:', error);
+      }
+    }
+
+    // Handle content update events (all events come through 'contentUpdate')
+    const handleContentUpdate = (payload: any) => {
+      console.log('📢 HomePage received content update:', payload);
+      
+      // Check if this is an announcement-related event
+      if (payload.type === 'NEW_ANNOUNCEMENT' || 
+          payload.type === 'ANNOUNCEMENT_UPDATED' || 
+          payload.type === 'ANNOUNCEMENT_DELETED') {
+        console.log('📢 HomePage received announcement event:', payload.type);
+        // Refresh announcements to get the latest data
+        fetchAnnouncements();
       }
     };
 
-    fetchAnnouncements();
-  }, []);
+    // Add event listener for content updates
+    socketService.addEventListener('contentUpdate', handleContentUpdate);
 
-  // Auto-rotate announcements
+    // Cleanup function
+    return () => {
+      socketService.removeEventListener('contentUpdate', handleContentUpdate);
+    };
+  }, [fetchAnnouncements]);
+
+  // Auto-rotate announcements (infinite loop for multiple announcements)
   useEffect(() => {
-    if (!isAnnouncementAutoPlaying || announcements.length === 0) return;
+    console.log('🔍 Announcement rotation check:', {
+      autoPlay: isAnnouncementAutoPlaying,
+      count: announcements.length,
+      currentRef: rotationIntervalRef.current
+    });
+
+    // Clear any existing interval
+    if (rotationIntervalRef.current) {
+      console.log('🗑️ Clearing existing interval');
+      clearInterval(rotationIntervalRef.current);
+      rotationIntervalRef.current = null;
+    }
+
+    // Only activate infinite loop if there are multiple announcements AND auto-play is enabled
+    if (!isAnnouncementAutoPlaying) {
+      console.log('📢 Announcement rotation disabled: Auto-play is off');
+      return;
+    }
     
-    const interval = setInterval(() => {
-      setCurrentAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+    if (announcements.length <= 1) {
+      console.log('📢 Announcement rotation disabled: Not enough announcements (', announcements.length, ')');
+      return;
+    }
+    
+    console.log('🔄 Starting infinite announcement loop for', announcements.length, 'announcements');
+    
+    rotationIntervalRef.current = setInterval(() => {
+      setCurrentAnnouncementIndex((prev) => {
+        const nextIndex = (prev + 1) % announcements.length;
+        console.log('📢 Announcement rotation:', prev, '→', nextIndex, '(Total:', announcements.length, ')');
+        return nextIndex;
+      });
     }, 5000); // Change every 5 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      if (rotationIntervalRef.current) {
+        console.log('⏹️ Stopping announcement rotation');
+        clearInterval(rotationIntervalRef.current);
+        rotationIntervalRef.current = null;
+      }
+    };
   }, [isAnnouncementAutoPlaying, announcements.length]);
 
   // Auto-rotate quotes
@@ -335,8 +419,6 @@ const HomePage = () => {
         style={{
           marginTop: '-1px', // Overlap by 1px to eliminate border line
         }}
-        onMouseEnter={() => setIsAnnouncementAutoPlaying(false)}
-        onMouseLeave={() => setIsAnnouncementAutoPlaying(true)}
       >
         {/* Animated background particles - always visible */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

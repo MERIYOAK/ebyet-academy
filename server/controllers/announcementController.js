@@ -219,6 +219,18 @@ exports.deleteAnnouncement = async (req, res) => {
       });
     }
 
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyAnnouncementDeletion({
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        date: announcement.date,
+        isActive: announcement.isActive
+      });
+    }
+
     res.json({
       success: true,
       message: 'Announcement deleted successfully'

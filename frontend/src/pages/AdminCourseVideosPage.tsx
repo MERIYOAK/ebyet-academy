@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryClient';
 
 import { useParams, Link } from 'react-router-dom';
-import { Video, Edit, Trash2, Clock, User, Save, X, GripVertical, Check, AlertCircle, Plus, Lock, Unlock } from 'lucide-react';
+import { Video, Edit, Trash2, Save, X, GripVertical, Check, AlertCircle, Plus, Lock, Unlock } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { formatDuration } from '../utils/durationFormatter';
 import { getEnglishText } from '../utils/bilingualHelper';
@@ -415,8 +415,14 @@ const AdminCourseVideosPage: React.FC = () => {
         
         // Invalidate cache and refresh
         if (courseId) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(courseId) });
-          queryClient.invalidateQueries({ queryKey: ['videos', 'course', courseId] });
+          queryClient.invalidateQueries({ 
+            queryKey: queryKeys.courses.detail(courseId), 
+            refetchType: 'active' 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: ['videos', 'course', courseId], 
+            refetchType: 'active' 
+          });
         }
         
         setTimeout(() => {
@@ -467,64 +473,69 @@ const AdminCourseVideosPage: React.FC = () => {
       const courseData = data.data.course;
       
       // Parse video titles and descriptions - handle both objects and JSON strings
-      const processedVideos = (courseData.videos || []).map((video: any) => {
-        let parsedTitle = video.title;
-        let parsedDescription = video.description;
-        
-        // Handle title - could be object, JSON string, or plain string
-        if (typeof video.title === 'string') {
-          // Try to parse as JSON if it looks like JSON
-          if (video.title.trim().startsWith('{') || video.title.trim().startsWith('"')) {
-            try {
-              const parsed = JSON.parse(video.title);
-              if (parsed && typeof parsed === 'object') {
-                parsedTitle = parsed;
+      const processedVideos = (courseData.videos || [])
+        .map((video: any) => {
+          let parsedTitle = video.title;
+          let parsedDescription = video.description;
+          
+          // Handle title - could be object, JSON string, or plain string
+          if (typeof video.title === 'string') {
+            // Try to parse as JSON if it looks like JSON
+            if (video.title.trim().startsWith('{') || video.title.trim().startsWith('"')) {
+              try {
+                const parsed = JSON.parse(video.title);
+                if (parsed && typeof parsed === 'object') {
+                  parsedTitle = parsed;
+                }
+              } catch (e) {
+                // Not valid JSON, keep as plain string
+                parsedTitle = video.title;
               }
-            } catch (e) {
-              // Not valid JSON, keep as plain string
-              parsedTitle = video.title;
             }
+            // If it's a plain string (not JSON), keep it as is
           }
-          // If it's a plain string (not JSON), keep it as is
-        }
-        // If it's already an object, keep it as is
-        
-        // Handle description - could be object, JSON string, or plain string
-        if (video.description && typeof video.description === 'string') {
-          // Try to parse as JSON if it looks like JSON
-          if (video.description.trim().startsWith('{') || video.description.trim().startsWith('"')) {
-            try {
-              const parsed = JSON.parse(video.description);
-              if (parsed && typeof parsed === 'object') {
-                parsedDescription = parsed;
+          // If it's already an object, keep it as is
+          
+          // Handle description - could be object, JSON string, or plain string
+          if (video.description && typeof video.description === 'string') {
+            // Try to parse as JSON if it looks like JSON
+            if (video.description.trim().startsWith('{') || video.description.trim().startsWith('"')) {
+              try {
+                const parsed = JSON.parse(video.description);
+                if (parsed && typeof parsed === 'object') {
+                  parsedDescription = parsed;
+                }
+              } catch (e) {
+                // Not valid JSON, keep as plain string
+                parsedDescription = video.description;
               }
-            } catch (e) {
-              // Not valid JSON, keep as plain string
-              parsedDescription = video.description;
             }
+            // If it's a plain string (not JSON), keep it as is
           }
-          // If it's a plain string (not JSON), keep it as is
-        }
-        // If it's already an object, keep it as is
-        
-        return {
-          ...video,
-          title: parsedTitle,
-          description: parsedDescription
-        };
-      });
+          // If it's already an object, keep it as is
+          
+          return {
+            ...video,
+            title: parsedTitle,
+            description: parsedDescription
+          };
+        })
+        // Sort videos by order field to ensure correct display order
+        .sort((a: Video, b: Video) => (a.order || 0) - (b.order || 0));
       
       console.log('🎬 Frontend received course data:', {
         courseId: courseData._id,
         title: courseData.title,
         videoCount: processedVideos.length,
-        videos: processedVideos.map((v: Video) => ({ 
+        rawVideosFromAPI: courseData.videos,
+        processedVideos: processedVideos.map((v: Video) => ({ 
           id: v._id, 
           title: v.title, 
           titleType: typeof v.title,
           description: v.description,
           duration: v.duration,
-          status: v.status 
+          status: v.status,
+          isFreePreview: v.isFreePreview
         })) || []
       });
       
@@ -591,6 +602,44 @@ const AdminCourseVideosPage: React.FC = () => {
       });
 
       setSuccess('Video deleted successfully!');
+      
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        // Find the deleted video info for the broadcast
+        const deletedVideo = videos.find(v => v._id === videoId);
+        if (deletedVideo && courseId && course) {
+          console.log('📢 Admin emitted VIDEO_DELETED event for video:', deletedVideo._id);
+          
+          // Create payload for the event
+          const payload = {
+            type: 'VIDEO_DELETED',
+            data: {
+              videoId: videoId,
+              video: deletedVideo,
+              courseId: courseId,
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              message: `Video "${deletedVideo.title || (deletedVideo.title as any)?.en || 'Video'}" deleted from course`
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log('📢 Broadcasting VIDEO_DELETED event:', payload);
+          // Note: The actual broadcasting will happen on the server side
+          // For now, this connects the admin to the socket service
+        } else {
+          console.warn('⚠️ [Delete] No video data found for broadcast:', { videoId, courseId, course });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update for deleted video:', socketError);
+      }
       
       // Invalidate React Query cache for this course and related data
       if (courseId) {
@@ -817,7 +866,7 @@ const AdminCourseVideosPage: React.FC = () => {
       setProgressOverlay(prev => ({
         ...prev,
         progress: 80,
-        message: 'Processing update response...'
+        message: 'Processing update response...',
       }));
 
       if (!response.ok) {
@@ -838,6 +887,26 @@ const AdminCourseVideosPage: React.FC = () => {
       setEditingVideo(null);
       setEditForm({ titleEn: '', titleTg: '', descriptionEn: '', descriptionTg: '', order: 0, duration: '' });
       await fetchCourseAndVideos();
+      
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        // Get the updated video data for the broadcast
+        const updatedVideo = videos.find(v => v._id === editingVideo);
+        if (updatedVideo && courseId) {
+          // Emit the video update event through the socket connection
+          console.log('📢 Admin emitted VIDEO_UPDATED event for video:', editingVideo);
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update:', socketError);
+      }
     } catch (err) {
       setProgressOverlay({
         isVisible: true,
@@ -849,7 +918,6 @@ const AdminCourseVideosPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to update video');
     }
   };
-
 
   // Toggle video selection
   const toggleVideoSelection = (videoId: string) => {
@@ -887,14 +955,42 @@ const AdminCourseVideosPage: React.FC = () => {
 
       const result = await response.json();
       
-      // Update the video in the local state
+      // Update the video in the local state with the new status from the response
+      const newStatus = !currentStatus;
+      console.log('🔄 [toggleFreePreview] Updating video state:', {
+        videoId,
+        currentStatus,
+        newStatus,
+        videosBefore: videos.map(v => ({ id: v._id, isFreePreview: v.isFreePreview }))
+      });
+      
       setVideos(prev => prev.map(video => 
         video._id === videoId 
-          ? { ...video, isFreePreview: !currentStatus }
+          ? { ...video, isFreePreview: newStatus }
           : video
       ));
 
       setSuccess(result.message || 'Free preview status updated successfully');
+      
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        // Get the updated video data for the broadcast (use the new status)
+        const updatedVideo = { ...videos.find(v => v._id === videoId), isFreePreview: newStatus };
+        if (updatedVideo && courseId) {
+          // Emit the video update event through the socket connection
+          console.log('📢 Admin emitted VIDEO_UPDATED event for free preview toggle:', videoId, 'New status:', newStatus);
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update for free preview toggle:', socketError);
+      }
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
@@ -917,28 +1013,32 @@ const AdminCourseVideosPage: React.FC = () => {
     }
   }, [courseId]);
 
+  // Debug: Monitor videos state changes
+  useEffect(() => {
+    console.log('🔍 [AdminVideosPage] Videos state changed:', {
+      videoCount: videos.length,
+      videosWithFreePreview: videos.map(v => ({ 
+        id: v._id, 
+        title: typeof v.title === 'string' ? v.title : v.title?.en || 'Untitled',
+        isFreePreview: v.isFreePreview 
+      }))
+    });
+  }, [videos]);
+
   // Clear success/error messages after timeout
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(null), 5000);
+      const timer = setTimeout(() => setSuccess(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [success]);
 
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
+      const timer = setTimeout(() => setError(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [error]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

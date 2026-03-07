@@ -164,6 +164,13 @@ class SocketService {
     });
   }
 
+  notifyAnnouncementDeletion(announcementData) {
+    this.broadcastContentUpdate('ANNOUNCEMENT_DELETED', {
+      announcement: announcementData,
+      message: 'Announcement has been deleted!'
+    });
+  }
+
   /**
    * Review-related notification methods
    */

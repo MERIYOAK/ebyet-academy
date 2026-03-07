@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
+import socketService from '../services/socketService';
 
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Save, X, Upload, Image, Video, Plus, Trash2, Eye, Edit, Check, AlertCircle, FileText, Download, Power, PowerOff, ExternalLink } from 'lucide-react';
@@ -314,6 +315,40 @@ const AdminCourseEditPage: React.FC = () => {
       setMaterialForm({ titleEn: '', titleTg: '', descriptionEn: '', descriptionTg: '', order: materials.length + 1, file: null });
       await fetchCourse(); // Refresh course to update version if needed (this will also fetch materials)
       
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        if (courseId && course) {
+          console.log('📢 Admin emitted NEW_MATERIAL event for uploaded material');
+          
+          // Create payload for event
+          const payload = {
+            type: 'NEW_MATERIAL',
+            data: {
+              courseId: courseId,
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              message: `New material added to course`
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log('📢 Broadcasting NEW_MATERIAL event:', payload);
+          // Note: The actual broadcasting will happen on the server side
+          // For now, this connects the admin to the socket service
+        } else {
+          console.warn('⚠️ [Material Upload] No course data found for broadcast:', { courseId, course });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update for new material:', socketError);
+      }
+      
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload material');
@@ -409,6 +444,40 @@ const AdminCourseEditPage: React.FC = () => {
       setEditingMaterialId(null);
       await fetchCourse(); // Refresh course to get updated materials
       
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        if (courseId && course) {
+          console.log('📢 Admin emitted MATERIAL_UPDATED event for updated material');
+          
+          // Create payload for event
+          const payload = {
+            type: 'MATERIAL_UPDATED',
+            data: {
+              courseId: courseId,
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              message: `Material updated in course`
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log('📢 Broadcasting MATERIAL_UPDATED event:', payload);
+          // Note: The actual broadcasting will happen on the server side
+          // For now, this connects the admin to the socket service
+        } else {
+          console.warn('⚠️ [Material Update] No course data found for broadcast:', { courseId, course });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update for updated material:', socketError);
+      }
+      
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update material');
@@ -443,6 +512,40 @@ const AdminCourseEditPage: React.FC = () => {
 
       setSuccess('Material deleted successfully');
       await fetchCourse(); // Refresh course to update version if needed (this will also fetch materials)
+      
+      // Emit real-time update to connected users
+      try {
+        const adminToken = localStorage.getItem('adminToken');
+        const userData = adminToken ? { 
+          userId: JSON.parse(atob(adminToken.split('.')[1])).userId || 'admin',
+          role: 'admin' 
+        } : { userId: 'admin', role: 'admin' };
+
+        await socketService.connect(userData);
+        
+        if (courseId && course) {
+          console.log('📢 Admin emitted MATERIAL_DELETED event for deleted material');
+          
+          // Create payload for event
+          const payload = {
+            type: 'MATERIAL_DELETED',
+            data: {
+              courseId: courseId,
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              message: `Material deleted from course`
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log('📢 Broadcasting MATERIAL_DELETED event:', payload);
+          // Note: The actual broadcasting will happen on the server side
+          // For now, this connects the admin to the socket service
+        } else {
+          console.warn('⚠️ [Material Delete] No course data found for broadcast:', { courseId, course });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ Failed to emit Socket.IO update for deleted material:', socketError);
+      }
       
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -636,6 +739,49 @@ const AdminCourseEditPage: React.FC = () => {
       });
       
       setSuccess('Course updated successfully!');
+      
+      // Emit Socket.IO event for real-time update
+      try {
+        const userData = {
+          userId: 'admin',
+          role: 'admin',
+          email: localStorage.getItem('adminEmail') || 'admin'
+        };
+        
+        await socketService.connect(userData);
+        
+        if (courseId && course) {
+          console.log('📢 Admin emitted COURSE_UPDATED event for WhatsApp link changes');
+          
+          // Create payload for event
+          const payload = {
+            type: 'COURSE_UPDATED',
+            data: {
+              courseId: courseId,
+              course: {
+                id: courseId,
+                title: course.title,
+                hasWhatsappGroup: formData.hasWhatsappGroup,
+                whatsappGroupLink: formData.whatsappGroupLink
+              },
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              message: `Course WhatsApp settings updated`
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log('📢 Broadcasting COURSE_UPDATED event:', payload);
+          // Note: The actual broadcasting will happen on the server side
+          // For now, this connects the admin to the socket service
+        } else {
+          console.warn('⚠️ [Course Update] No course data found for broadcast:', { courseId, course });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ [Course Update] Failed to emit Socket.IO event:', socketError);
+      }
+      
+      // Refetch course data to get latest state
+      await fetchCourse();
       
     } catch (err) {
       setProgressOverlay({

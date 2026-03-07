@@ -260,7 +260,7 @@ const BundleDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                     <CheckCircle className="h-5 w-5" />
                     <span className="font-semibold">
-                      {t('bundle_detail.save_amount', { amount: savingsAmount.toFixed(2), percentage: savingsPercentage }, `Save $${savingsAmount.toFixed(2)} (${savingsPercentage}%)`)}
+                      {t('bundle_detail.save_amount', `Save $${savingsAmount.toFixed(2)} (${savingsPercentage}%)`)}
                     </span>
                   </div>
                 )}
@@ -278,7 +278,7 @@ const BundleDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-gray-800 dark:text-gray-300">
                     <Tag className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                     <span>
-                      {t('bundle_detail.original_value', { value: bundle.originalValue.toFixed(2) }, `Original Value: $${bundle.originalValue.toFixed(2)}`)}
+                      {t('bundle_detail.original_value', `Original Value: $${bundle.originalValue.toFixed(2)}`)}
                     </span>
                   </div>
                 )}
@@ -294,7 +294,7 @@ const BundleDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {t('bundle_detail.max_enrollments', { max: bundle.maxEnrollments }, `Limited to ${bundle.maxEnrollments} students`)}
+                      {t('bundle_detail.max_enrollments', `Limited to ${bundle.maxEnrollments} students`)}
                     </span>
                   </div>
                 )}

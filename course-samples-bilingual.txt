@@ -1,0 +1,303 @@
+Course Sample 1 - "መግቢያዊ ልማጻ ምርመራት / Introduction to Web Development"
+
+Course Structure:
+- Course ID: web-dev-101
+- Title: መግቢያዊ ልማጻ ምርመራት / Introduction to Web Development
+- Description (EN): Learn fundamentals of web development from scratch
+- Description (TG): ከትክክክ መግቢያዊ ልማጻ ምርመራት ይማሩ
+- Price: $49.99
+- Category: Programming / ፕሮግራሚንግ
+- Level: Beginner / መጀመሪያ
+
+Lessons:
+Lesson 1: HTML Fundamentals / HTML መሰረታዎች
+  - Lesson ID: lesson-1-1
+  - Duration: 45 minutes / 45 ደቂቃ
+  - Description (EN): Learn the basics of HTML structure and elements
+  - Description (TG): HTML አወቃትና አካልፎች መሰረታ
+  - Order: 1
+
+  Videos:
+  Video 1.1: HTML Document Structure / HTML ደብታዊ አወቃት
+    - Video ID: video-1-1-1
+    - Duration: 15:30
+    - Description (EN): Understanding HTML document structure and basic tags
+    - Description (TG): HTML ደብታዊ አወቃትና መሰረታዊ ትግበሮች መረዳቅ
+    - Thumbnail: /thumbnails/html-structure.jpg
+    - Video URL: /videos/web-dev-101/html-structure.mp4
+    - Order: 1
+
+  Video 1.2: HTML Forms and Input / HTML ቅጠላታዎችና ማስገቢያ
+    - Video ID: video-1-1-2
+    - Duration: 18:45
+    - Description (EN): Creating forms and handling user input
+    - Description (TG): ቅጠላታዎች መስራትና ተጠቃሚ ማስገቢያ አስተዋግጥ
+    - Thumbnail: /thumbnails/html-forms.jpg
+    - Video URL: /videos/web-dev-101/html-forms.mp4
+    - Order: 2
+
+  Video 1.3: HTML Semantic Elements / HTML ሴማንቲክ አካልፎች
+    - Video ID: video-1-1-3
+    - Duration: 10:45
+    - Description (EN): Using semantic HTML5 elements properly
+    - Description (TG): HTML5 ሴማንቲክ አካልፎችን በትክክ መጠቀም
+    - Thumbnail: /thumbnails/html-semantic.jpg
+    - Video URL: /videos/web-dev-101/html-semantic.mp4
+    - Order: 3
+
+Lesson 2: CSS Styling / CSS ቅርጻት
+  - Lesson ID: lesson-1-2
+  - Duration: 60 minutes / 60 ደቂቃ
+  - Description (EN): Master CSS styling and layout techniques
+  - Description (TG): CSS ቅርጻትና አቀማመጥ ቴክኒኮች መያዝ
+  - Order: 2
+
+  Videos:
+  Video 2.1: CSS Selectors and Properties / CSS መምረጫዎችና ባህሪዎች
+    - Video ID: video-1-2-1
+    - Duration: 20:15
+    - Description (EN): Understanding CSS selectors and basic properties
+    - Description (TG): CSS መምረጫዎችና መሰረታዊ ባህሪዎች መረዳቅ
+    - Thumbnail: /thumbnails/css-selectors.jpg
+    - Video URL: /videos/web-dev-101/css-selectors.mp4
+    - Order: 1
+
+  Video 2.2: CSS Layout with Flexbox / CSS አቀማመጥ ከFlexbox ጋር
+    - Video ID: video-1-2-2
+    - Duration: 22:30
+    - Description (EN): Creating flexible layouts with Flexbox
+    - Description (TG): ከFlexbox ጋር ተለቋሚ አቀማመጦች መስራት
+    - Thumbnail: /thumbnails/css-flexbox.jpg
+    - Video URL: /videos/web-dev-101/css-flexbox.mp4
+    - Order: 2
+
+  Video 2.3: CSS Grid System / CSS ግሪድ ሲስተም
+    - Video ID: video-1-2-3
+    - Duration: 17:15
+    - Description (EN): Building complex layouts with CSS Grid
+    - Description (TG): ከCSS Grid ጋር ውስተኛ አቀማመጦች መስራት
+    - Thumbnail: /thumbnails/css-grid.jpg
+    - Video URL: /videos/web-dev-101/css-grid.mp4
+    - Order: 3
+
+Lesson 3: JavaScript Basics / JavaScript መሰረታዎች
+  - Lesson ID: lesson-1-3
+  - Duration: 75 minutes / 75 ደቂቃ
+  - Description (EN): Introduction to JavaScript programming
+  - Description (TG): ወደ ፕሮግራሚንግ ወደ JavaScript ማስተማሪያ
+  - Order: 3
+
+  Videos:
+  Video 3.1: Variables and Data Types / ተለዋጮችና ዳታ ዓይነታዎች
+    - Video ID: video-1-3-1
+    - Duration: 25:00
+    - Description (EN): Understanding JavaScript variables and data types
+    - Description (TG): JavaScript ተለዋጮችና ዳታ ዓይነታዎች መረዳቅ
+    - Thumbnail: /thumbnails/js-variables.jpg
+    - Video URL: /videos/web-dev-101/js-variables.mp4
+    - Order: 1
+
+  Video 3.2: Functions and Scope / ፋንክሽኖችና ክልል
+    - Video ID: video-1-3-2
+    - Duration: 28:30
+    - Description (EN): Creating functions and understanding scope
+    - Description (TG): ፋንክሽኖች መስራትና ክልል መረዳቅ
+    - Thumbnail: /thumbnails/js-functions.jpg
+    - Video URL: /videos/web-dev-101/js-functions.mp4
+    - Order: 2
+
+  Video 3.3: DOM Manipulation / DOM ማስተከም
+    - Video ID: video-1-3-3
+    - Duration: 21:30
+    - Description (EN): Interacting with HTML elements using JavaScript
+    - Description (TG): ከJavaScript ጋር HTML አካልፎችን መስተከም
+    - Thumbnail: /thumbnails/js-dom.jpg
+    - Video URL: /videos/web-dev-101/js-dom.mp4
+    - Order: 3
+
+Lesson 4: Building Your First Website / የመጀመሪያ ዌብሳይትዎ ስራ
+  - Lesson ID: lesson-1-4
+  - Duration: 90 minutes / 90 ደቂቃ
+  - Description (EN): Combine everything to build a complete website
+  - Description (TG): ሁሉንን በማዋሃድ ሙሉ ዌብሳይት መስራት
+  - Order: 4
+
+  Videos:
+  Video 4.1: Project Planning and Structure / ፕሮጀክት እቅድና አወቃት
+    - Video ID: video-1-4-1
+    - Duration: 30:00
+    - Description (EN): Planning your first website project
+    - Description (TG): የመጀመሪያ ዌብሳይት ፕሮጀክትዎ እቅድ
+    - Thumbnail: /thumbnails/project-planning.jpg
+    - Video URL: /videos/web-dev-101/project-planning.mp4
+    - Order: 1
+
+  Video 4.2: Building the Layout / አቀማመጡን መስራት
+    - Video ID: video-1-4-2
+    - Duration: 35:45
+    - Description (EN): Creating website structure and layout
+    - Description (TG): ዌብሳይት አወቃትና አቀማመጥ መስራት
+    - Thumbnail: /thumbnails/building-layout.jpg
+    - Video URL: /videos/web-dev-101/building-layout.mp4
+    - Order: 2
+
+  Video 4.3: Adding Interactivity / ኢንተራክቲቪቲ መጨምር
+    - Video ID: video-1-4-3
+    - Duration: 24:15
+    - Description (EN): Making your website interactive with JavaScript
+    - Description (TG): ዌብሳይትዎን ከJavaScript ጋር ኢንተራክቲቭ መስራት
+    - Thumbnail: /thumbnails/adding-interactivity.jpg
+    - Video URL: /videos/web-dev-101/adding-interactivity.mp4
+    - Order: 3
+
+Course Sample 2 - "ዲጂታል ማርኬቲንግ መሰረታዎች / Digital Marketing Fundamentals"
+
+Course Structure:
+- Course ID: marketing-101
+- Title: ዲጂታል ማርኬቲንግ መሰረታዎች / Digital Marketing Fundamentals
+- Description (EN): Master the essentials of digital marketing strategies
+- Description (TG): የዲጂታል ማርኬቲንግ ስትራቴጂዎች መያዝ
+- Price: $79.99
+- Category: Marketing / ማርኬቲንግ
+- Level: Intermediate / መካከለኛ
+
+Lessons:
+Lesson 1: Marketing Strategy Basics / ማርኬቲንግ ስትራቴጂ መሰረታዎች
+  - Lesson ID: lesson-2-1
+  - Duration: 50 minutes / 50 ደቂቃ
+  - Description (EN): Understanding digital marketing fundamentals
+  - Description (TG): የዲጂታል ማርኬቲንግ መሰረታዎች መረዳቅ
+  - Order: 1
+
+  Videos:
+  Video 1.1: Introduction to Digital Marketing / ወደ ዲጂታል ማርኬቲንግ ማስተማሪያ
+    - Video ID: video-2-1-1
+    - Duration: 18:20
+    - Description (EN): Overview of digital marketing landscape
+    - Description (TG): የዲጂታል ማርኬቲንግ እይታዎች አጠቃል
+    - Thumbnail: /thumbnails/marketing-intro.jpg
+    - Video URL: /videos/marketing-101/marketing-intro.mp4
+    - Order: 1
+
+  Video 1.2: Target Audience Analysis / የይፈለግ ህዝብታ ትንታክ ትንቀል
+    - Video ID: video-2-1-2
+    - Duration: 16:45
+    - Description (EN): Identifying and understanding your target audience
+    - Description (TG): የሚይፈለግዎትን ህዝብታ መለይና መረዳቅ
+    - Thumbnail: /thumbnails/target-audience.jpg
+    - Video URL: /videos/marketing-101/target-audience.mp4
+    - Order: 2
+
+  Video 1.3: Marketing Funnel Creation / ማርኬቲንግ ፈኖል መስራት
+    - Video ID: video-2-1-3
+    - Duration: 14:55
+    - Description (EN): Building effective marketing funnels
+    - Description (TG): አስፈላጊ የማርኬቲንግ ፈኖሎች መስራት
+    - Thumbnail: /thumbnails/marketing-funnel.jpg
+    - Video URL: /videos/marketing-101/marketing-funnel.mp4
+    - Order: 3
+
+Lesson 2: Social Media Marketing / ሶሻል ሚዲያ ማርኬቲንግ
+  - Lesson ID: lesson-2-2
+  - Duration: 65 minutes / 65 ደቂቃ
+  - Description (EN): Master social media platforms and strategies
+  - Description (TG): ሶሻል ሚዲያ ፕላትፎርሞችና ስትራቴጂዎች መያዝ
+  - Order: 2
+
+  Videos:
+  Video 2.1: Facebook Marketing Strategies / ፌስቡክ ማርኬቲንግ ስትራቴጂዎች
+    - Video ID: video-2-2-1
+    - Duration: 22:30
+    - Description (EN): Effective Facebook marketing techniques
+    - Description (TG): አስፈላጊ የፌስቡክ ማርኬቲንግ��ክኒኮች
+    - Thumbnail: /thumbnails/facebook-marketing.jpg
+    - Video URL: /videos/marketing-101/facebook-marketing.mp4
+    - Order: 1
+
+  Video 2.2: Instagram Content Creation / ኢንስታግራም ይዘክታዎች መፍጠሪያ
+    - Video ID: video-2-2-2
+    - Duration: 24:15
+    - Description (EN): Creating engaging Instagram content
+    - Description (TG): የሚያሳቱ ኢንስታግራም ይዘክታዎች መፍጠሪያ
+    - Thumbnail: /thumbnails/instagram-content.jpg
+    - Video URL: /videos/marketing-101/instagram-content.mp4
+    - Order: 2
+
+  Video 2.3: LinkedIn Professional Marketing / ሊንክዲን ፕሮፌሽናል ማርኬቲንግ
+    - Video ID: video-2-2-3
+    - Duration: 18:15
+    - Description (EN): Leveraging LinkedIn for business growth
+    - Description (TG): ለቢዝነስ እድገጃ ሊንክዲንን መጠቀም
+    - Thumbnail: /thumbnails/linkedin-marketing.jpg
+    - Video URL: /videos/marketing-101/linkedin-marketing.mp4
+    - Order: 3
+
+Lesson 3: Content Marketing / ይዘክታ ማርኬቲንግ
+  - Lesson ID: lesson-2-3
+  - Duration: 70 minutes / 70 ደቂቃ
+  - Description (EN): Creating compelling content that converts
+  - Description (TG): የሚለውጥ ይዘክታዎች መፍጠሪያ
+  - Order: 3
+
+  Videos:
+  Video 3.1: Blog Content Strategy / ብሎግ ይዘክታ ስትራቴጂ
+    - Video ID: video-2-3-1
+    - Duration: 26:45
+    - Description (EN): Developing effective blog content strategies
+    - Description (TG): አስፈላጊ የብሎግ ይዘክታ ስትራቴጂዎች መልማት
+    - Thumbnail: /thumbnails/blog-strategy.jpg
+    - Video URL: /videos/marketing-101/blog-strategy.mp4
+    - Order: 1
+
+  Video 3.2: Video Content Creation / ቪዲዮ ይዘክታዎች መፍጠሪያ
+    - Video ID: video-2-3-2
+    - Duration: 23:30
+    - Description (EN): Producing engaging video content
+    - Description (TG): የሚያሳቱ ቪዲዮ ይዘክታዎች መፍጠሪያ
+    - Thumbnail: /thumbnails/video-content.jpg
+    - Video URL: /videos/marketing-101/video-content.mp4
+    - Order: 2
+
+  Video 3.3: Email Marketing Campaigns / ኢሜል ማርኬቲንግ ካምፔይኖች
+    - Video ID: video-2-3-3
+    - Duration: 19:45
+    - Description (EN): Building effective email marketing campaigns
+    - Description (TG): አስፈላጊ የኢሜል ማርኬቲንግ ካምፔይኖች መስራት
+    - Thumbnail: /thumbnails/email-marketing.jpg
+    - Video URL: /videos/marketing-101/email-marketing.mp4
+    - Order: 3
+
+Lesson 4: Analytics and Optimization / አናሊቲክስና ኦፕቲማይዜሽን
+  - Lesson ID: lesson-2-4
+  - Duration: 55 minutes / 55 ደቂቃ
+  - Description (EN): Measuring and optimizing marketing performance
+  - Description (TG): የማርኬቲንግ አፈፃት መለክመያና ኦፕቲማይዜሽን
+  - Order: 4
+
+  Videos:
+  Video 4.1: Google Analytics Setup / ጉግል አናሊቲክስ ማዋቋሪያ
+    - Video ID: video-2-4-1
+    - Duration: 20:00
+    - Description (EN): Setting up and configuring Google Analytics
+    - Description (TG): ጉግል አናሊቲክስ ማዋቋሪያና ማስተከል
+    - Thumbnail: /thumbnails/analytics-setup.jpg
+    - Video URL: /videos/marketing-101/analytics-setup.mp4
+    - Order: 1
+
+  Video 4.2: Conversion Rate Optimization / የመቀየሪያ መጠንቀቅ ኦፕቲማይዜሽን
+    - Video ID: video-2-4-2
+    - Duration: 18:30
+    - Description (EN): Improving conversion rates through testing
+    - Description (TG): በመፈተኛ የመቀየሪያ መጠንቀቅን መሻሻለ
+    - Thumbnail: /thumbnails/conversion-optimization.jpg
+    - Video URL: /videos/marketing-101/conversion-optimization.mp4
+    - Order: 2
+
+  Video 4.3: ROI Measurement / ROI መለክመያ
+    - Video ID: video-2-4-3
+    - Duration: 16:30
+    - Description (EN): Measuring return on investment for campaigns
+    - Description (TG): ለካምፔይኖች የኢንቬስትመንት መመለሻት
+    - Thumbnail: /thumbnails/roi-measurement.jpg
+    - Video URL: /videos/marketing-101/roi-measurement.mp4
+    - Order: 3

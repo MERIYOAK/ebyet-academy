@@ -928,7 +928,7 @@ const getCourseById = async (req, res) => {
 
     // Find course with populated videos
     const course = await Course.findById(id)
-      .populate('videos', 'title s3Key order fileSize duration originalName description');
+      .populate('videos', 'title s3Key order fileSize duration originalName description isFreePreview');
 
     if (!course) {
       return res.status(404).json({

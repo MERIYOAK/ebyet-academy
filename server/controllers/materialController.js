@@ -146,22 +146,24 @@ exports.uploadMaterial = async (req, res) => {
     
     console.log(`✅ [uploadMaterial] Material added to course ${courseId}`);
     
-    // Emit Socket.IO event for real-time update
-    const socketService = getSocketService(req);
-    if (socketService) {
-      socketService.notifyCourseMaterialsUpdated({
-        id: course._id,
-        title: course.title,
-        material: {
-          id: material._id,
-          title: material.title,
-          description: material.description,
-          order: material.order,
-          fileSize: material.fileSize,
-          mimeType: material.mimeType,
-          originalName: material.originalName
-        }
-      });
+    // Emit real-time update to connected users
+    try {
+      const socketService = getSocketService(req);
+      if (socketService) {
+        // Get course information for the broadcast
+        const course = await Course.findById(material.courseId);
+        const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+        
+        console.log('📢 [uploadMaterial] Emitting NEW_MATERIAL event to connected users');
+        socketService.broadcastContentUpdate('NEW_MATERIAL', {
+          material: material,
+          courseId: material.courseId,
+          courseTitle: courseTitle,
+          message: `New material "${material.title}" added to course`
+        });
+      }
+    } catch (socketError) {
+      console.warn('⚠️ [uploadMaterial] Failed to emit Socket.IO update:', socketError);
     }
     
     res.status(201).json({
@@ -371,6 +373,28 @@ exports.deleteMaterial = async (req, res) => {
       // Still preserve the S3 file in case it's needed
       console.log(`🔒 [deleteMaterial] CourseVersion not found, but preserving S3 file. Only removing database record.`);
       await Material.findByIdAndDelete(material._id);
+      
+      // Emit real-time update to connected users
+      try {
+        const socketService = getSocketService(req);
+        if (socketService) {
+          // Get course information for the broadcast
+          const course = await Course.findById(material.courseId);
+          const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+          
+          console.log('📢 [deleteMaterial] Emitting MATERIAL_DELETED event to connected users (orphaned material)');
+          socketService.broadcastContentUpdate('MATERIAL_DELETED', {
+            materialId: material._id,
+            material: material,
+            courseId: material.courseId,
+            courseTitle: courseTitle,
+            message: `Material "${material.title}" deleted from course (orphaned)`
+          });
+        }
+      } catch (socketError) {
+        console.warn('⚠️ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
+      }
+      
       return res.json({ 
         success: true,
         message: 'Material database record removed. S3 file preserved.',
@@ -394,6 +418,28 @@ exports.deleteMaterial = async (req, res) => {
           console.log(`📝 [deleteMaterial] Initial upload mode: Removing material from version 1 (no enrollments yet)`);
           // DO NOT delete from database or S3 - preserve for potential restoration
           console.log(`🔒 [deleteMaterial] Material database record and S3 file preserved`);
+          
+          // Emit real-time update to connected users
+          try {
+            const socketService = getSocketService(req);
+            if (socketService) {
+              // Get course information for the broadcast
+              const course = await Course.findById(material.courseId);
+              const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+              
+              console.log('📢 [deleteMaterial] Emitting MATERIAL_DELETED event to connected users (initial upload)');
+              socketService.broadcastContentUpdate('MATERIAL_DELETED', {
+                materialId: material._id,
+                material: material,
+                courseId: material.courseId,
+                courseTitle: courseTitle,
+                message: `Material "${material.title}" deleted from course (initial upload)`
+              });
+            }
+          } catch (socketError) {
+            console.warn('⚠️ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
+          }
+          
           return res.json({
             success: true,
             message: 'Material removed from version 1 during initial upload. File preserved.',
@@ -522,14 +568,27 @@ exports.deleteMaterial = async (req, res) => {
         await course.save();
         
         console.log(`✅ [deleteMaterial] Created new version v${newVersionNumber} and set as current`);
-    }
-    
-    // CRITICAL: DO NOT delete the database record or S3 file!
-    // The material must remain accessible for students who purchased earlier versions.
-    // We've already created a new version without this material above (if it was in current version).
-    // The old version still has the reference, so students with access to that version can still access the file.
-    
-    if (material.courseVersion === courseCurrentVersion) {
+        
+        // Emit real-time update to connected users
+        try {
+          const socketService = getSocketService(req);
+          if (socketService) {
+            // Get course information for the broadcast
+            const course = await Course.findById(material.courseId);
+            const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+            
+            console.log('📢 [deleteMaterial] Emitting MATERIAL_DELETED event to connected users');
+            socketService.broadcastContentUpdate('MATERIAL_DELETED', {
+              materialId: material._id,
+              material: material,
+              courseId: material.courseId,
+              courseTitle: courseTitle,
+              message: `Material "${material.title}" deleted from course`
+            });
+          }
+        } catch (socketError) {
+          console.warn('⚠️ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
+        }
       // Material is in current version - we've already created a new version without it above
       // DO NOT delete the database record or S3 file - preserve for students with earlier versions
       console.log(`🔒 [deleteMaterial] Material database record and S3 file preserved for students with earlier versions`);
@@ -624,6 +683,26 @@ exports.updateMaterial = async (req, res) => {
         material
       }
     });
+
+    // Emit real-time update to connected users
+    try {
+      const socketService = getSocketService(req);
+      if (socketService) {
+        // Get course information for the broadcast
+        const course = await Course.findById(material.courseId);
+        const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+        
+        console.log('📢 [updateMaterial] Emitting MATERIAL_UPDATED event to connected users');
+        socketService.broadcastContentUpdate('MATERIAL_UPDATED', {
+          material: material,
+          courseId: material.courseId,
+          courseTitle: courseTitle,
+          message: `Material "${material.title}" updated in course`
+        });
+      }
+    } catch (socketError) {
+      console.warn('⚠️ [updateMaterial] Failed to emit Socket.IO update:', socketError);
+    }
   } catch (err) {
     console.error('[updateMaterial] error:', err?.message || err);
     res.status(500).json({ message: 'Update failed', error: err.message });

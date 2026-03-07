@@ -280,6 +280,28 @@ router.delete('/:id', adminAuthMiddleware, async (req, res) => {
       });
     }
 
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('REVIEW_DELETED', {
+        review: {
+          id: review._id,
+          rating: review.rating,
+          title: review.title,
+          comment: review.comment,
+          courseId: review.courseId?._id,
+          userId: review.userId?._id,
+          userName: review.userId?.name || 'Unknown User'
+        },
+        courseId: review.courseId?._id,
+        message: `Review deleted from course`
+      });
+      
+      console.log('📢 [deleteReview] Emitting REVIEW_DELETED event');
+    } else {
+      console.warn('⚠️ [deleteReview] Socket.IO service not available');
+    }
+
     res.json({
       success: true,
       message: 'Review deleted successfully'

@@ -765,6 +765,30 @@ const deleteBundle = async (req, res) => {
 
     console.log(`✅ Bundle deleted: ${bundle.title} by ${adminEmail}`);
 
+    // Emit Socket.IO event for real-time update
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('BUNDLE_DELETED', {
+        bundle: {
+          id: bundle._id,
+          title: bundle.title,
+          description: bundle.description,
+          price: bundle.price,
+          originalValue: bundle.originalValue,
+          category: bundle.category,
+          tags: bundle.tags,
+          featured: bundle.featured,
+          isPublic: bundle.isPublic,
+          status: bundle.status
+        },
+        message: `Bundle "${bundle.title}" has been deleted`
+      });
+      
+      console.log('📢 [deleteBundle] Emitting BUNDLE_DELETED event');
+    } else {
+      console.warn('⚠️ [deleteBundle] Socket.IO service not available');
+    }
+
     res.json({
       success: true,
       message: 'Bundle deleted successfully'

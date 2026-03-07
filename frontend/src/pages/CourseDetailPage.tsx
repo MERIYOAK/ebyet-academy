@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Clock, Play, CheckCircle, Download, BookOpen, ShoppingCart, Loader, Lock, FileText, ExternalLink, Sparkles, Eye, MessageCircle } from 'lucide-react';
+import { Clock, Play, CheckCircle, Download, BookOpen, ShoppingCart, Loader, Lock, FileText, ExternalLink, Sparkles, Eye, MessageCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import VideoPlaylist from '../components/VideoPlaylist';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import WhatsAppGroupButton from '../components/WhatsAppGroupButton';
@@ -13,6 +13,8 @@ import { parseDurationToSeconds, formatDuration } from '../utils/durationFormatt
 import { useCourse } from '../hooks/useCourses';
 import { getLocalizedText } from '../utils/bilingualHelper';
 import { groupVideosByLesson } from '../utils/lessonGrouper';
+import socketService from '../services/socketService';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 interface Video {
@@ -76,8 +78,10 @@ const CourseDetailPage = () => {
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   const { id, videoId } = useParams<{ id: string; videoId?: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [purchaseStatus, setPurchaseStatus] = useState<PurchaseStatus | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -120,6 +124,25 @@ const CourseDetailPage = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Collapsible lessons state - initialize with all lessons collapsed by default
+  const [collapsedLessons, setCollapsedLessons] = useState<Set<string | number>>(() => {
+    // This will be populated after groupedVideos is calculated
+    return new Set();
+  });
+
+  // Toggle lesson collapse/expand
+  const toggleLessonCollapse = useCallback((lessonKey: string | number) => {
+    setCollapsedLessons(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(lessonKey)) {
+        newSet.delete(lessonKey);
+      } else {
+        newSet.add(lessonKey);
+      }
+      return newSet;
+    });
+  }, []);
 
   // URL cache for video URLs
   const videoUrlCache = useRef<Map<string, { url: string; timestamp: number }>>(new Map());
@@ -224,8 +247,9 @@ const CourseDetailPage = () => {
         // Always try to fetch materials, even if not authenticated
         // The API will return empty array for unauthenticated users
         const headers: HeadersInit = {};
-        // Get token from localStorage as fallback if userToken state is not set
-        const token = userToken || localStorage.getItem('token');
+        // Get token from multiple sources to ensure authentication
+        const token = userToken || localStorage.getItem('userToken') || localStorage.getItem('token');
+        console.log('🔧 [Initial Materials] Token available:', !!token);
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
@@ -285,6 +309,134 @@ const CourseDetailPage = () => {
     setUserToken(token);
   }, []);
 
+  // Real-time updates via Socket.IO
+  useEffect(() => {
+    if (!id) return;
+
+    // Connect to Socket.IO for real-time updates
+    const connectSocket = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userData = token ? { 
+          userId: JSON.parse(atob(token.split('.')[1])).userId || 'anonymous',
+          role: 'user' 
+        } : { userId: 'anonymous', role: 'user' };
+
+        await socketService.connect(userData);
+        
+        // Listen for course-related updates
+        const handleCourseUpdate = (payload: any) => {
+          console.log('📢 CourseDetail received update:', payload);
+          
+          // Check if this update is for the current course
+          if ((payload.type === 'COURSE_UPDATED' || payload.type === 'WHATSAPP_GROUP_UPDATED') && payload.data.course?._id === id) {
+            console.log('🔄 Refreshing course data due to admin update');
+            console.log('🔄 WhatsApp settings updated:', {
+              hasWhatsappGroup: payload.data.course?.hasWhatsappGroup,
+              whatsappGroupLink: payload.data.course?.whatsappGroupLink ? '✅ Link present' : '❌ No link'
+            });
+            // Refresh course data by invalidating the query
+            queryClient.invalidateQueries({ queryKey: ['courses', 'detail', id] });
+            // Also refresh the detailed course data
+            fetchCourseData();
+          }
+          
+          // Handle video updates within this course
+          if ((payload.type === 'VIDEO_UPDATED' || payload.type === 'NEW_VIDEO' || payload.type === 'VIDEO_DELETED') && 
+              payload.data.video?.courseId === id) {
+            console.log('🔄 Refreshing course videos due to video update/deletion');
+            fetchCourseData();
+          }
+          
+          // Handle material updates within this course
+          if ((payload.type === 'NEW_MATERIAL' || payload.type === 'MATERIAL_UPDATED' || payload.type === 'MATERIAL_DELETED') && 
+              payload.data.courseId === id) {
+            console.log('🔄 Refreshing course materials due to material update/deletion');
+            // Refresh materials specifically
+            const fetchMaterials = async () => {
+              if (!id) return;
+              try {
+                setLoadingMaterials(true);
+                const headers: HeadersInit = {};
+                // Try multiple token sources to ensure authentication
+                const token = userToken || localStorage.getItem('userToken') || localStorage.getItem('token');
+                console.log('🔧 [Material Refresh] Token available:', !!token);
+                console.log('🔧 [Material Refresh] UserToken state:', !!userToken);
+                console.log('🔧 [Material Refresh] LocalStorage token:', !!localStorage.getItem('userToken'));
+                console.log('🔧 [Material Refresh] Course version:', courseVersion);
+                
+                if (token) {
+                  headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch(buildApiUrl(`/api/materials/course/${id}?version=${courseVersion}`), { headers });
+                console.log('🔧 [Material Refresh] Response status:', response.status);
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  console.log('🔧 [Material Refresh] Response data:', data);
+                  if (data.success && data.data?.materials) {
+                    const materialsList = data.data.materials || [];
+                    console.log('🔧 [Material Refresh] Materials with download URLs:', materialsList.map((m: any) => ({ id: m.id, hasDownloadUrl: !!m.downloadUrl })));
+                    setMaterials(materialsList);
+                    console.log('📦 Materials refreshed:', materialsList.length, 'materials');
+                  } else {
+                    setMaterials([]);
+                  }
+                } else {
+                  console.log('🔧 [Material Refresh] Failed response:', response.status);
+                  setMaterials([]);
+                }
+              } catch (error) {
+                console.error('❌ Exception fetching materials after update:', error);
+                setMaterials([]);
+              } finally {
+                setLoadingMaterials(false);
+              }
+            };
+            
+            fetchMaterials();
+          }
+          
+          // Handle review updates within this course
+          if ((payload.type === 'REVIEW_APPROVED' || payload.type === 'REVIEW_REJECTED' || payload.type === 'REVIEW_DELETED' || payload.type === 'REVIEW_REPLY_ADDED') && 
+              payload.data.courseId === id) {
+            console.log('🔄 Refreshing course reviews due to review update/deletion/reply');
+            fetchReviews();
+          }
+        };
+
+        // Register event listeners
+        socketService.addEventListener('COURSE_UPDATED', handleCourseUpdate);
+        socketService.addEventListener('WHATSAPP_GROUP_UPDATED', handleCourseUpdate);
+        socketService.addEventListener('REVIEW_APPROVED', handleCourseUpdate);
+        socketService.addEventListener('REVIEW_REJECTED', handleCourseUpdate);
+        socketService.addEventListener('REVIEW_DELETED', handleCourseUpdate);
+        socketService.addEventListener('REVIEW_REPLY_ADDED', handleCourseUpdate);
+        socketService.addEventListener('VIDEO_UPDATED', handleCourseUpdate);
+        socketService.addEventListener('NEW_VIDEO', handleCourseUpdate);
+        socketService.addEventListener('VIDEO_DELETED', handleCourseUpdate);
+        socketService.addEventListener('NEW_MATERIAL', handleCourseUpdate);
+        socketService.addEventListener('MATERIAL_UPDATED', handleCourseUpdate);
+        socketService.addEventListener('MATERIAL_DELETED', handleCourseUpdate);
+        socketService.addEventListener('contentUpdate', handleCourseUpdate);
+
+        console.log('🔌 CourseDetail connected to Socket.IO for real-time updates');
+      } catch (error) {
+        console.error('❌ Failed to connect to Socket.IO in CourseDetail:', error);
+      }
+    };
+
+    connectSocket();
+
+    // Cleanup on unmount
+    return () => {
+      socketService.removeEventListener('COURSE_UPDATED', () => {});
+      socketService.removeEventListener('VIDEO_UPDATED', () => {});
+      socketService.removeEventListener('NEW_VIDEO', () => {});
+      socketService.removeEventListener('contentUpdate', () => {});
+    };
+  }, [id, queryClient]);
 
   // Fetch course data - API first, fallback to sample
   useEffect(() => {
@@ -292,8 +444,10 @@ const CourseDetailPage = () => {
       if (!id) return;
 
       try {
-        // Use API loading state
-        setLoading(apiLoading);
+        // Only set loading to true if we haven't initially loaded yet
+        if (!hasInitiallyLoaded) {
+          setLoading(apiLoading);
+        }
         setError(null);
 
         // Try to use API course data first
@@ -317,6 +471,7 @@ const CourseDetailPage = () => {
           
           setCourse(courseData as Course);
           setLoading(false);
+          setHasInitiallyLoaded(true); // Mark as initially loaded
         } else if (!apiLoading && (apiError || !apiCourse)) {
           // API failed or returned no data - show error
           throw new Error(t('course_detail.course_not_found'));
@@ -326,6 +481,7 @@ const CourseDetailPage = () => {
         console.error('❌ Error loading course:', error);
         setError(error instanceof Error ? error.message : t('course_detail.failed_to_load_course'));
         setLoading(false);
+        setHasInitiallyLoaded(true); // Mark as initially loaded even on error
       }
 };
 
@@ -338,195 +494,199 @@ const CourseDetailPage = () => {
   }, [id, apiCourse, apiLoading, apiError, t]);
 
   // Fetch video data for the course from API with DRM support (like VideoPlayerPage)
-  useEffect(() => {
-    const fetchCourseData = async () => {
-      if (!id) return;
+  const fetchCourseData = useCallback(async () => {
+    if (!id) return;
 
-      const loadingTimeout = setTimeout(() => {
-        console.log('⚠️ [CourseDetail] Loading timeout reached');
-        setError('Loading timeout. Please refresh the page and try again.');
-        setLoading(false);
-      }, 30000);
+    const loadingTimeout = setTimeout(() => {
+      console.log('⚠️ [CourseDetail] Loading timeout reached');
+      setError('Loading timeout. Please refresh the page and try again.');
+      setLoading(false);
+    }, 30000);
 
-      try {
+    try {
+      // Only set loading to true if we haven't initially loaded yet
+      if (!hasInitiallyLoaded) {
         setLoading(true);
-        console.log('🔧 [CourseDetail] Starting to fetch course data...');
-        console.log('   - Course ID:', id);
-        
-        const token = localStorage.getItem('token');
-        if (!token && !userToken) {
-          console.log('⚠️ [CourseDetail] No authentication token, will fetch public data');
-        }
-        
-        // Fetch course data first to get the proper title
-        console.log('🔧 [CourseDetail] Fetching course data...');
-        const courseResponse = await fetch(buildApiUrl(`/api/courses/${id}`), {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-        
-        let courseDataFromApi = null;
-        if (courseResponse.ok) {
-          const courseResult = await courseResponse.json();
-          courseDataFromApi = courseResult.data?.course;
-          console.log('✅ [CourseDetail] Course data received');
-        }
-        
-        // Fetch videos with DRM protection (like VideoPlayerPage)
-        console.log('🔧 [CourseDetail] Fetching videos with DRM protection...');
-        let videosWithAccess: any[] = [];
-        let userHasPurchased = false;
-        
-        try {
-          const drmVideoService = DRMVideoService.getInstance();
-          const courseVersion = courseDataFromApi?.currentVersion || courseDataFromApi?.version || 1;
-          const videosResult = await drmVideoService.getCourseVideosWithDRM(id, courseVersion);
-          console.log('🔧 [CourseDetail] DRM videos data received');
-          console.log('🔧 [CourseDetail] videosResult.userHasPurchased:', videosResult.userHasPurchased);
-          
-          videosWithAccess = videosResult.course.videos || [];
-          userHasPurchased = videosResult.userHasPurchased || false;
-        } catch (drmError) {
-          console.log('⚠️ [CourseDetail] Could not fetch DRM videos (may be unauthenticated), fetching basic course info...');
-          console.log('⚠️ [CourseDetail] DRM Error:', drmError);
-          console.log('⚠️ [CourseDetail] Setting userHasPurchased to false due to DRM error');
-          // For unauthenticated users, get basic course info and mark all videos as locked
-          if (courseDataFromApi?.videos) {
-            videosWithAccess = courseDataFromApi.videos.map((video: any) => ({
-              ...video,
-              locked: true,
-              hasAccess: false
-            }));
-          }
-          userHasPurchased = false;
-        }
-        
-        // Create videos without progress tracking
-        const transformedVideos = videosWithAccess.map((video: any) => {
-          // IMPORTANT: Only set videoUrl if user has access - locked videos should have empty URL
-          const hasAccess = video.hasAccess || false;
-          const isLocked = video.locked !== undefined ? video.locked : !hasAccess;
-          let videoUrl = '';
-          
-          // Log video access status for debugging
-          console.log(`🔒 [CourseDetail] Video ${video.id?.substring(0, 8)}...}:`, {
-            hasAccess,
-            isLocked,
-            locked: video.locked,
-            isFreePreview: video.isFreePreview,
-            hasUrl: !!(video.url || video.videoUrl)
-          });
-          
-          // Only provide video URL if user has access AND video is not locked
-          if (hasAccess && !isLocked) {
-            videoUrl = video.url || video.videoUrl || '';
-            
-            // If we have an encrypted URL, don't set it as the video source yet
-            if (video.drm?.encryptedUrl && video.drm?.sessionId) {
-              videoUrl = ''; // Empty URL until decryption
-            }
-          } else {
-            // Locked video - ensure no URL is set (double-check)
-            videoUrl = '';
-            console.log(`🔒 [CourseDetail] Video ${video.id?.substring(0, 8)}... is LOCKED - no URL provided`);
-          }
-
-          return {
-            id: video.id,
-            title: video.title,
-            description: video.description,
-            duration: video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}` : '00:00',
-            videoUrl: videoUrl, // Empty for locked videos
-            hasAccess: hasAccess,
-            locked: !hasAccess,
-            isFreePreview: video.isFreePreview,
-            requiresPurchase: !hasAccess && !video.isFreePreview,
-            // DRM data - only include if user has access
-            drm: hasAccess ? {
-              enabled: video.drm?.enabled || false,
-              sessionId: video.drm?.sessionId,
-              watermarkData: video.drm?.watermarkData,
-              encryptedUrl: video.drm?.encryptedUrl
-            } : {
-              enabled: false,
-              sessionId: null,
-              watermarkData: null,
-              encryptedUrl: null
-            }
-};
-        });
-        
-        // Get course title
-        const courseTitle = courseDataFromApi?.title || course?.title || 'Course';
-        
-        const finalCourseData = {
-          title: courseTitle,
-          videos: transformedVideos,
-          userHasPurchased,
-          hasWhatsappGroup: courseDataFromApi?.hasWhatsappGroup || course?.hasWhatsappGroup || false
-};
-        
-        console.log('🔧 [CourseDetail] Setting courseData with userHasPurchased:', userHasPurchased);
-        console.log('🔧 [CourseDetail] Final courseData:', finalCourseData);
-        setCourseData(finalCourseData);
-        
-        // Fetch reviews after course data is loaded
-        fetchReviews();
-        
-        // Set current video - prioritize videoId from URL params, then existing currentVideoId, then first accessible
-        if (videoId && transformedVideos.find((v: Video) => v.id === videoId)) {
-          // Use videoId from URL params if it exists and is valid
-          const videoFromUrl = transformedVideos.find((v: Video) => v.id === videoId);
-          if (videoFromUrl) {
-            // Only set if video is not locked
-            if (!videoFromUrl.locked && videoFromUrl.hasAccess) {
-              setCurrentVideoId(videoId);
-              setCurrentVideo(videoFromUrl);
-            } else {
-              // Video is locked, find first accessible video instead
-              const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
-              if (firstAccessibleVideo) {
-                setCurrentVideoId(firstAccessibleVideo.id);
-                setCurrentVideo(firstAccessibleVideo);
-              } else if (transformedVideos.length > 0) {
-                // If no accessible videos, set first video (will show locked message)
-                setCurrentVideoId(transformedVideos[0].id);
-                setCurrentVideo(transformedVideos[0]);
-              }
-            }
-          }
-        } else if (!currentVideoId && transformedVideos.length > 0) {
-          // Fallback to first accessible video
-          const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
-          if (firstAccessibleVideo) {
-            setCurrentVideoId(firstAccessibleVideo.id);
-            setCurrentVideo(firstAccessibleVideo);
-          } else if (transformedVideos.length > 0) {
-            // If no accessible videos, set first video (will show locked message)
-            setCurrentVideoId(transformedVideos[0].id);
-            setCurrentVideo(transformedVideos[0]);
-          }
-        } else if (currentVideoId) {
-          // Use existing currentVideoId
-          const initialCurrentVideo = finalCourseData.videos.find((v: Video) => v.id === currentVideoId);
-          setCurrentVideo(initialCurrentVideo);
-        }
-        
-        console.log('✅ [CourseDetail] Course data setup completed');
-        clearTimeout(loadingTimeout);
-        
-      } catch (error) {
-        console.error('❌ [CourseDetail] Error fetching course data:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load course data');
-        clearTimeout(loadingTimeout);
-      } finally {
-        setLoading(false);
       }
-};
+      console.log('🔧 [CourseDetail] Starting to fetch course data...');
+      console.log('   - Course ID:', id);
+      
+      const token = localStorage.getItem('token');
+      if (!token && !userToken) {
+        console.log('⚠️ [CourseDetail] No authentication token, will fetch public data');
+      }
+      
+      // Fetch course data first to get the proper title
+      console.log('🔧 [CourseDetail] Fetching course data...');
+      const courseResponse = await fetch(buildApiUrl(`/api/courses/${id}`), {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      let courseDataFromApi = null;
+      if (courseResponse.ok) {
+        const courseResult = await courseResponse.json();
+        courseDataFromApi = courseResult.data?.course;
+        console.log('✅ [CourseDetail] Course data received');
+      }
+      
+      // Fetch videos with DRM protection (like VideoPlayerPage)
+      console.log('🔧 [CourseDetail] Fetching videos with DRM protection...');
+      let videosWithAccess: any[] = [];
+      let userHasPurchased = false;
+      
+      try {
+        const drmVideoService = DRMVideoService.getInstance();
+        const courseVersion = courseDataFromApi?.currentVersion || courseDataFromApi?.version || 1;
+        const videosResult = await drmVideoService.getCourseVideosWithDRM(id, courseVersion);
+        console.log('🔧 [CourseDetail] DRM videos data received');
+        console.log('🔧 [CourseDetail] videosResult.userHasPurchased:', videosResult.userHasPurchased);
+        
+        videosWithAccess = videosResult.course.videos || [];
+        userHasPurchased = videosResult.userHasPurchased || false;
+      } catch (drmError) {
+        console.log('⚠️ [CourseDetail] Could not fetch DRM videos (may be unauthenticated), fetching basic course info...');
+        console.log('⚠️ [CourseDetail] DRM Error:', drmError);
+        console.log('⚠️ [CourseDetail] Setting userHasPurchased to false due to DRM error');
+        // For unauthenticated users, get basic course info and mark all videos as locked
+        if (courseDataFromApi?.videos) {
+          videosWithAccess = courseDataFromApi.videos.map((video: any) => ({
+            ...video,
+            locked: true,
+            hasAccess: false
+          }));
+        }
+        userHasPurchased = false;
+      }
+      
+      // Create videos without progress tracking
+      const transformedVideos = videosWithAccess.map((video: any) => {
+        // IMPORTANT: Only set videoUrl if user has access - locked videos should have empty URL
+        const hasAccess = video.hasAccess || false;
+        const isLocked = video.locked !== undefined ? video.locked : !hasAccess;
+        let videoUrl = '';
+        
+        // Log video access status for debugging
+        console.log(`🔒 [CourseDetail] Video ${video.id?.substring(0, 8)}...}:`, {
+          hasAccess,
+          isLocked,
+          locked: video.locked,
+          isFreePreview: video.isFreePreview,
+          hasUrl: !!(video.url || video.videoUrl)
+        });
+        
+        // Only provide video URL if user has access AND video is not locked
+        if (hasAccess && !isLocked) {
+          videoUrl = video.url || video.videoUrl || '';
+          
+          // If we have an encrypted URL, don't set it as the video source yet
+          if (video.drm?.encryptedUrl && video.drm?.sessionId) {
+            videoUrl = ''; // Empty URL until decryption
+          }
+        } else {
+          // Locked video - ensure no URL is set (double-check)
+          videoUrl = '';
+          console.log(`🔒 [CourseDetail] Video ${video.id?.substring(0, 8)}... is LOCKED - no URL provided`);
+        }
 
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          duration: video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}` : '00:00',
+          videoUrl: videoUrl, // Empty for locked videos
+          hasAccess: hasAccess,
+          locked: !hasAccess,
+          isFreePreview: video.isFreePreview,
+          requiresPurchase: !hasAccess && !video.isFreePreview,
+          // DRM data - only include if user has access
+          drm: hasAccess ? {
+            enabled: video.drm?.enabled || false,
+            sessionId: video.drm?.sessionId,
+            watermarkData: video.drm?.watermarkData,
+            encryptedUrl: video.drm?.encryptedUrl
+          } : {
+            enabled: false,
+            sessionId: null,
+            watermarkData: null,
+            encryptedUrl: null
+          }
+        };
+      });
+      
+      // Get course title
+      const courseTitle = courseDataFromApi?.title || course?.title || 'Course';
+      
+      const finalCourseData = {
+        title: courseTitle,
+        videos: transformedVideos,
+        userHasPurchased,
+        hasWhatsappGroup: courseDataFromApi?.hasWhatsappGroup || course?.hasWhatsappGroup || false
+      };
+      
+      console.log('🔧 [CourseDetail] Setting courseData with userHasPurchased:', userHasPurchased);
+      console.log('🔧 [CourseDetail] Final courseData:', finalCourseData);
+      setCourseData(finalCourseData);
+      
+      // Fetch reviews after course data is loaded
+      fetchReviews();
+      
+      // Set current video - prioritize videoId from URL params, then existing currentVideoId, then first accessible
+      if (videoId && transformedVideos.find((v: Video) => v.id === videoId)) {
+        // Use videoId from URL params if it exists and is valid
+        const videoFromUrl = transformedVideos.find((v: Video) => v.id === videoId);
+        if (videoFromUrl) {
+          // Only set if video is not locked
+          if (!videoFromUrl.locked && videoFromUrl.hasAccess) {
+            setCurrentVideoId(videoId);
+            setCurrentVideo(videoFromUrl);
+          } else {
+            // Video is locked, find first accessible video instead
+            const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
+            if (firstAccessibleVideo) {
+              setCurrentVideoId(firstAccessibleVideo.id);
+              setCurrentVideo(firstAccessibleVideo);
+            } else if (transformedVideos.length > 0) {
+              // If no accessible videos, set first video (will show locked message)
+              setCurrentVideoId(transformedVideos[0].id);
+              setCurrentVideo(transformedVideos[0]);
+            }
+          }
+        }
+      } else if (!currentVideoId && transformedVideos.length > 0) {
+        // Fallback to first accessible video
+        const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
+        if (firstAccessibleVideo) {
+          setCurrentVideoId(firstAccessibleVideo.id);
+          setCurrentVideo(firstAccessibleVideo);
+        } else if (transformedVideos.length > 0) {
+          // If no accessible videos, set first video (will show locked message)
+          setCurrentVideoId(transformedVideos[0].id);
+          setCurrentVideo(transformedVideos[0]);
+        }
+      } else if (currentVideoId) {
+        // Use existing currentVideoId
+        const initialCurrentVideo = finalCourseData.videos.find((v: Video) => v.id === currentVideoId);
+        setCurrentVideo(initialCurrentVideo);
+      }
+      
+      console.log('✅ [CourseDetail] Course data setup completed');
+      clearTimeout(loadingTimeout);
+      
+    } catch (error) {
+      console.error('❌ [CourseDetail] Error fetching course data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load course data');
+      clearTimeout(loadingTimeout);
+    } finally {
+      setLoading(false);
+      setHasInitiallyLoaded(true); // Mark as initially loaded
+    }
+  }, [id, userToken, videoId, currentVideoId, course, fetchReviews]);
+
+  useEffect(() => {
     if (id) {
       fetchCourseData();
     }
-  }, [id, userToken]);
+  }, [id, fetchCourseData]);
 
   // Fetch purchase status
   useEffect(() => {
@@ -1292,6 +1452,14 @@ const CourseDetailPage = () => {
     return groupVideosByLesson(courseData.videos);
   }, [courseData?.videos]);
 
+  // Initialize collapsedLessons with all lesson keys when groupedVideos is calculated
+  useEffect(() => {
+    if (groupedVideos.length > 0) {
+      const lessonKeys = groupedVideos.map(lesson => lesson.lessonNumber || 'general');
+      setCollapsedLessons(new Set(lessonKeys));
+    }
+  }, [groupedVideos]);
+
   const formatTotalDuration = (videos?: Array<{ duration?: number }>) => {
     if (!videos) return '0:00';
     const totalSeconds = videos.reduce((acc, video) => acc + (video.duration || 0), 0);
@@ -1813,96 +1981,128 @@ const CourseDetailPage = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {groupedVideos.map((lessonGroup) => (
-                    <div key={lessonGroup.lessonNumber || 'general'}>
-                      {/* Lesson Header */}
-                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900 px-3 tiny:px-4 xxs:px-4 sm:px-6 py-2 tiny:py-2.5 xxs:py-3 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-sm tiny:text-base xxs:text-lg font-semibold text-gray-900 dark:text-white">
-                          {lessonGroup.lessonTitle}
-                        </h3>
-                        <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                          {lessonGroup.videos.length} {lessonGroup.videos.length === 1 ? 'video' : 'videos'}
-                        </p>
-                      </div>
-                      
-                      {/* Lesson Videos */}
-                      {lessonGroup.videos.map((video) => {
-                        const isLocked = video.locked;
-                        const hasAccess = !isLocked || (purchaseStatus?.hasPurchased || courseData?.userHasPurchased);
-                        
-                        return (
-                          <div
-                            key={video.id}
-                            className={`p-3 tiny:p-4 xxs:p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
-                              isLocked && !hasAccess ? 'opacity-60' : 'cursor-pointer'
-                            }`}
-                            onClick={() => {
-                              if (!isLocked || hasAccess) {
-                                handleVideoSelect(video.id);
-                              }
-                            }}
-                          >
-                            <div className="flex items-start gap-2 tiny:gap-3 xxs:gap-4">
-                              <div className="flex-shrink-0">
-                                {isLocked && !hasAccess ? (
-                                  <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                    <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-gray-500 dark:text-gray-400" />
-                                  </div>
+                  {groupedVideos.map((lessonGroup) => {
+                    const lessonKey = lessonGroup.lessonNumber || 'general';
+                    const isCollapsed = collapsedLessons.has(lessonKey);
+                    
+                    return (
+                      <div key={lessonKey} className="transition-all duration-300 ease-in-out">
+                        {/* Lesson Header - Clickable to toggle */}
+                        <div 
+                          className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900 px-3 tiny:px-4 xxs:px-4 sm:px-6 py-2 tiny:py-2.5 xxs:py-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:from-blue-100 hover:to-cyan-100 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-200"
+                          onClick={() => toggleLessonCollapse(lessonKey)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 tiny:gap-3">
+                              {/* Chevron Icon */}
+                              <div className={`transform transition-transform duration-200 ${isCollapsed ? 'rotate-0' : 'rotate-90'}`}>
+                                {isCollapsed ? (
+                                  <ChevronRight className="h-4 w-4 tiny:h-5 tiny:w-5 text-gray-600 dark:text-gray-400" />
                                 ) : (
-                                  <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                    <Play className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-blue-600 dark:text-blue-400" />
-                                  </div>
+                                  <ChevronDown className="h-4 w-4 tiny:h-5 tiny:w-5 text-gray-600 dark:text-gray-400" />
                                 )}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 tiny:mb-1.5 xxs:mb-2">
-                                      {(() => {
-                                        // Try displayTitle first (processed by lessonGrouper)
-                                        if (video.displayTitle) {
-                                          const title = getLocalizedText(video.displayTitle, currentLanguage);
-                                          // If displayTitle gives us a valid result (not empty and not JSON-like), use it
-                                          if (title && !title.includes('{"') && !title.includes('"tg"')) {
-                                            return title;
-                                          }
-                                        }
-                                        
-                                        // Fallback to original title
-                                        return getLocalizedText(video.title, currentLanguage);
-                                      })()}
-                                    </h3>
-                                    {video.description && (
-                                      <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mb-2 tiny:mb-2.5 xxs:mb-3 line-clamp-2">
-                                        {getLocalizedText(video.description, currentLanguage)}
-                                      </p>
-                                    )}
-                                    <div className="flex items-center gap-2 tiny:gap-2.5 xxs:gap-3 flex-wrap">
-                                      <div className="flex items-center gap-1 text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
-                                        <Clock className="h-3 w-3 tiny:h-3.5 tiny:w-3.5 xxs:h-4 xxs:w-4 flex-shrink-0" />
-                                        <span>{video.duration}</span>
+                              
+                              <div>
+                                <h3 className="text-sm tiny:text-base xxs:text-lg font-semibold text-gray-900 dark:text-white">
+                                  {lessonGroup.lessonTitle}
+                                </h3>
+                                <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                                  {lessonGroup.videos.length} {lessonGroup.videos.length === 1 ? 'video' : 'videos'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Video count badge */}
+                            <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 tiny:px-3 py-1 rounded-full text-xs font-medium">
+                              {lessonGroup.videos.length}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Lesson Videos - Collapsible */}
+                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-screen opacity-100'
+                        }`}>
+                          {lessonGroup.videos.map((video) => {
+                            const isLocked = video.locked;
+                            const hasAccess = !isLocked || (purchaseStatus?.hasPurchased || courseData?.userHasPurchased);
+                            
+                            return (
+                              <div
+                                key={video.id}
+                                className={`p-3 tiny:p-4 xxs:p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
+                                  isLocked && !hasAccess ? 'opacity-60' : 'cursor-pointer'
+                                }`}
+                                onClick={() => {
+                                  if (!isLocked || hasAccess) {
+                                    handleVideoSelect(video.id);
+                                  }
+                                }}
+                              >
+                                <div className="flex items-start gap-2 tiny:gap-3 xxs:gap-4">
+                                  <div className="flex-shrink-0">
+                                    {isLocked && !hasAccess ? (
+                                      <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                        <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-gray-500 dark:text-gray-400" />
                                       </div>
-                                      {video.isFreePreview && !isLocked && (
-                                        <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-green-600 text-white">
-                                          🔓 {t('course_detail.free_preview', 'Free Preview')}
-                                        </span>
-                                      )}
-                                      {isLocked && !hasAccess && (
-                                        <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-gray-600 text-white">
-                                          <Lock className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 mr-0.5 tiny:mr-1 flex-shrink-0" />
-                                          {t('course_detail.locked', 'Locked')}
-                                        </span>
-                                      )}
+                                    ) : (
+                                      <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                        <Play className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-blue-600 dark:text-blue-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
+                                      <div className="flex-1 min-w-0">
+                                        <h3 className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 tiny:mb-1.5 xxs:mb-2">
+                                          {(() => {
+                                            // Try displayTitle first (processed by lessonGrouper)
+                                            if (video.displayTitle) {
+                                              const title = getLocalizedText(video.displayTitle, currentLanguage);
+                                              // If displayTitle gives us a valid result (not empty and not JSON-like), use it
+                                              if (title && !title.includes('{"') && !title.includes('"tg"')) {
+                                                return title;
+                                              }
+                                            }
+                                            
+                                            // Fallback to original title
+                                            return getLocalizedText(video.title, currentLanguage);
+                                          })()}
+                                        </h3>
+                                        {video.description && (
+                                          <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mb-2 tiny:mb-2.5 xxs:mb-3 line-clamp-2">
+                                            {getLocalizedText(video.description, currentLanguage)}
+                                          </p>
+                                        )}
+                                        <div className="flex items-center gap-2 tiny:gap-2.5 xxs:gap-3 flex-wrap">
+                                          <div className="flex items-center gap-1 text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
+                                            <Clock className="h-3 w-3 tiny:h-3.5 tiny:w-3.5 xxs:h-4 xxs:w-4 flex-shrink-0" />
+                                            <span>{video.duration}</span>
+                                          </div>
+                                          {video.isFreePreview && !isLocked && (
+                                            <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-green-600 text-white">
+                                              🔓 {t('course_detail.free_preview', 'Free Preview')}
+                                            </span>
+                                          )}
+                                          {isLocked && !hasAccess && (
+                                            <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-gray-600 text-white">
+                                              <Lock className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 mr-0.5 tiny:mr-1 flex-shrink-0" />
+                                              {t('course_detail.locked', 'Locked')}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

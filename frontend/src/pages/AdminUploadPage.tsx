@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 
 import { Plus, Upload, X, FileText } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
-import { xhrUpload } from '../utils/uploadUtils';
+import { xhrUpload, refreshPresignedUrl } from '../utils/uploadUtils';
 import { validateBilingualLessonTitles, getLessonTitleHelperText } from '../utils/videoTitleValidation';
 
 interface Video {
@@ -395,37 +395,42 @@ const AdminUploadPage = () => {
           setProgressOverlay(prev => ({
             ...prev,
             progress: Math.round((uploadedBytesCompleted / totalBytesToUpload) * 100),
-            message: `Uploading video ${i + 1}/${course.videos.length}: ${video.file?.name || 'video'}...`
+            message: `Preparing video ${i + 1}/${course.videos.length}: ${video.file?.name || 'video'}...`
           }));
           
           console.debug('[UI] upload video start:', video.file.name);
 
-          const presignedUrlResponse = await fetchWithTimeout(buildApiUrl('/api/videos/presigned-url'), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminToken}`
-            },
-            body: JSON.stringify({
-              courseId,
-              fileName: video.file.name,
-              fileSize: video.file.size,
-              mimeType: video.file.type,
-              version: 1 // Default to version 1 for new course uploads
-            })
-          });
+          let uploadUrl: string;
+          let s3Key: string;
+          let retryCount = 0;
+          const maxRetries = 3;
 
-          if (!presignedUrlResponse.ok) {
-            const errorData = await presignedUrlResponse.json();
-            throw new Error(errorData.message || 'Failed to get upload URL');
-          }
-
-          const presignedData = await presignedUrlResponse.json();
-          console.log('[UI] Presigned URL response:', presignedData);
-          const { uploadUrl, s3Key } = presignedData.data || presignedData;
-
-          if (!uploadUrl) {
-            throw new Error('Upload URL is missing from server response');
+          // Get presigned URL with retry logic
+          while (retryCount <= maxRetries) {
+            try {
+              const presignedData = await refreshPresignedUrl(
+                courseId,
+                video.file.name,
+                video.file.size,
+                video.file.type,
+                1, // Default to version 1 for new course uploads
+                adminToken
+              );
+              uploadUrl = presignedData.uploadUrl;
+              s3Key = presignedData.s3Key;
+              break; // Success, exit retry loop
+            } catch (error) {
+              retryCount++;
+              if (retryCount > maxRetries) {
+                throw new Error(`Failed to get upload URL after ${maxRetries} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
+              console.warn(`Retry ${retryCount}/${maxRetries} for presigned URL:`, error);
+              setProgressOverlay(prev => ({
+                ...prev,
+                message: `Retrying to get upload URL for video ${i + 1}/${course.videos.length} (attempt ${retryCount}/${maxRetries})...`
+              }));
+              await new Promise(resolve => setTimeout(resolve, 2000 * retryCount)); // Exponential backoff
+            }
           }
 
           setProgressOverlay(prev => ({
@@ -433,25 +438,74 @@ const AdminUploadPage = () => {
             message: `Uploading video ${i + 1}/${course.videos.length} to cloud storage...`
           }));
 
-          await xhrUpload({
-            url: uploadUrl,
-            method: 'PUT',
-            file: video.file!,
-            headers: { 'Content-Type': video.file.type },
-            timeoutMs: 30 * 60 * 1000, // 30 minutes for large file uploads
-            onProgress: (loaded, total) => {
-              if (totalBytesToUpload > 0) {
-                const currentPercent = Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100);
-                const videoUploadPercent = Math.round((loaded / total) * 100);
-                setProgressOverlay(prev => ({
-                  ...prev,
-                  progress: currentPercent,
-                  message: `Uploading video ${i + 1}/${course.videos.length}: ${videoUploadPercent}%`
-                }));
+          // Upload video with retry logic
+          try {
+            await xhrUpload({
+              url: uploadUrl!,
+              method: 'PUT',
+              file: video.file!,
+              headers: { 'Content-Type': video.file.type },
+              timeoutMs: 45 * 60 * 1000, // 45 minutes for large file uploads
+              maxRetries: 3,
+              onProgress: (loaded, total) => {
+                if (totalBytesToUpload > 0) {
+                  const currentPercent = Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100);
+                  const videoUploadPercent = Math.round((loaded / total) * 100);
+                  setProgressOverlay(prev => ({
+                    ...prev,
+                    progress: currentPercent,
+                    message: `Uploading video ${i + 1}/${course.videos.length}: ${videoUploadPercent}%`
+                  }));
+                }
+                console.debug('[UI] video upload progress:', { loaded, total, currentPercent: Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100) });
               }
-              console.debug('[UI] video upload progress:', { loaded, total, currentPercent: Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100) });
+            });
+          } catch (uploadError: any) {
+            console.error(`Video upload failed for ${video.file.name}:`, uploadError);
+            
+            // If upload failed due to expired URL, try to refresh and retry once more
+            if (uploadError.message === 'PRESIGNED_URL_EXPIRED' && retryCount <= maxRetries) {
+              setProgressOverlay(prev => ({
+                ...prev,
+                message: `Upload URL expired, refreshing for video ${i + 1}/${course.videos.length}...`
+              }));
+              
+              try {
+                const freshPresignedData = await refreshPresignedUrl(
+                  courseId,
+                  video.file.name,
+                  video.file.size,
+                  video.file.type,
+                  1,
+                  adminToken
+                );
+                
+                await xhrUpload({
+                  url: freshPresignedData.uploadUrl,
+                  method: 'PUT',
+                  file: video.file!,
+                  headers: { 'Content-Type': video.file.type },
+                  timeoutMs: 45 * 60 * 1000,
+                  maxRetries: 2,
+                  onProgress: (loaded, total) => {
+                    if (totalBytesToUpload > 0) {
+                      const currentPercent = Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100);
+                      const videoUploadPercent = Math.round((loaded / total) * 100);
+                      setProgressOverlay(prev => ({
+                        ...prev,
+                        progress: currentPercent,
+                        message: `Retrying upload video ${i + 1}/${course.videos.length}: ${videoUploadPercent}%`
+                      }));
+                    }
+                  }
+                });
+              } catch (retryError) {
+                throw new Error(`Upload failed for video ${video.file.name} after URL refresh: ${retryError instanceof Error ? retryError.message : 'Unknown error'}`);
+              }
+            } else {
+              throw new Error(`Upload failed for video ${video.file.name}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
             }
-          });
+          }
 
           console.debug('[UI] video upload done:', video.file.name);
 
@@ -470,7 +524,7 @@ const AdminUploadPage = () => {
               courseId,
               title: JSON.stringify(video.title),
               description: JSON.stringify(video.description),
-              s3Key,
+              s3Key: s3Key!,
               order: i + 1,
               duration: video.duration || '00:00',
               fileSize: video.file.size,

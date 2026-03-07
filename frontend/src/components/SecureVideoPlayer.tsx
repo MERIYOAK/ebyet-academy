@@ -75,7 +75,10 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
+  // Start muted on mobile, unmuted on desktop for better UX
+  const [isMuted, setIsMuted] = useState(
+    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  );
   const [volume, setVolume] = useState(1);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(playbackRate);
   const [showSettings, setShowSettings] = useState(false);
@@ -233,6 +236,56 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       }
     };
   }, [drmEnabled, watermarkData, forensicWatermark, watermarkVisible]);
+
+  // iOS-specific video event listeners for debugging and compatibility
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // iOS-specific event listeners for debugging
+    const handleiOSDebug = (event: Event) => {
+      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+        console.log('📱 iOS video event:', {
+          type: event.type,
+          readyState: video.readyState,
+          networkState: video.networkState,
+          currentTime: video.currentTime,
+          duration: video.duration,
+          muted: video.muted,
+          paused: video.paused,
+          src: video.src
+        });
+      }
+    };
+
+    // Add iOS-specific event listeners
+    video.addEventListener('loadstart', handleiOSDebug);
+    video.addEventListener('loadedmetadata', handleiOSDebug);
+    video.addEventListener('loadeddata', handleiOSDebug);
+    video.addEventListener('canplay', handleiOSDebug);
+    video.addEventListener('canplaythrough', handleiOSDebug);
+    video.addEventListener('play', handleiOSDebug);
+    video.addEventListener('pause', handleiOSDebug);
+    video.addEventListener('ended', handleiOSDebug);
+    video.addEventListener('error', handleiOSDebug);
+    video.addEventListener('stalled', handleiOSDebug);
+    video.addEventListener('waiting', handleiOSDebug);
+
+    return () => {
+      // Cleanup event listeners
+      video.removeEventListener('loadstart', handleiOSDebug);
+      video.removeEventListener('loadedmetadata', handleiOSDebug);
+      video.removeEventListener('loadeddata', handleiOSDebug);
+      video.removeEventListener('canplay', handleiOSDebug);
+      video.removeEventListener('canplaythrough', handleiOSDebug);
+      video.removeEventListener('play', handleiOSDebug);
+      video.removeEventListener('pause', handleiOSDebug);
+      video.removeEventListener('ended', handleiOSDebug);
+      video.removeEventListener('error', handleiOSDebug);
+      video.removeEventListener('stalled', handleiOSDebug);
+      video.removeEventListener('waiting', handleiOSDebug);
+    };
+  }, [src]);
 
   // Security: Disable right-click context menu
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -728,6 +781,29 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const handlePlay = () => {
     setIsPlaying(true);
     setShowCenterPlayButton(false);
+    
+    // iOS-specific play handling
+    if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+      const video = videoRef.current;
+      if (video) {
+        // Ensure video plays inline on iOS
+        console.log('📱 iOS video playback started:', {
+          muted: video.muted,
+          playsInline: video.hasAttribute('playsInline'),
+          currentTime: video.currentTime
+        });
+        
+        // Handle iOS Safari autoplay restrictions
+        if (video.paused) {
+          // Attempt to play with user interaction fallback
+          video.play().catch(error => {
+            console.warn('📱 iOS autoplay blocked, requiring user interaction:', error);
+            setError('Tap the play button to start video on iOS devices');
+          });
+        }
+      }
+    }
+    
     onPlay?.();
   };
 
@@ -763,7 +839,30 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const handleNativeError = (e: Event) => {
     const video = e.target as HTMLVideoElement;
     const error = video.error;
-    setError(error ? `Video error: ${error.message}` : 'Unknown video error');
+    
+    // iPhone-specific error handling
+    if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+      console.warn('📱 iOS video error detected:', {
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        videoSrc: video.src,
+        muted: video.muted,
+        playsInline: video.hasAttribute('playsInline'),
+        webkitPlaysinline: video.hasAttribute('webkit-playsinline')
+      });
+      
+      // Common iOS video error solutions
+      if (error?.code === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
+        setError('Video format not supported on iOS. Please try a different browser or contact support.');
+      } else if (error?.code === 3) { // MEDIA_ERR_DECODE
+        setError('Video decoding failed on iOS. Please refresh the page and try again.');
+      } else {
+        setError(error ? `iOS Video error: ${error.message}` : 'Unknown iOS video error');
+      }
+    } else {
+      setError(error ? `Video error: ${error.message}` : 'Unknown video error');
+    }
+    
     setIsLoading(false);
     onError?.(error);
   };
@@ -775,6 +874,26 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
   const handleCanPlay = () => {
     setIsLoading(false);
+    
+    // iOS-specific video optimization
+    if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+      const video = videoRef.current;
+      if (video) {
+        // Ensure video is ready for iOS playback
+        console.log('📱 iOS video ready for playback:', {
+          src: video.src,
+          muted: video.muted,
+          playsInline: video.hasAttribute('playsInline'),
+          readyState: video.readyState,
+          networkState: video.networkState
+        });
+        
+        // Force video to load metadata for iOS
+        if (video.readyState < 2) {
+          video.load();
+        }
+      }
+    }
   };
 
   // Mouse movement handlers for controls
@@ -806,10 +925,37 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     }
     
     if (isReady) {
-      if (isPlaying) {
-        videoRef.current?.pause();
+      const video = videoRef.current;
+      
+      // iOS-specific user interaction handling
+      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+        if (video) {
+          // Ensure video is muted for iOS autoplay
+          if (!video.muted) {
+            video.muted = true;
+            setIsMuted(true);
+          }
+          
+          // Direct play with user interaction
+          if (isPlaying) {
+            video.pause();
+          } else {
+            // Ensure proper iOS play sequence
+            video.play().then(() => {
+              console.log('📱 iOS video playback successful');
+            }).catch(error => {
+              console.warn('📱 iOS video play failed:', error);
+              setError('Unable to play video on iOS. Please tap the play button again.');
+            });
+          }
+        }
       } else {
-        videoRef.current?.play();
+        // Non-iOS handling
+        if (isPlaying) {
+          video?.pause();
+        } else {
+          video?.play();
+        }
       }
     }
   };
@@ -1224,6 +1370,8 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         preload="metadata"
         crossOrigin="anonymous"
         muted={isMuted}
+        playsInline
+        webkit-playsinline
         style={{
           userSelect: 'none',
           WebkitUserSelect: 'none',

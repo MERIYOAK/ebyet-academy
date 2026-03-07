@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import BundleCard from '../components/BundleCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
 import { useBundles, useFeaturedBundles, BundleFilters, ApiBundle } from '../hooks/useBundles';
+import socketService from '../services/socketService';
 
 const BundlesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -57,9 +58,54 @@ const BundlesPage: React.FC = () => {
   const categories = useMemo(() => {
     const cats = bundles
       .map(bundle => bundle.category)
-      .filter((cat): cat is string => !!cat);
-    return Array.from(new Set(cats));
+      .filter((category): category is string => category !== undefined && category !== null);
+    return Array.from(new Set(cats)).sort();
   }, [bundles]);
+
+  // Socket.IO for real-time bundle updates
+  useEffect(() => {
+    const connectSocket = async () => {
+      try {
+        const userData = {
+          userId: localStorage.getItem('userId') || 'anonymous',
+          role: localStorage.getItem('userRole') || 'user'
+        };
+
+        await socketService.connect(userData);
+        
+        // Listen for bundle-related updates
+        const handleBundleUpdate = (payload: any) => {
+          console.log('📢 BundlesPage received update:', payload);
+          
+          // Refresh bundles for any bundle update
+          if (payload.type === 'NEW_BUNDLE' || payload.type === 'BUNDLE_UPDATED' || payload.type === 'BUNDLE_DELETED') {
+            console.log('🔄 Refreshing bundles due to bundle update/deletion');
+            refetch();
+          }
+        };
+
+        // Register event listeners
+        socketService.addEventListener('NEW_BUNDLE', handleBundleUpdate);
+        socketService.addEventListener('BUNDLE_UPDATED', handleBundleUpdate);
+        socketService.addEventListener('BUNDLE_DELETED', handleBundleUpdate);
+        socketService.addEventListener('contentUpdate', handleBundleUpdate);
+
+        console.log('🔌 BundlesPage connected to Socket.IO for real-time updates');
+      } catch (error) {
+        console.error('❌ Failed to connect to Socket.IO in BundlesPage:', error);
+      }
+    };
+
+    connectSocket();
+
+    // Cleanup on unmount
+    return () => {
+      socketService.removeEventListener('NEW_BUNDLE', () => {});
+      socketService.removeEventListener('BUNDLE_UPDATED', () => {});
+      socketService.removeEventListener('BUNDLE_DELETED', () => {});
+      socketService.removeEventListener('contentUpdate', () => {});
+    };
+  }, [refetch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

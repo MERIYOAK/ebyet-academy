@@ -83,9 +83,9 @@ router.post('/presigned-url', auth, adminAuthMiddleware, async (req, res) => {
       }
     });
     
-    // Generate presigned URL valid for 1 hour
+    // Generate presigned URL valid for 2 hours
     const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 7200 });
     
     console.log(`🔗 [presigned-url] Generated for course: ${courseId}, file: ${fileName}, key: ${s3Key}`);
     
@@ -94,7 +94,7 @@ router.post('/presigned-url', auth, adminAuthMiddleware, async (req, res) => {
       data: {
         uploadUrl,
         s3Key,
-        expiresIn: 3600
+        expiresIn: 7200
       }
     });
     
@@ -257,6 +257,26 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
         }
       }
     });
+          // Emit real-time update to connected users
+        try {
+          const socketService = req.app.get('socketService');
+          if (socketService) {
+            // Get course information for the broadcast
+            const Course = require('../models/Course');
+            const course = await Course.findById(courseId);
+            const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+              
+            console.log('📢 [save-metadata] Emitting NEW_VIDEO event to connected users');
+            socketService.broadcastContentUpdate('NEW_VIDEO', {
+              video: video,
+              courseId: courseId,
+              courseTitle: courseTitle,
+              message: `New video "${video.title}" added to course`
+            });
+          }
+        } catch (socketError) {
+          console.warn('⚠️ [save-metadata] Failed to emit Socket.IO update:', socketError);
+        }
   } catch (error) {
     console.error('[save-metadata] error:', error?.message || error);
     res.status(500).json({ 
@@ -336,6 +356,25 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
     });
     
     console.log(`✅ [deleteVideo] Video deletion completed: ${video.title} by ${adminEmail}`);
+    
+    // Emit real-time update to connected users
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
+        
+        console.log('📢 [deleteVideo] Emitting VIDEO_DELETED event to connected users');
+        socketService.broadcastContentUpdate('VIDEO_DELETED', {
+          videoId: video._id,
+          video: video,
+          courseId: video.courseId,
+          courseTitle: courseTitle,
+          message: `Video "${video.title}" deleted from course`
+        });
+      }
+    } catch (socketError) {
+      console.warn('⚠️ [deleteVideo] Failed to emit Socket.IO update:', socketError);
+    }
     
   } catch (error) {
     console.error('❌ [deleteVideo] Error:', error);
