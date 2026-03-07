@@ -117,20 +117,21 @@ class DeploymentNotificationService {
   private hasNewDeployment(serverDeployment: DeploymentInfo): boolean {
     if (!this.currentDeployment) return false;
     
-    // Compare deployment IDs (most reliable)
-    if (serverDeployment.deploymentId !== this.currentDeployment.deploymentId) {
-      console.log('🆕 New deployment detected:', {
-        from: this.currentDeployment.deploymentId,
-        to: serverDeployment.deploymentId
-      });
-      return true;
-    }
-
-    // Fallback to build hash comparison
+    // Use buildHash as primary comparison (more reliable)
     if (serverDeployment.buildHash !== this.currentDeployment.buildHash) {
       console.log('🆕 New build hash detected:', {
         from: this.currentDeployment.buildHash,
         to: serverDeployment.buildHash
+      });
+      return true;
+    }
+
+    // Fallback to deploymentId comparison if both exist
+    if (serverDeployment.deploymentId && 
+        serverDeployment.deploymentId !== this.currentDeployment.deploymentId) {
+      console.log('🆕 New deployment detected:', {
+        from: this.currentDeployment.deploymentId,
+        to: serverDeployment.deploymentId
       });
       return true;
     }
@@ -145,8 +146,8 @@ class DeploymentNotificationService {
   private handleNewDeployment(serverDeployment: DeploymentInfo): void {
     console.log('🚀 New deployment detected:', serverDeployment);
     
-    // Check if we've already notified about this deployment
-    if (this.hasBeenNotified(serverDeployment.deploymentId)) {
+    // Check if we've already notified about this deployment (use buildHash)
+    if (this.hasBeenNotified(serverDeployment.buildHash)) {
       console.log('📋 Deployment already notified, skipping');
       return;
     }
@@ -154,8 +155,8 @@ class DeploymentNotificationService {
     // Update current deployment
     this.currentDeployment = serverDeployment;
     
-    // Mark as notified
-    this.markAsNotified(serverDeployment.deploymentId);
+    // Mark as notified (use buildHash)
+    this.markAsNotified(serverDeployment.buildHash);
     
     // Show simple deployment notification
     this.showDeploymentNotification();
@@ -167,12 +168,12 @@ class DeploymentNotificationService {
   /**
    * Check if deployment has already been notified
    */
-  private hasBeenNotified(deploymentId: string): boolean {
+  private hasBeenNotified(buildHash: string): boolean {
     try {
       const notifiedDeployments = JSON.parse(
         localStorage.getItem(this.NOTIFIED_DEPLOYMENTS_KEY) || '[]'
       );
-      return notifiedDeployments.includes(deploymentId);
+      return notifiedDeployments.includes(buildHash);
     } catch {
       return false;
     }
@@ -181,20 +182,20 @@ class DeploymentNotificationService {
   /**
    * Mark deployment as notified
    */
-  private markAsNotified(deploymentId: string): void {
+  private markAsNotified(buildHash: string): void {
     try {
       const notifiedDeployments = JSON.parse(
         localStorage.getItem(this.NOTIFIED_DEPLOYMENTS_KEY) || '[]'
       );
       
-      // Add new deployment ID
-      notifiedDeployments.push(deploymentId);
+      // Add new build hash
+      notifiedDeployments.push(buildHash);
       
       // Keep only last 10 deployments to prevent storage bloat
       const recentDeployments = notifiedDeployments.slice(-10);
       
       localStorage.setItem(this.NOTIFIED_DEPLOYMENTS_KEY, JSON.stringify(recentDeployments));
-      console.log('📋 Marked deployment as notified:', deploymentId);
+      console.log('📋 Marked deployment as notified:', buildHash);
     } catch (error) {
       console.warn('⚠️ Failed to mark deployment as notified:', error);
     }
