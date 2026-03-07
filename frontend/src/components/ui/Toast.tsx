@@ -50,11 +50,12 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     
     setToasts(prev => [...prev, newToast]);
 
-    // Auto remove after duration (default 5 seconds)
-    const duration = toast.duration || 5000;
-    setTimeout(() => {
-      removeToast(id);
-    }, duration);
+    // Only auto-remove if duration is explicitly provided and greater than 0
+    if (toast.duration && toast.duration > 0) {
+      setTimeout(() => {
+        removeToast(id);
+      }, toast.duration);
+    }
   };
 
   const removeToast = (id: string) => {
@@ -80,7 +81,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       title: translatedTitle,
       message: translatedMessage,
       icon: <Sparkles className="w-5 h-5" />,
-      duration: 10000, // Show longer for deployment notifications
+      duration: 0, // No auto-dismissal - user controlled
       action: {
         label: translatedButton,
         onClick: () => {
