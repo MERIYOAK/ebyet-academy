@@ -12,20 +12,17 @@ const Toast: React.FC<ToastProps> = ({
   message, 
   type, 
   onClose, 
-  duration = 0 
+  duration = 3600000 
 }) => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Only set auto-dismissal if duration is greater than 0
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setTimeout(onClose, 300); // Wait for fade out animation
-      }, duration);
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(onClose, 300); // Wait for fade out animation
+    }, duration);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [duration, onClose]);
 
   const getIcon = () => {
