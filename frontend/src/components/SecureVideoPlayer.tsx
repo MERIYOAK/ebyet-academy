@@ -1478,7 +1478,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             </div>
 
             {/* Volume Control - Hidden on very small screens */}
-            <div className="hidden sm:flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+            <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
               <button
                 onClick={toggleMute}
                 className="text-white hover:text-gray-300 transition-colors"
