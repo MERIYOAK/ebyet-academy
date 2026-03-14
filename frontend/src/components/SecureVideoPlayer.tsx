@@ -64,7 +64,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   watermarkData,
   forensicWatermark
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const watermarkCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -91,7 +91,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [controlsTimeout, setControlsTimeout] = useState<number | null>(null);
   const [showCenterPlayButton, setShowCenterPlayButton] = useState(true);
 
-  // Security states
+  // Security states (recording detection disabled per client request)
   const [securityStatus, setSecurityStatus] = useState<{
     isSecure: boolean;
     violations: string[];
@@ -111,8 +111,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [watermarkVisible, setWatermarkVisible] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockReason, setBlockReason] = useState<string>('');
-  const [antiRecordingActive, setAntiRecordingActive] = useState(false);
-  const [contentObfuscation, setContentObfuscation] = useState(false);
+  // Recording detection states removed per client request
 
   // Progress tracking
   const lastProgressUpdate = useRef(0);
@@ -133,26 +132,9 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           console.log(`🔒 DRM session initialized for course: ${courseId}, video: ${videoId}, user: ${userId}`);
         }
 
-        // Perform initial security check
-        const securityCheck = await drmService.performSecurityCheck();
-        setSecurityStatus(prev => ({ ...prev, ...securityCheck }));
+        // Skip security check to avoid recording detection
+        console.log('🔒 Recording detection disabled per client request');
 
-        if (!securityCheck.isSecure) {
-          setShowSecurityWarning(true);
-          console.warn('🚨 Security violations detected:', securityCheck.violations);
-        }
-
-        // Set up periodic security checks
-        const securityInterval = setInterval(async () => {
-          const check = await drmService.performSecurityCheck();
-          setSecurityStatus(prev => ({ ...prev, ...check }));
-          
-          if (!check.isSecure) {
-            setShowSecurityWarning(true);
-          }
-        }, 30000); // Check every 30 seconds
-
-        return () => clearInterval(securityInterval);
       } catch (error) {
         console.error('❌ Failed to initialize security:', error);
         setError('Security initialization failed');
@@ -293,47 +275,11 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     return false;
   };
 
-  // Enhanced recording detection state
-  const [lastDetectionTime, setLastDetectionTime] = useState(0);
-
-  // Comprehensive recording detection function
+  // Recording detection disabled per client request
   const detectRecordingAttempt = useCallback((source: string, details: string) => {
-    const now = Date.now();
-    
-    // Prevent spam detection (only trigger once per 2 seconds)
-    if (now - lastDetectionTime < 2000) {
-      return;
-    }
-    
-    setLastDetectionTime(now);
-    console.warn(`🚨 RECORDING DETECTED from ${source}:`, details);
-    
-    // Immediately pause video
-      if (videoRef.current && !videoRef.current.paused) {
-        videoRef.current.pause();
-      console.warn('🚨 Video paused due to recording detection');
-      }
-      
-    // Activate all security measures
-    setAntiRecordingActive(true);
-    setContentObfuscation(true);
-      setShowSecurityWarning(true);
-    setIsBlocked(true);
-    setBlockReason(`Recording detected via ${source}`);
-    
-      setSecurityStatus(prev => ({
-        ...prev,
-        isSecure: false,
-      violations: [...prev.violations, `Recording attempt detected: ${source}`]
-      }));
-
-      // Activate content obfuscation
-      activateContentObfuscation();
-      
-      // Show immediate alert
-    alert(`🚫 RECORDING DETECTED AND BLOCKED! 🚫\n\nRecording attempt detected via: ${source}\n\nTo continue watching:\n1. Disable Windows Game Bar (Win+I → Gaming → Game Bar)\n2. Close all recording software (OBS, Bandicam, etc.)\n3. Disable browser extensions for video downloading\n4. Refresh this page\n\nThis content is protected and cannot be recorded.`);
-  }, [lastDetectionTime]);
-
+    console.log(`🔒 Recording detection disabled - would have triggered from ${source}:`, details);
+    // Do nothing - recording detection feature removed
+  }, []);
 
   // Security: Prevent drag and drop
   const handleDragStart = (e: React.DragEvent) => {
@@ -341,435 +287,27 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     return false;
   };
 
-  // Activate content obfuscation to make recordings useless
-  const activateContentObfuscation = () => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // Create simple black overlay instead of colorful obfuscation
-    const obfuscationOverlay = document.createElement('div');
-    obfuscationOverlay.id = 'recording-obfuscation';
-    obfuscationOverlay.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.3);
-      z-index: 30;
-      pointer-events: none;
-    `;
-
-    container.appendChild(obfuscationOverlay);
-
-
-    // Store references for cleanup
-    (obfuscationOverlay as any).cleanup = () => {
-      obfuscationOverlay.remove();
-    };
-
-    return obfuscationOverlay;
-  };
-
-  // Anti-recording content obfuscation
+  // Anti-recording content obfuscation disabled per client request
   useEffect(() => {
     if (!drmEnabled) return;
 
-    const obfuscateContent = () => {
-      const video = videoRef.current;
-      if (!video) return;
-
-      // Add simple black overlay instead of colorful one
-      const overlay = document.createElement('div');
-      overlay.id = 'anti-recording-overlay';
-      overlay.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.2);
-        pointer-events: none;
-        z-index: 25;
-      `;
-
-      // Add overlay to video container
-      const container = containerRef.current;
-      if (container) {
-        container.appendChild(overlay);
-      }
-
-      // Add dynamic watermark that changes every second
-      const dynamicWatermark = document.createElement('div');
-      dynamicWatermark.id = 'dynamic-watermark';
-      dynamicWatermark.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        color: rgba(255,255,255,0.3);
-        font-size: 12px;
-        font-family: monospace;
-        z-index: 26;
-        pointer-events: none;
-      `;
-
-      container?.appendChild(dynamicWatermark);
-
-      // Add IBYET INVESTING watermark
-      const academyWatermark = document.createElement('div');
-      academyWatermark.id = 'academy-watermark';
-      academyWatermark.style.cssText = `
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        color: rgba(255,255,255,0.15);
-        font-size: 24px;
-        font-weight: bold;
-        font-family: 'Arial', sans-serif;
-        z-index: 25;
-        pointer-events: none;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        user-select: none;
-      `;
-      academyWatermark.textContent = t('brand.name').toUpperCase();
-      container?.appendChild(academyWatermark);
-
-      // Update watermark every second
-      const updateWatermark = () => {
-        const timestamp = Date.now();
-        const randomId = Math.random().toString(36).substring(7);
-        dynamicWatermark.textContent = `ID:${userId?.substring(0,4)}-${randomId}-${timestamp}`;
-      };
-
-      updateWatermark();
-      const watermarkInterval = setInterval(updateWatermark, 1000);
-
-      return () => {
-        clearInterval(watermarkInterval);
-        overlay.remove();
-        dynamicWatermark.remove();
-        academyWatermark.remove();
-      };
-    };
-
-    const cleanup = obfuscateContent();
-    return cleanup;
-  }, [drmEnabled, userId, i18n.language, t]);
-
-  // Enhanced recording detection with multiple methods
-  useEffect(() => {
-    if (!drmEnabled) return;
-
-    // Variables for cleanup
-    let periodicChecks: number;
-    let observer: MutationObserver;
-    let stopAggressiveDetection: () => void;
-    let handleFocusChange: () => void;
-    let handleKeyDownHighPriority: (e: KeyboardEvent) => boolean | void;
-
-    // Add a delay before starting detection to avoid false positives during page load
-    const detectionDelay = setTimeout(() => {
-      console.log('🔒 Starting recording detection after delay...');
-      
-      // Method 1: Screen recording API detection
-      const detectScreenRecording = async () => {
-        try {
-          const isRecording = await drmService.detectScreenRecording();
-          setSecurityChecks(prev => ({ ...prev, screenRecording: isRecording }));
-          
-          if (isRecording) {
-            detectRecordingAttempt('Screen Recording API', 'Active screen recording detected');
-          }
-        } catch (error) {
-          console.error('❌ Screen recording detection failed:', error);
-        }
-      };
-
-    // Method 2: DOM-based Game Bar detection (less aggressive)
-    const detectGameBarElements = () => {
-      // Check for specific Game Bar overlay elements only
-      const gameBarSelectors = [
-        '[class*="xbox-gamebar"]',
-        '[id*="xbox-gamebar"]',
-        '[class*="game-dvr-overlay"]',
-        '[data-testid*="xbox-gamebar"]',
-        '[aria-label*="Xbox Game Bar"]'
-      ];
-
-      for (const selector of gameBarSelectors) {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-          // Only trigger if we find multiple specific Game Bar elements
-          if (elements.length >= 2) {
-            detectRecordingAttempt('Game Bar DOM Elements', `Found ${elements.length} Game Bar elements`);
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    // Method 3: Window focus/blur detection (very relaxed - only for obvious recording software)
-    let focusChangeTimeout: number;
-    let focusChangeCount = 0;
-    let lastFocusTime = 0;
-    handleFocusChange = () => {
-      // Completely ignore focus changes when video is paused - users often switch tabs when paused
-      if (!isPlaying) {
-        return;
-      }
-      
-      const now = Date.now();
-      clearTimeout(focusChangeTimeout);
-      
-      // Only track extremely rapid focus changes (less than 500ms apart - indicates automated software)
-      if (now - lastFocusTime < 500) {
-        focusChangeCount++;
-      } else {
-        focusChangeCount = 1; // Reset count if it's been a while
-      }
-      lastFocusTime = now;
-      
-      focusChangeTimeout = window.setTimeout(() => {
-        // Only trigger after MANY extremely rapid focus changes (clearly automated behavior)
-        if (document.hidden) {
-          setTimeout(() => {
-            if (!document.hidden && focusChangeCount >= 15) { // Increased from 8 to 15
-              detectRecordingAttempt('Window Focus Change', 'Automated focus changes detected (possible recording software)');
-              focusChangeCount = 0; // Reset counter
-            }
-          }, 1000); // Increased from 500ms to 1000ms
-        }
-      }, 500); // Increased from 200ms to 500ms
-    };
-
-    // Method 4: Performance monitoring for recording indicators
-    const detectPerformanceAnomalies = () => {
-      const performanceEntries = performance.getEntriesByType('measure');
-      const suspiciousEntries = performanceEntries.filter(entry => 
-        entry.name.includes('recording') || 
-        entry.name.includes('capture') ||
-        entry.name.includes('gamebar')
-      );
-      
-      if (suspiciousEntries.length > 0) {
-        detectRecordingAttempt('Performance Monitoring', `Found ${suspiciousEntries.length} suspicious performance entries`);
-      }
-    };
-
-    // Method 5: Media stream detection
-    const detectMediaStreams = () => {
-      // Check for active media streams
-      const videoElements = document.querySelectorAll('video');
-      const hasBlobStreams = Array.from(videoElements).some(video => 
-        video.src && video.src.startsWith('blob:')
-      );
-      
-      if (hasBlobStreams) {
-        detectRecordingAttempt('Media Stream Detection', 'Blob video streams detected');
-      }
-    };
-
-    // Method 6: Extension detection
-    const detectExtensions = async () => {
-      try {
-        const hasExtensions = await drmService.detectBrowserExtensions();
-        setSecurityChecks(prev => ({ ...prev, extensions: hasExtensions }));
-        
-        if (hasExtensions) {
-          detectRecordingAttempt('Browser Extensions', 'Suspicious browser extensions detected');
-        }
-      } catch (error) {
-        console.error('❌ Extension detection failed:', error);
-      }
-    };
-
-    // Method 7: Storage-based Game Bar detection
-    const detectGameBarStorage = () => {
-      const gameBarKeys = ['gamebar', 'xbox', 'game-dvr', 'gamebar-overlay', 'recording', 'capture'];
-      for (const key of gameBarKeys) {
-        if (localStorage.getItem(key) || sessionStorage.getItem(key)) {
-          detectRecordingAttempt('Game Bar Storage', `Game Bar storage key found: ${key}`);
-          return true;
-        }
-      }
-      return false;
-    };
-
-    // Method 8: WebRTC detection (screen sharing)
-    const detectWebRTCStreams = () => {
-      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-        // Override getDisplayMedia to detect usage
-        const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-        navigator.mediaDevices.getDisplayMedia = function(...args) {
-          detectRecordingAttempt('WebRTC Screen Sharing', 'getDisplayMedia API called');
-          return originalGetDisplayMedia.apply(this, args);
-        };
-      }
-    };
-
-    // Method 9: Canvas fingerprinting detection
-    const detectCanvasRecording = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        // Check if canvas is being used for recording
-        const originalToDataURL = canvas.toDataURL;
-        canvas.toDataURL = function(...args) {
-          detectRecordingAttempt('Canvas Recording', 'Canvas toDataURL called (possible recording)');
-          return originalToDataURL.apply(this, args);
-        };
-      }
-    };
-
-    // Method 10: Very relaxed polling for Game Bar elements
-    const aggressiveGameBarDetection = () => {
-      let detectionCount = 0;
-      const maxDetections = 20; // Much higher threshold from 10 to 20
-      
-      const checkForGameBar = () => {
-        // Skip Game Bar detection when video is paused
-        if (!isPlaying) {
-          return;
-        }
-        
-        if (detectGameBarElements() || detectGameBarStorage()) {
-          detectionCount++;
-          if (detectionCount >= maxDetections) {
-            detectRecordingAttempt('Game Bar Detection', `Game Bar detected ${detectionCount} times (only when video playing)`);
-          }
-        }
-      };
-      
-      // Check every 5 seconds instead of 3 seconds for much less aggressive detection
-      const interval = setInterval(checkForGameBar, 5000);
-      return () => clearInterval(interval);
-    };
+    console.log('🔒 Content obfuscation disabled per client request');
     
-    // Assign the cleanup function
-    stopAggressiveDetection = aggressiveGameBarDetection();
-
-    // Initialize all detection methods
-    console.log('🔒 Initializing relaxed recording detection optimized for trader audience...');
-    
-    // Initial checks - only run the most reliable ones
-    detectScreenRecording();
-    detectGameBarElements();
-    // Skip aggressive initial checks for trader audience:
-    // detectExtensions(); - Can cause false positives
-    // detectGameBarStorage(); - Too aggressive
-    // detectPerformanceAnomalies(); - Unreliable
-    // detectMediaStreams(); - Can trigger false positives
-    // detectWebRTCStreams(); - Too aggressive for normal users
-    // detectCanvasRecording(); - Can interfere with legitimate canvas use
-    
-    // Set up event listeners
-    window.addEventListener('focus', handleFocusChange);
-    window.addEventListener('blur', handleFocusChange);
-    document.addEventListener('visibilitychange', handleFocusChange);
-    
-    // Method 11: Relaxed DOM mutation observer - only for obvious Game Bar elements
-    observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const element = node as Element;
-              const className = element.className?.toString().toLowerCase() || '';
-              const id = element.id?.toLowerCase() || '';
-              
-              // Only trigger for very specific Game Bar patterns (much more strict)
-              const isObviousGameBar = (
-                (className.includes('gamebar') && className.includes('overlay')) ||
-                (id.includes('gamebar') && id.includes('overlay')) ||
-                className.includes('xbox-gamebar') ||
-                id.includes('xbox-gamebar')
-              );
-              
-              // Skip generic terms that can cause false positives
-              const hasGenericTerms = (
-                className.includes('recording') && !className.includes('gamebar') ||
-                className.includes('capture') && !className.includes('gamebar') ||
-                id.includes('recording') && !id.includes('gamebar') ||
-                id.includes('capture') && !id.includes('gamebar')
-              );
-              
-              if (isObviousGameBar && !hasGenericTerms && isPlaying) {
-                detectRecordingAttempt('DOM Mutation', `Obvious Game Bar element detected: ${element.tagName}`);
-              }
-            }
-          });
-        }
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    // Method 12: Relaxed periodic comprehensive checks (much less frequent)
-    periodicChecks = window.setInterval(() => {
-      // Only run comprehensive checks when video is playing
-      if (isPlaying) {
-        // Only run the most important and reliable checks
-        detectScreenRecording();
-        detectGameBarElements();
-        // Skip these less reliable checks for trader audience:
-        // detectExtensions(); - Can trigger false positives
-        // detectGameBarStorage(); - Too aggressive
-        // detectPerformanceAnomalies(); - Unreliable indicator
-        // detectMediaStreams(); - Can trigger false positives
-      }
-    }, 5000); // Reduced from 2000ms to 5000ms (every 5 seconds)
-
-    // Method 13: Relaxed Windows key blocking - only block obvious recording shortcuts
-    handleKeyDownHighPriority = (e: KeyboardEvent) => {
-      // Only block specific recording-related shortcuts, not all Windows keys
-      const isRecordingShortcut = (
-        // Win+Alt+R (Start/Stop recording) - PRIMARY TARGET
-        (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) ||
-        // Win+Alt+G (Record last 30 seconds)
-        (e.metaKey && e.altKey && (e.key === 'g' || e.key === 'G')) ||
-        // Win+G (Open Game Bar)
-        (e.metaKey && (e.key === 'g' || e.key === 'G'))
-      );
-      
-      if (isRecordingShortcut && isPlaying) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        console.warn('🚫 Recording shortcut blocked:', e.key);
-        detectRecordingAttempt('Recording Shortcut Block', `Recording shortcut blocked: ${e.key}`);
-        return false;
-      }
-      
-      // Allow all other Windows key combinations for normal user activity
-    };
-
-    // Add high priority event listener
-    document.addEventListener('keydown', handleKeyDownHighPriority, true);
-
-    console.log('🔒 Enhanced recording detection initialized with 13 detection methods');
-    
-    }, 2000); // 2 second delay before starting detection
-
     return () => {
-      // Cleanup all detection methods
-      clearTimeout(detectionDelay);
-      if (periodicChecks) clearInterval(periodicChecks);
-      if (observer) observer.disconnect();
-      if (stopAggressiveDetection) stopAggressiveDetection();
-      if (handleFocusChange) {
-        window.removeEventListener('focus', handleFocusChange);
-        window.removeEventListener('blur', handleFocusChange);
-        document.removeEventListener('visibilitychange', handleFocusChange);
-      }
-      if (handleKeyDownHighPriority) {
-        document.removeEventListener('keydown', handleKeyDownHighPriority, true);
-      }
+      // Cleanup - no active obfuscation to clean up
     };
-  }, [drmEnabled, drmService, detectRecordingAttempt, isPlaying]);
+  }, [drmEnabled]);
+
+  // Enhanced recording detection disabled per client request
+  useEffect(() => {
+    if (!drmEnabled) return;
+
+    console.log('🔒 Recording detection disabled per client request');
+    
+    return () => {
+      // Cleanup - no active detection to clean up
+    };
+  }, [drmEnabled]);
 
   // Video event handlers
   const handleLoadedData = () => {
@@ -1376,8 +914,8 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           userSelect: 'none',
           WebkitUserSelect: 'none',
           pointerEvents: 'auto',
-          WebkitFilter: antiRecordingActive ? 'blur(5px) brightness(0.3)' : 'none',
-          filter: antiRecordingActive ? 'blur(5px) brightness(0.3)' : 'none',
+          WebkitFilter: 'none',
+          filter: 'none',
           display: 'block',
           maxWidth: '100%',
           maxHeight: '100%',
