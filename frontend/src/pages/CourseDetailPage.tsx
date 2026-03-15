@@ -2024,81 +2024,163 @@ const CourseDetailPage = () => {
                         <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
                           isCollapsed ? 'max-h-0 opacity-0' : 'max-h-screen opacity-100'
                         }`}>
-                          {lessonGroup.videos.map((video) => {
-                            const isLocked = video.locked;
-                            const hasAccess = !isLocked || (purchaseStatus?.hasPurchased || courseData?.userHasPurchased);
-                            
-                            return (
-                              <div
-                                key={video.id}
-                                className={`p-3 tiny:p-4 xxs:p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
-                                  isLocked && !hasAccess ? 'opacity-60' : 'cursor-pointer'
-                                }`}
-                                onClick={() => {
-                                  if (!isLocked || hasAccess) {
-                                    handleVideoSelect(video.id);
-                                  }
-                                }}
-                              >
-                                <div className="flex items-start gap-2 tiny:gap-3 xxs:gap-4">
-                                  <div className="flex-shrink-0">
-                                    {isLocked && !hasAccess ? (
-                                      <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                        <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-gray-500 dark:text-gray-400" />
-                                      </div>
-                                    ) : (
-                                      <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                        <Play className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-blue-600 dark:text-blue-400" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
-                                      <div className="flex-1 min-w-0">
-                                        <h3 className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 tiny:mb-1.5 xxs:mb-2">
-                                          {(() => {
-                                            // Try displayTitle first (processed by lessonGrouper)
-                                            if (video.displayTitle) {
-                                              const title = getLocalizedText(video.displayTitle, currentLanguage);
-                                              // If displayTitle gives us a valid result (not empty and not JSON-like), use it
-                                              if (title && !title.includes('{"') && !title.includes('"tg"')) {
-                                                return title;
+                          {/* Desktop: Limited height with scrolling for more than 5 videos */}
+                          <div className={`hidden lg:block ${lessonGroup.videos.length > 5 ? 'max-h-[400px] overflow-y-auto playlist-scrollbar' : ''}`}>
+                            {lessonGroup.videos.map((video) => {
+                              const isLocked = video.locked;
+                              const hasAccess = !isLocked || (purchaseStatus?.hasPurchased || courseData?.userHasPurchased);
+                              
+                              return (
+                                <div
+                                  key={video.id}
+                                  className={`p-3 tiny:p-4 xxs:p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
+                                    isLocked && !hasAccess ? 'opacity-60' : 'cursor-pointer'
+                                  }`}
+                                  onClick={() => {
+                                    if (!isLocked || hasAccess) {
+                                      handleVideoSelect(video.id);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-start gap-2 tiny:gap-3 xxs:gap-4">
+                                    <div className="flex-shrink-0">
+                                      {isLocked && !hasAccess ? (
+                                        <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                          <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-gray-500 dark:text-gray-400" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                          <Play className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
+                                        <div className="flex-1 min-w-0">
+                                          <h3 className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 tiny:mb-1.5 xxs:mb-2">
+                                            {(() => {
+                                              // Try displayTitle first (processed by lessonGrouper)
+                                              if (video.displayTitle) {
+                                                const title = getLocalizedText(video.displayTitle, currentLanguage);
+                                                // If displayTitle gives us a valid result (not empty and not JSON-like), use it
+                                                if (title && !title.includes('{"') && !title.includes('"tg"')) {
+                                                  return title;
+                                                }
                                               }
-                                            }
-                                            
-                                            // Fallback to original title
-                                            return getLocalizedText(video.title, currentLanguage);
-                                          })()}
-                                        </h3>
-                                        {video.description && (
-                                          <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mb-2 tiny:mb-2.5 xxs:mb-3 line-clamp-2">
-                                            {getLocalizedText(video.description, currentLanguage)}
-                                          </p>
-                                        )}
-                                        <div className="flex items-center gap-2 tiny:gap-2.5 xxs:gap-3 flex-wrap">
-                                          <div className="flex items-center gap-1 text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
-                                            <Clock className="h-3 w-3 tiny:h-3.5 tiny:w-3.5 xxs:h-4 xxs:w-4 flex-shrink-0" />
-                                            <span>{video.duration}</span>
+                                              
+                                              // Fallback to original title
+                                              return getLocalizedText(video.title, currentLanguage);
+                                            })()}
+                                          </h3>
+                                          {video.description && (
+                                            <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mb-2 tiny:mb-2.5 xxs:mb-3 line-clamp-2">
+                                              {getLocalizedText(video.description, currentLanguage)}
+                                            </p>
+                                          )}
+                                          <div className="flex items-center gap-2 tiny:gap-2.5 xxs:gap-3 flex-wrap">
+                                            <div className="flex items-center gap-1 text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
+                                              <Clock className="h-3 w-3 tiny:h-3.5 tiny:w-3.5 xxs:h-4 xxs:w-4 flex-shrink-0" />
+                                              <span>{video.duration}</span>
+                                            </div>
+                                            {video.isFreePreview && !isLocked && (
+                                              <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-green-600 text-white">
+                                                🔓 {t('course_detail.free_preview', 'Free Preview')}
+                                              </span>
+                                            )}
+                                            {isLocked && !hasAccess && (
+                                              <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-gray-600 text-white">
+                                                <Lock className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 mr-0.5 tiny:mr-1 flex-shrink-0" />
+                                                {t('course_detail.locked', 'Locked')}
+                                              </span>
+                                            )}
                                           </div>
-                                          {video.isFreePreview && !isLocked && (
-                                            <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-green-600 text-white">
-                                              🔓 {t('course_detail.free_preview', 'Free Preview')}
-                                            </span>
-                                          )}
-                                          {isLocked && !hasAccess && (
-                                            <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-gray-600 text-white">
-                                              <Lock className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 mr-0.5 tiny:mr-1 flex-shrink-0" />
-                                              {t('course_detail.locked', 'Locked')}
-                                            </span>
-                                          )}
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Mobile/Tablet: Limited height with scrolling for more than 5 videos - no visible scrollbar */}
+                          <div className={`lg:hidden ${lessonGroup.videos.length > 5 ? 'max-h-[400px] overflow-y-auto scrollbar-hide' : ''}`}>
+                            {lessonGroup.videos.map((video) => {
+                              const isLocked = video.locked;
+                              const hasAccess = !isLocked || (purchaseStatus?.hasPurchased || courseData?.userHasPurchased);
+                              
+                              return (
+                                <div
+                                  key={video.id}
+                                  className={`p-3 tiny:p-4 xxs:p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
+                                    isLocked && !hasAccess ? 'opacity-60' : 'cursor-pointer'
+                                  }`}
+                                  onClick={() => {
+                                    if (!isLocked || hasAccess) {
+                                      handleVideoSelect(video.id);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-start gap-2 tiny:gap-3 xxs:gap-4">
+                                    <div className="flex-shrink-0">
+                                      {isLocked && !hasAccess ? (
+                                        <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                          <Lock className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-gray-500 dark:text-gray-400" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-8 h-8 tiny:w-9 tiny:h-9 xxs:w-10 xxs:h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                          <Play className="h-4 w-4 tiny:h-4.5 tiny:w-4.5 xxs:h-5 xxs:w-5 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-2 tiny:gap-3 xxs:gap-4">
+                                        <div className="flex-1 min-w-0">
+                                          <h3 className="text-xs tiny:text-sm xxs:text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 tiny:mb-1.5 xxs:mb-2">
+                                            {(() => {
+                                              // Try displayTitle first (processed by lessonGrouper)
+                                              if (video.displayTitle) {
+                                                const title = getLocalizedText(video.displayTitle, currentLanguage);
+                                                // If displayTitle gives us a valid result (not empty and not JSON-like), use it
+                                                if (title && !title.includes('{"') && !title.includes('"tg"')) {
+                                                  return title;
+                                                }
+                                              }
+                                              
+                                              // Fallback to original title
+                                              return getLocalizedText(video.title, currentLanguage);
+                                            })()}
+                                          </h3>
+                                          {video.description && (
+                                            <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mb-2 tiny:mb-2.5 xxs:mb-3 line-clamp-2">
+                                              {getLocalizedText(video.description, currentLanguage)}
+                                            </p>
+                                          )}
+                                          <div className="flex items-center gap-2 tiny:gap-2.5 xxs:gap-3 flex-wrap">
+                                            <div className="flex items-center gap-1 text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400">
+                                              <Clock className="h-3 w-3 tiny:h-3.5 tiny:w-3.5 xxs:h-4 xxs:w-4 flex-shrink-0" />
+                                              <span>{video.duration}</span>
+                                            </div>
+                                            {video.isFreePreview && !isLocked && (
+                                              <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-green-600 text-white">
+                                                🔓 {t('course_detail.free_preview', 'Free Preview')}
+                                              </span>
+                                            )}
+                                            {isLocked && !hasAccess && (
+                                              <span className="inline-flex items-center px-1.5 tiny:px-2 py-0.5 tiny:py-1 rounded text-[10px] tiny:text-xs font-medium bg-gray-600 text-white">
+                                                <Lock className="h-2.5 w-2.5 tiny:h-3 tiny:w-3 mr-0.5 tiny:mr-1 flex-shrink-0" />
+                                                {t('course_detail.locked', 'Locked')}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     );
@@ -2206,6 +2288,7 @@ const CourseDetailPage = () => {
                         handleVideoSelect(videoId);
                         setShowPlaylist(false); // Close playlist after selecting video
                       }}
+                      isMobileOverlay={true}
                     />
                   </div>
                 </div>

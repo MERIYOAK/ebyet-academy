@@ -30,12 +30,14 @@ interface VideoPlaylistProps {
   videos: Video[];
   currentVideoId: string;
   onVideoSelect: (videoId: string) => void;
+  isMobileOverlay?: boolean;
 }
 
 const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   videos,
   currentVideoId,
-  onVideoSelect
+  onVideoSelect,
+  isMobileOverlay,
 }) => {
   const { t, i18n } = useTranslation();
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
@@ -133,75 +135,151 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
               <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
                 isCollapsed ? 'max-h-0 opacity-0' : 'max-h-screen opacity-100'
               }`}>
-                {lessonGroup.videos.map((video, index) => {
-                  const isCompleted = video.completed || video.progress?.isCompleted;
-                  const isCurrent = currentVideoId === video.id;
-                  
-                  return (
-                    <div
-                      key={video.id}
-                      className={`border-b border-gray-700 transition-all duration-200 ${
-                        video.locked 
-                          ? 'cursor-not-allowed opacity-50' 
-                          : 'cursor-pointer hover:bg-gray-700'
-                      } ${
-                        isCurrent ? 'bg-cyan-900/30 border-cyan-600' : ''
-                      }`}
-                      onClick={() => !video.locked && onVideoSelect(video.id)}
-                    >
-                      <div className="p-3 xxs:p-4 flex items-start space-x-2 xxs:space-x-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {video.locked ? (
-                            <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                              <Lock className="h-3 w-3 xxs:h-4 xxs:w-4 text-gray-400" />
-                            </div>
-                          ) : isCompleted ? (
-                            <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-green-500 rounded-full flex items-center justify-center">
-                              <CheckCircle className="h-3 w-3 xxs:h-4 xxs:w-4 text-white" />
-                            </div>
-                          ) : isCurrent ? (
-                            <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full flex items-center justify-center">
-                              <Play className="h-3 w-3 xxs:h-4 xxs:w-4 text-white fill-current" />
-                            </div>
-                          ) : (
-                            <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gray-600 rounded-full flex items-center justify-center text-gray-300 font-semibold text-xs xxs:text-sm">
-                              {index + 1}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h4 className={`font-medium text-xs xxs:text-sm mb-1 line-clamp-2 ${
-                            isCurrent ? 'text-cyan-400' : 'text-white'
-                          }`}>
-                            {(() => {
-                              // Try displayTitle first (processed by lessonGrouper)
-                              if (video.displayTitle) {
-                                const title = getLocalizedText(video.displayTitle, currentLanguage);
-                                // If displayTitle gives us a valid result (not empty and not JSON-like), use it
-                                if (title && !title.includes('{"') && !title.includes('"tg"')) {
-                                  return title;
-                                }
-                              }
-                              
-                              // Fallback to original title
-                              return getLocalizedText(video.title, currentLanguage);
-                            })()}
-                            {video.isFreePreview && !video.locked && (
-                              <span className="ml-1 xxs:ml-2 inline-flex items-center px-1 xxs:px-1.5 py-0.5 rounded text-xs font-medium bg-green-600 text-white">
-                                🔓 {t('course_detail.free', 'Free')}
-                              </span>
+                {/* Desktop: Limited height with scrolling for more than 5 videos */}
+                <div className={`hidden lg:block ${lessonGroup.videos.length > 5 ? 'max-h-[320px] overflow-y-auto playlist-scrollbar' : ''}`}>
+                  {lessonGroup.videos.map((video, index) => {
+                    const isCompleted = video.completed || video.progress?.isCompleted;
+                    const isCurrent = currentVideoId === video.id;
+                    
+                    return (
+                      <div
+                        key={video.id}
+                        className={`border-b border-gray-700 transition-all duration-200 ${
+                          video.locked 
+                            ? 'cursor-not-allowed opacity-50' 
+                            : 'cursor-pointer hover:bg-gray-700'
+                        } ${
+                          isCurrent ? 'bg-cyan-900/30 border-cyan-600' : ''
+                        }`}
+                        onClick={() => !video.locked && onVideoSelect(video.id)}
+                      >
+                        <div className="p-3 xxs:p-4 flex items-start space-x-2 xxs:space-x-3">
+                          <div className="flex-shrink-0 mt-1">
+                            {video.locked ? (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                                <Lock className="h-3 w-3 xxs:h-4 xxs:w-4 text-gray-400" />
+                              </div>
+                            ) : isCompleted ? (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <CheckCircle className="h-3 w-3 xxs:h-4 xxs:w-4 text-white" />
+                              </div>
+                            ) : isCurrent ? (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full flex items-center justify-center">
+                                <Play className="h-3 w-3 xxs:h-4 xxs:w-4 text-white fill-current" />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gray-600 rounded-full flex items-center justify-center text-gray-300 font-semibold text-xs xxs:text-sm">
+                                {index + 1}
+                              </div>
                             )}
-                          </h4>
-                          <div className="flex items-center space-x-1 text-gray-400 text-xs">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatDuration(video.duration)}</span>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-medium text-xs xxs:text-sm mb-1 line-clamp-2 ${
+                              isCurrent ? 'text-cyan-400' : 'text-white'
+                            }`}>
+                              {(() => {
+                                // Try displayTitle first (processed by lessonGrouper)
+                                if (video.displayTitle) {
+                                  const title = getLocalizedText(video.displayTitle, currentLanguage);
+                                  // If displayTitle gives us a valid result (not empty and not JSON-like), use it
+                                  if (title && !title.includes('{"') && !title.includes('"tg"')) {
+                                    return title;
+                                  }
+                                }
+                                
+                                // Fallback to original title
+                                return getLocalizedText(video.title, currentLanguage);
+                              })()}
+                              {video.isFreePreview && !video.locked && (
+                                <span className="ml-1 xxs:ml-2 inline-flex items-center px-1 xxs:px-1.5 py-0.5 rounded text-xs font-medium bg-green-600 text-white">
+                                  🔓 {t('course_detail.free', 'Free')}
+                                </span>
+                              )}
+                            </h4>
+                            <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                              <Clock className="h-3 w-3" />
+                              <span>{formatDuration(video.duration)}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+                
+                {/* Mobile/Tablet: Limited height with scrolling for more than 5 videos - no visible scrollbar, unless in mobile overlay */}
+                <div className={`lg:hidden ${!isMobileOverlay && lessonGroup.videos.length > 5 ? 'max-h-[320px] overflow-y-auto scrollbar-hide' : ''}`}>
+                  {lessonGroup.videos.map((video, index) => {
+                    const isCompleted = video.completed || video.progress?.isCompleted;
+                    const isCurrent = currentVideoId === video.id;
+                    
+                    return (
+                      <div
+                        key={video.id}
+                        className={`border-b border-gray-700 transition-all duration-200 ${
+                          video.locked 
+                            ? 'cursor-not-allowed opacity-50' 
+                            : 'cursor-pointer hover:bg-gray-700'
+                        } ${
+                          isCurrent ? 'bg-cyan-900/30 border-cyan-600' : ''
+                        }`}
+                        onClick={() => !video.locked && onVideoSelect(video.id)}
+                      >
+                        <div className="p-3 xxs:p-4 flex items-start space-x-2 xxs:space-x-3">
+                          <div className="flex-shrink-0 mt-1">
+                            {video.locked ? (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                                <Lock className="h-3 w-3 xxs:h-4 xxs:w-4 text-gray-400" />
+                              </div>
+                            ) : isCompleted ? (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <CheckCircle className="h-3 w-3 xxs:h-4 xxs:w-4 text-white" />
+                              </div>
+                            ) : isCurrent ? (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full flex items-center justify-center">
+                                <Play className="h-3 w-3 xxs:h-4 xxs:w-4 text-white fill-current" />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 xxs:w-8 xxs:h-8 bg-gray-600 rounded-full flex items-center justify-center text-gray-300 font-semibold text-xs xxs:text-sm">
+                                {index + 1}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-medium text-xs xxs:text-sm mb-1 line-clamp-2 ${
+                              isCurrent ? 'text-cyan-400' : 'text-white'
+                            }`}>
+                              {(() => {
+                                // Try displayTitle first (processed by lessonGrouper)
+                                if (video.displayTitle) {
+                                  const title = getLocalizedText(video.displayTitle, currentLanguage);
+                                  // If displayTitle gives us a valid result (not empty and not JSON-like), use it
+                                  if (title && !title.includes('{"') && !title.includes('"tg"')) {
+                                    return title;
+                                  }
+                                }
+                                
+                                // Fallback to original title
+                                return getLocalizedText(video.title, currentLanguage);
+                              })()}
+                              {video.isFreePreview && !video.locked && (
+                                <span className="ml-1 xxs:ml-2 inline-flex items-center px-1 xxs:px-1.5 py-0.5 rounded text-xs font-medium bg-green-600 text-white">
+                                  🔓 {t('course_detail.free', 'Free')}
+                                </span>
+                              )}
+                            </h4>
+                            <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                              <Clock className="h-3 w-3" />
+                              <span>{formatDuration(video.duration)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           );
