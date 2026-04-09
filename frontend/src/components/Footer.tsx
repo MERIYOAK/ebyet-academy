@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaFacebook, FaYoutube, FaTiktok } from 'react-icons/fa';
+import { FaDiscord, FaYoutube, FaTiktok } from 'react-icons/fa';
 import { Mail, Phone, MapPin, Shield, FileText, HelpCircle } from 'lucide-react';
 import { config } from '../config/environment';
 
@@ -19,6 +19,9 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
   const supportEmail = config.SUPPORT_EMAIL;
   const supportPhone = config.SUPPORT_PHONE;
   const supportAddress = config.SUPPORT_ADDRESS;
+  const youtubeUrl = config.SOCIAL_YOUTUBE;
+  const tiktokUrl = config.SOCIAL_TIKTOK;
+  const discordUrl = config.SOCIAL_DISCORD;
   
   // Format phone number for tel: link (remove spaces, parentheses, and dashes)
   const phoneLink = supportPhone.replace(/[\s()\-]/g, '');
@@ -41,23 +44,7 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
             {/* Social Media Links */}
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-cyan-500/20 dark:hover:bg-cyan-500/20 border border-gray-300 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                aria-label="X (Twitter)"
-              >
-                <svg 
-                  className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" 
-                  viewBox="0 0 24 24" 
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </a>
-              <a
-                href="https://youtube.com"
+                href={youtubeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-cyan-500/20 dark:hover:bg-cyan-500/20 border border-gray-300 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -66,7 +53,7 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
                 <FaYoutube className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" />
               </a>
               <a
-                href="https://tiktok.com"
+                href={tiktokUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-cyan-500/20 dark:hover:bg-cyan-500/20 border border-gray-300 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -75,13 +62,13 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
                 <FaTiktok className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" />
               </a>
               <a
-                href="https://facebook.com"
+                href={discordUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-cyan-500/20 dark:hover:bg-cyan-500/20 border border-gray-300 dark:border-gray-700 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                aria-label="Facebook"
+                aria-label="Discord"
               >
-                <FaFacebook className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" />
+                <FaDiscord className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-300" />
               </a>
             </div>
           </div>

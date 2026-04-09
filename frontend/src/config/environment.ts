@@ -30,6 +30,8 @@ export const config = {
   SOCIAL_YOUTUBE: import.meta.env.VITE_SOCIAL_YOUTUBE || 'ibyetacademy',
   SOCIAL_INSTAGRAM: import.meta.env.VITE_SOCIAL_INSTAGRAM || 'ibyetacademy',
   SOCIAL_TWITTER: import.meta.env.VITE_SOCIAL_TWITTER || 'ibyetacademy',
+  SOCIAL_DISCORD: import.meta.env.VITE_SOCIAL_DISCORD || 'https://discord.com',
+  SOCIAL_TIKTOK: import.meta.env.VITE_SOCIAL_TIKTOK || 'https://tiktok.com',
   
   // S3 Configuration
   S3_BUCKET_URL: import.meta.env.VITE_S3_BUCKET_URL || '',

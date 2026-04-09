@@ -2,14 +2,14 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, BookOpen, Award, Users, Clock, Star, HelpCircle, Megaphone } from 'lucide-react';
-import { FaFacebook, FaYoutube, FaTiktok } from 'react-icons/fa';
+import { FaDiscord, FaYoutube, FaTiktok } from 'react-icons/fa';
 import CourseCard from '../components/CourseCard';
 import BundleCard from '../components/BundleCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { useFeaturedCourses } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 import { useFeaturedBundles } from '../hooks/useBundles';
-import { buildApiUrl } from '../config/environment';
+import { buildApiUrl, config } from '../config/environment';
 import socketService from '../services/socketService';
 import heroImage from '../assets/images/hero-image.jpeg';
 
@@ -38,6 +38,9 @@ interface Announcement {
 
 const HomePage = () => {
   const { t, i18n } = useTranslation();
+  const youtubeUrl = config.SOCIAL_YOUTUBE;
+  const tiktokUrl = config.SOCIAL_TIKTOK;
+  const discordUrl = config.SOCIAL_DISCORD;
   
   // Testimonials animation state
   const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
@@ -365,23 +368,7 @@ const HomePage = () => {
               </p>
               <div className="flex items-center gap-1 tiny:gap-1.5 xs:gap-2 sm:gap-3 p-1 tiny:p-1.5 xs:p-2 sm:p-3">
                 <a
-                  href="https://twitter.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  aria-label="X (Twitter)"
-                >
-                  <svg 
-                    className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" 
-                    viewBox="0 0 24 24" 
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                </a>
-                <a
-                  href="https://youtube.com"
+                  href={youtubeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
@@ -390,7 +377,7 @@ const HomePage = () => {
                   <FaYoutube className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
                 <a
-                  href="https://tiktok.com"
+                  href={tiktokUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
@@ -399,13 +386,13 @@ const HomePage = () => {
                   <FaTiktok className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
                 <a
-                  href="https://facebook.com"
+                  href={discordUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-6 h-6 tiny:w-7 tiny:h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-cyan-500/20 backdrop-blur-sm border border-white/20 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  aria-label="Facebook"
+                  aria-label="Discord"
                 >
-                  <FaFacebook className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
+                  <FaDiscord className="w-3 h-3 tiny:w-3.5 tiny:h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-white hover:text-cyan-400 transition-colors duration-300" />
                 </a>
               </div>
             </div>
