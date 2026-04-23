@@ -5,6 +5,7 @@ import { BookOpen, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { buildApiUrl } from '../config/environment';
+import { getValidImageUrl } from '../utils/imageUrlHelper';
 
 interface UserData {
   name: string;

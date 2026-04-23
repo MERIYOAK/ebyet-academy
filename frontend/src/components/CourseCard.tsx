@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Play, ShoppingCart, CheckCircle, Loader } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
 import { getLocalizedText } from '../utils/bilingualHelper';
+import { getValidImageUrl } from '../utils/imageUrlHelper';
 
 interface CourseCardProps {
   id: string;
@@ -66,6 +67,23 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const [imgSrc, setImgSrc] = useState<string>(thumbnail || placeholderThumb);
   const [imgLoading, setImgLoading] = useState<boolean>(true);
   const [imgError, setImgError] = useState<boolean>(false);
+
+  // Refresh expired image URLs
+  useEffect(() => {
+    const refreshImage = async () => {
+      if (!thumbnail || thumbnail === placeholderThumb) return;
+      
+      try {
+        const validUrl = await getValidImageUrl(thumbnail, id);
+        setImgSrc(validUrl);
+        console.log(' [CourseCard] Image URL refreshed:', { courseId: id, oldUrl: thumbnail, newUrl: validUrl });
+      } catch (error) {
+        console.error(' [CourseCard] Failed to refresh image URL:', error);
+      }
+    };
+
+    refreshImage();
+  }, [thumbnail, id]);
 
   useEffect(() => {
     // Image source updated

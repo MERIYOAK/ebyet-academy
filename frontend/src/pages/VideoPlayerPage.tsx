@@ -81,12 +81,70 @@ const VideoPlayerPage = () => {
   const [isSwitchingVideo, setIsSwitchingVideo] = useState(false); // Track video switching state
   const [currentVideo, setCurrentVideo] = useState<Video | undefined>(undefined); // Track current video object
   const [isDecryptingUrl, setIsDecryptingUrl] = useState(false); // Track URL decryption state
+  const [resumePosition, setResumePosition] = useState(0);
   
   // Udemy-style progress tracking: Request deduplication and batching
   const pendingProgressRequest = useRef<AbortController | null>(null);
   const progressUpdateTimeout = useRef<number | null>(null);
   const lastProgressUpdate = useRef(0);
   const PROGRESS_UPDATE_INTERVAL = 5000; // 5 seconds minimum between updates (reduced for testing)
+
+  const getResumeStorageKey = useCallback(
+    (courseId: string, selectedVideoId: string) => `videoResume:${courseId}:${selectedVideoId}`,
+    []
+  );
+
+  const saveLocalResumePosition = useCallback(
+    (position: number, selectedVideoId: string = currentVideoId) => {
+      if (!id || !selectedVideoId || !Number.isFinite(position) || position < 0) return;
+      try {
+        const storageKey = getResumeStorageKey(id, selectedVideoId);
+        const data = {
+          position,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        console.log('💾 [VideoPlayer] Saved resume position:', {
+          storageKey,
+          data,
+          position,
+          selectedVideoId
+        });
+      } catch (storageError) {
+        console.warn('Could not save local resume position:', storageError);
+      }
+    },
+    [id, currentVideoId, getResumeStorageKey]
+  );
+
+  const getLocalResumePosition = useCallback(
+    (selectedVideoId: string) => {
+      if (!id || !selectedVideoId) return 0;
+      try {
+        const storageKey = getResumeStorageKey(id, selectedVideoId);
+        const raw = localStorage.getItem(storageKey);
+        console.log('🔍 [VideoPlayer] Getting resume position:', {
+          storageKey,
+          raw,
+          selectedVideoId
+        });
+        if (!raw) return 0;
+        const parsed = JSON.parse(raw);
+        const position = Number(parsed?.position || 0);
+        const finalPosition = Number.isFinite(position) && position > 0 ? position : 0;
+        console.log('🔍 [VideoPlayer] Resume position result:', {
+          parsed,
+          position,
+          finalPosition
+        });
+        return finalPosition;
+      } catch (storageError) {
+        console.warn('Could not read local resume position:', storageError);
+        return 0;
+      }
+    },
+    [id, getResumeStorageKey]
+  );
   
   // Note: videoRef is no longer needed as EnhancedVideoPlayer handles video element internally
 
@@ -550,7 +608,8 @@ const VideoPlayerPage = () => {
                           completionPercentage: result.data.videoProgress.completionPercentage,
                           watchedDuration: result.data.videoProgress.watchedDuration,
                           totalDuration: result.data.videoProgress.totalDuration,
-                          isCompleted: result.data.videoProgress.isCompleted
+                          isCompleted: result.data.videoProgress.isCompleted,
+                          lastPosition: result.data.videoProgress.lastPosition ?? watchedDuration
                         }
                       }
                     : video
@@ -649,7 +708,8 @@ const VideoPlayerPage = () => {
                         completionPercentage: result.data.videoProgress.completionPercentage,
                         watchedDuration: result.data.videoProgress.watchedDuration,
                         totalDuration: result.data.videoProgress.totalDuration,
-                        isCompleted: result.data.videoProgress.isCompleted
+                        isCompleted: result.data.videoProgress.isCompleted,
+                        lastPosition: result.data.videoProgress.lastPosition ?? watchedDuration
                       }
                     }
                   : video
@@ -1047,10 +1107,23 @@ const VideoPlayerPage = () => {
       if (!currentVideoId || !id) return;
 
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        const localResume = getLocalResumePosition(currentVideoId);
+        let finalResume = localResume;
 
-        // Fetch resume position
+        console.log(`🔍 [VideoPlayer] Resume position calculation:`, {
+          currentVideoId,
+          localResume,
+          videoProgress: currentVideo?.progress?.lastPosition
+        });
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setResumePosition(finalResume);
+          console.log(`📍 [VideoPlayer] No token, using local resume: ${finalResume}s`);
+          return;
+        }
+
+        // Try to get resume position from API as backup
         const resumeResponse = await fetch(buildApiUrl(`/api/progress/resume/${id}/${currentVideoId}`), {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1059,18 +1132,24 @@ const VideoPlayerPage = () => {
 
         if (resumeResponse.ok) {
           const resumeResult = await resumeResponse.json();
-          const resumePosition = resumeResult.data.resumePosition;
-
-          // Note: Resume position is now handled by EnhancedVideoPlayer's initialTime prop
-          console.log(`✅ [VideoPlayer] Resume position set to ${resumePosition}s`);
+          const apiResume = Number(resumeResult?.data?.resumePosition || 0);
+          if (Number.isFinite(apiResume) && apiResume > finalResume) {
+            finalResume = apiResume;
+          }
         }
+
+        setResumePosition(finalResume);
+        console.log(`✅ [VideoPlayer] Resume position set to ${finalResume}s for video ${currentVideoId}`);
       } catch (error) {
         console.error('Error fetching resume position:', error);
+        const fallbackResume = getLocalResumePosition(currentVideoId);
+        setResumePosition(fallbackResume);
+        console.log(`📍 [VideoPlayer] Using fallback resume: ${fallbackResume}s`);
       }
     };
 
     fetchResumePosition();
-  }, [currentVideoId, id]);
+  }, [currentVideoId, id, getLocalResumePosition, currentVideo?.progress?.lastPosition]);
 
   useEffect(() => {
     if (videoId) {
@@ -1227,6 +1306,7 @@ const VideoPlayerPage = () => {
     setPauseStartTime(Date.now());
       
       console.log('⏸️ [VideoPlayer] Video paused at:', currentTime, 'seconds');
+      saveLocalResumePosition(currentTime);
       
       // Save progress immediately when paused
       saveProgressImmediately(currentTime, duration, currentTime);
@@ -1273,13 +1353,14 @@ const VideoPlayerPage = () => {
         const pauseDuration = Date.now() - pauseStartTime;
         if (pauseDuration >= 5000) { // 5 seconds
           console.log('⏰ [VideoPlayer] Video paused for 5+ seconds, ensuring progress is saved');
+            saveLocalResumePosition(currentTime);
             saveProgressImmediately(currentTime, duration, currentTime);
         }
       }, 5000);
 
       return () => clearTimeout(checkPauseDuration);
     }
-  }, [isPaused, pauseStartTime, saveProgressImmediately, currentTime, duration]);
+  }, [isPaused, pauseStartTime, saveProgressImmediately, currentTime, duration, saveLocalResumePosition]);
 
   // Handle page navigation and save progress
   useEffect(() => {
@@ -1302,6 +1383,7 @@ const VideoPlayerPage = () => {
     const handleVisibilityChange = () => {
       if (document.hidden && isPlaying) {
         console.log('👁️ [VideoPlayer] Page hidden, saving progress');
+        saveLocalResumePosition(currentTime);
         saveProgressImmediately(currentTime, duration, currentTime);
       }
     };
@@ -1315,7 +1397,7 @@ const VideoPlayerPage = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [id, currentVideoId, isPlaying, saveProgressImmediately, currentTime, duration]);
+  }, [id, currentVideoId, isPlaying, saveProgressImmediately, currentTime, duration, saveLocalResumePosition]);
 
   // Handle pending progress on page load
   useEffect(() => {
@@ -1766,6 +1848,9 @@ const VideoPlayerPage = () => {
               onTimeUpdate={(currentTime, duration) => {
                 setCurrentTime(currentTime);
                 setDuration(duration);
+                if (currentTime > 0) {
+                  saveLocalResumePosition(currentTime);
+                }
                     if (duration > 0) {
                   const actualPercentage = Math.round((currentTime / duration) * 100);
                   setCurrentVideoPercentage(actualPercentage);
@@ -1777,7 +1862,16 @@ const VideoPlayerPage = () => {
               onPlaybackRateChange={setPlaybackRate}
               onControlsToggle={setControlsVisible}
               className="w-full h-full"
-              initialTime={currentVideo?.progress?.lastPosition || 0}
+              initialTime={(() => {
+                const initialTime = resumePosition || currentVideo?.progress?.lastPosition || 0;
+                console.log(`🎥 [VideoPlayer] Passing initialTime to video player:`, {
+                  resumePosition,
+                  videoProgress: currentVideo?.progress?.lastPosition,
+                  finalInitialTime: initialTime,
+                  videoId: currentVideoId
+                });
+                return initialTime;
+              })()}
               drmEnabled={currentVideo?.drm?.enabled || false}
               watermarkData={currentVideo?.drm?.watermarkData}
               forensicWatermark={forensicWatermark}
@@ -1935,7 +2029,6 @@ const VideoPlayerPage = () => {
                 videos={courseData.videos}
                 currentVideoId={currentVideoId}
                 onVideoSelect={handleVideoSelect}
-                courseProgress={courseData.overallProgress}
               />
             ) : (
               <div className="p-4">
@@ -1983,7 +2076,6 @@ const VideoPlayerPage = () => {
                   handleVideoSelect(videoId);
                   setShowPlaylist(false);
                 }}
-                courseProgress={courseData.overallProgress}
               />
             ) : (
               <div className="p-4">

@@ -20,6 +20,26 @@ const getSocketService = (req) => {
   return req.app.get('socketService');
 };
 
+const attachFreshThumbnailUrl = async (course) => {
+  if (!course) return course;
+
+  const rawCourse = course.toObject ? course.toObject() : { ...course };
+  if (!rawCourse.thumbnailS3Key) {
+    return rawCourse;
+  }
+
+  try {
+    const freshUrl = await getThumbnailUrl(rawCourse.thumbnailS3Key);
+    if (freshUrl) {
+      rawCourse.thumbnailURL = freshUrl;
+    }
+  } catch (error) {
+    console.error('❌ Failed to refresh thumbnail URL:', error?.message || error);
+  }
+
+  return rawCourse;
+};
+
 /**
  * Create a new course without versioning
  */
@@ -882,11 +902,16 @@ const getAllCourses = async (req, res) => {
       }
     }
 
-    // Attach isPurchased flag to each course
-    const coursesWithPurchaseStatus = courses.map(course => ({
-      ...course,
-      isPurchased: purchasedCourseIds.includes(course._id.toString())
-    }));
+    // Attach fresh thumbnail URLs and purchase status
+    const coursesWithPurchaseStatus = await Promise.all(
+      courses.map(async (course) => {
+        const courseWithFreshThumbnail = await attachFreshThumbnailUrl(course);
+        return {
+          ...courseWithFreshThumbnail,
+          isPurchased: purchasedCourseIds.includes(course._id.toString())
+        };
+      })
+    );
 
     res.json({
       success: true,
@@ -952,13 +977,15 @@ const getCourseById = async (req, res) => {
       adminFromUser: req.user?.role === 'admin'
     });
     
+    const courseWithFreshThumbnail = await attachFreshThumbnailUrl(course);
+
     // For public active courses, allow access to anyone
     if (course.isPublic && course.status === 'active') {
       console.log(`✅ [getCourseById] Public active course, allowing access`);
       return res.json({
         success: true,
         data: {
-          course: course.toObject()
+          course: courseWithFreshThumbnail
         }
       });
     }
@@ -969,7 +996,7 @@ const getCourseById = async (req, res) => {
       return res.json({
         success: true,
         data: {
-          course: course.toObject()
+          course: courseWithFreshThumbnail
         }
       });
     }
@@ -980,7 +1007,7 @@ const getCourseById = async (req, res) => {
       return res.json({
         success: true,
         data: {
-          course: course.toObject()
+          course: courseWithFreshThumbnail
         }
       });
     }
@@ -1219,10 +1246,15 @@ const getFeaturedCourses = async (req, res) => {
       }
     }
 
-    const featuredWithPurchaseStatus = courses.map(course => ({
-      ...course,
-      isPurchased: purchasedCourseIds.includes(course._id.toString())
-    }));
+    const featuredWithPurchaseStatus = await Promise.all(
+      courses.map(async (course) => {
+        const courseWithFreshThumbnail = await attachFreshThumbnailUrl(course);
+        return {
+          ...courseWithFreshThumbnail,
+          isPurchased: purchasedCourseIds.includes(course._id.toString())
+        };
+      })
+    );
 
     res.json({
       success: true,

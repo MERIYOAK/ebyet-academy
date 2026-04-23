@@ -113,6 +113,77 @@ const CourseDetailPage = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [resumePosition, setResumePosition] = useState<number>(0);
   
+  // Resume position functions
+  const getResumeStorageKey = useCallback(
+    (courseId: string, selectedVideoId: string) => `videoResume:${courseId}:${selectedVideoId}`,
+    []
+  );
+
+  const saveLocalResumePosition = useCallback(
+    (position: number, selectedVideoId: string = currentVideoId) => {
+      if (!id || !selectedVideoId || !Number.isFinite(position) || position < 0) return;
+      try {
+        const storageKey = getResumeStorageKey(id, selectedVideoId);
+        const data = {
+          position,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        console.log('💾 [CourseDetail] Saved resume position:', {
+          storageKey,
+          data,
+          position,
+          selectedVideoId
+        });
+      } catch (storageError) {
+        console.warn('Could not save local resume position:', storageError);
+      }
+    },
+    [id, currentVideoId, getResumeStorageKey]
+  );
+
+  const getLocalResumePosition = useCallback(
+    (selectedVideoId: string) => {
+      if (!id || !selectedVideoId) return 0;
+      try {
+        const storageKey = getResumeStorageKey(id, selectedVideoId);
+        const raw = localStorage.getItem(storageKey);
+        console.log('🔍 [CourseDetail] Getting resume position:', {
+          storageKey,
+          raw,
+          selectedVideoId
+        });
+        if (!raw) return 0;
+        const parsed = JSON.parse(raw);
+        const position = Number(parsed?.position || 0);
+        const finalPosition = Number.isFinite(position) && position > 0 ? position : 0;
+        console.log('🔍 [CourseDetail] Resume position result:', {
+          parsed,
+          position,
+          finalPosition
+        });
+        return finalPosition;
+      } catch (storageError) {
+        console.warn('Could not read local resume position:', storageError);
+        return 0;
+      }
+    },
+    [id, getResumeStorageKey]
+  );
+  
+  // Fetch resume position when current video changes
+  useEffect(() => {
+    if (!currentVideoId) return;
+    
+    console.log('🔍 [CourseDetail] Video ID changed, fetching resume position:', currentVideoId);
+    const localResume = getLocalResumePosition(currentVideoId);
+    console.log('🔍 [CourseDetail] Setting resume position:', {
+      currentVideoId,
+      localResume
+    });
+    setResumePosition(localResume);
+  }, [currentVideoId, getLocalResumePosition]);
+  
   // Materials state
   const [materials, setMaterials] = useState<any[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
@@ -1185,7 +1256,15 @@ const CourseDetailPage = () => {
     setCurrentTime(0);
     setDuration(0);
     setCurrentVideoPercentage(0);
-    setResumePosition(0); // Reset resume position for new video
+    
+    // Fetch resume position for the new video
+    const localResume = getLocalResumePosition(newVideoId);
+    console.log('🔍 [CourseDetail] Setting resume position for new video:', {
+      newVideoId,
+      localResume
+    });
+    setResumePosition(localResume);
+    
     setRetryCount(0);
     setIsRetrying(false);
     setError(null);
@@ -1688,7 +1767,13 @@ const CourseDetailPage = () => {
                             videoId={currentVideoId}
                             courseId={id}
                             playing={isPlaying}
-                            initialTime={resumePosition}
+                            initialTime={(() => {
+                console.log('🎥 [CourseDetail] Passing initialTime to video player:', {
+                  resumePosition,
+                  videoId: currentVideoId
+                });
+                return resumePosition;
+              })()}
                             playbackRate={playbackRate}
                             onPlay={() => {
                               console.log('🔧 [CourseDetail] Video play event triggered');
@@ -1711,6 +1796,9 @@ const CourseDetailPage = () => {
                               setCurrentTime(currentTime);
                               setDuration(duration);
                               setCurrentVideoPosition(currentTime);
+                              if (currentTime > 0) {
+                                saveLocalResumePosition(currentTime);
+                              }
                               if (duration > 0) {
                                 const actualPercentage = Math.round((currentTime / duration) * 100);
                                 setCurrentVideoPercentage(actualPercentage);

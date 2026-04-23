@@ -316,6 +316,31 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     onReady?.();
   };
 
+  const handleLoadedMetadata = () => {
+    console.log('🎥 [SecureVideoPlayer] Metadata loaded, setting initial time:', initialTime);
+    const video = videoRef.current;
+    console.log('🎥 [SecureVideoPlayer] Video element state:', {
+      video: !!video,
+      currentTime: video?.currentTime,
+      duration: video?.duration,
+      readyState: video?.readyState,
+      initialTime,
+      initialTimeValid: initialTime > 0 && !isNaN(initialTime)
+    });
+    
+    // Set initial time as soon as metadata is loaded
+    if (video && initialTime > 0 && !isNaN(initialTime)) {
+      console.log('🎥 [SecureVideoPlayer] Setting video currentTime to:', initialTime);
+      video.currentTime = initialTime;
+      setCurrentTime(initialTime);
+      
+      // Verify it was set
+      setTimeout(() => {
+        console.log('🎥 [SecureVideoPlayer] Verification - video.currentTime after setting:', video.currentTime);
+      }, 100);
+    }
+  };
+
   const handlePlay = () => {
     setIsPlaying(true);
     setShowCenterPlayButton(false);
@@ -413,9 +438,16 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const handleCanPlay = () => {
     setIsLoading(false);
     
+    // Additional attempt to set initial time if not already set
+    const video = videoRef.current;
+    if (video && initialTime > 0 && !isNaN(initialTime) && video.currentTime < initialTime) {
+      console.log('🎥 [SecureVideoPlayer] CanPlay: Setting video currentTime to:', initialTime);
+      video.currentTime = initialTime;
+      setCurrentTime(initialTime);
+    }
+    
     // iOS-specific video optimization
     if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-      const video = videoRef.current;
       if (video) {
         // Ensure video is ready for iOS playback
         console.log('📱 iOS video ready for playback:', {
@@ -746,10 +778,55 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     }
   }, [playbackRate, isReady]);
 
-  // Set initial time
+  // Set initial time when src changes (primary method)
   useEffect(() => {
     const video = videoRef.current;
-    if (video && isReady && initialTime > 0) {
+    if (!video || !src || initialTime <= 0 || isNaN(initialTime)) return;
+    
+    console.log('🎥 [SecureVideoPlayer] Src changed, attempting to set initial time:', initialTime);
+    
+    const trySetTime = () => {
+      if (video.readyState >= 1) { // HAVE_METADATA
+        console.log('🎥 [SecureVideoPlayer] Video ready, setting currentTime to:', initialTime);
+        video.currentTime = initialTime;
+        setCurrentTime(initialTime);
+        return true;
+      }
+      return false;
+    };
+    
+    // Try immediately if ready
+    if (trySetTime()) return;
+    
+    // Wait for metadata to load
+    const handleMetadata = () => {
+      trySetTime();
+      video.removeEventListener('loadedmetadata', handleMetadata);
+    };
+    
+    video.addEventListener('loadedmetadata', handleMetadata);
+    
+    // Fallback: try every 100ms for up to 3 seconds
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (trySetTime() || attempts >= 30) {
+        clearInterval(interval);
+        video.removeEventListener('loadedmetadata', handleMetadata);
+      }
+    }, 100);
+    
+    return () => {
+      clearInterval(interval);
+      video.removeEventListener('loadedmetadata', handleMetadata);
+    };
+  }, [src, initialTime]);
+
+  // Set initial time (backup method)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && isReady && initialTime > 0 && !isNaN(initialTime)) {
+      console.log('🎥 [SecureVideoPlayer] Backup: Setting video currentTime to:', initialTime);
       video.currentTime = initialTime;
       setCurrentTime(initialTime);
     }
@@ -761,6 +838,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     if (!video) return;
 
     video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('ended', handleEnded);
@@ -774,6 +852,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
     return () => {
       video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('ended', handleEnded);
@@ -783,7 +862,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       video.removeEventListener('canplay', handleCanPlay);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleKeyDown]);
+  }, [handleKeyDown, handleLoadedMetadata]);
 
   const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 

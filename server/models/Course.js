@@ -60,6 +60,18 @@ const courseSchema = new mongoose.Schema({
     lastAccessedAt: { type: Date, default: Date.now },
     progress: { type: Number, default: 0 }, // Percentage completed
     completedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
+    videoProgress: [{
+      videoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Video', required: true },
+      watchedDuration: { type: Number, default: 0 },
+      totalDuration: { type: Number, default: 0 },
+      watchedPercentage: { type: Number, default: 0 },
+      completionPercentage: { type: Number, default: 0 },
+      isCompleted: { type: Boolean, default: false },
+      lastPosition: { type: Number, default: 0 },
+      lastWatchedAt: { type: Date, default: Date.now }
+    }],
+    lastWatchedVideo: { type: mongoose.Schema.Types.ObjectId, ref: 'Video', default: null },
+    lastWatchedPosition: { type: Number, default: 0 },
     // Access control fields
     accessGrantedBy: { 
       type: String, 

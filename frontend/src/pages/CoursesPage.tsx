@@ -4,6 +4,7 @@ import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
 import { useCourses, CourseFilters, ApiCourse } from '../hooks/useCourses';
+import { getValidImageUrl } from '../utils/imageUrlHelper';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
 

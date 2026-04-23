@@ -30,6 +30,13 @@ interface VideoPlaylistProps {
   videos: Video[];
   currentVideoId: string;
   onVideoSelect: (videoId: string) => void;
+  courseProgress?: {
+    totalVideos: number;
+    completedVideos: number;
+    totalProgress: number;
+    lastWatchedVideo: string | null;
+    lastWatchedPosition: number;
+  };
   isMobileOverlay?: boolean;
 }
 
@@ -37,6 +44,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   videos,
   currentVideoId,
   onVideoSelect,
+  courseProgress: _courseProgress,
   isMobileOverlay,
 }) => {
   const { t, i18n } = useTranslation();
