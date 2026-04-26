@@ -51,13 +51,13 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   
   // Collapsible lessons state - initialize with all lessons collapsed by default
-  const [collapsedLessons, setCollapsedLessons] = useState<Set<string | number>>(() => {
+  const [collapsedLessons, setCollapsedLessons] = useState<Set<string>>(() => {
     // This will be populated after groupedVideos is calculated
     return new Set();
   });
 
   // Toggle lesson collapse/expand
-  const toggleLessonCollapse = (lessonKey: string | number) => {
+  const toggleLessonCollapse = (lessonKey: string) => {
     setCollapsedLessons(prev => {
       const newSet = new Set(prev);
       if (newSet.has(lessonKey)) {
@@ -75,17 +75,35 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
     return result;
   }, [videos]);
 
-  // Initialize collapsedLessons with all lesson keys except the first one when groupedVideos is calculated
+  // Initialize collapsedLessons with all lesson keys except the one containing current video when groupedVideos is calculated
   useEffect(() => {
     if (groupedVideos.length > 0) {
-      const lessonKeys = groupedVideos.map(lesson => lesson.lessonNumber || 'general');
-      // Remove the first lesson key from the collapsed set to expand it by default
-      const firstLessonKey = lessonKeys[0];
+      const lessonKeys = groupedVideos.map(lesson => String(lesson.lessonNumber || 'general'));
+      
+      // Find which lesson contains the current video
+      let lessonToExpand = lessonKeys[0]; // Default to first lesson
+      if (currentVideoId) {
+        for (const lessonGroup of groupedVideos) {
+          const hasCurrentVideo = lessonGroup.videos.some(video => video.id === currentVideoId);
+          if (hasCurrentVideo) {
+            lessonToExpand = String(lessonGroup.lessonNumber || 'general');
+            break;
+          }
+        }
+      }
+      
+      // Remove the lesson key containing current video from the collapsed set to expand it
       const collapsedKeys = new Set(lessonKeys);
-      collapsedKeys.delete(firstLessonKey);
+      collapsedKeys.delete(lessonToExpand);
       setCollapsedLessons(collapsedKeys);
+      
+      console.log(' [VideoPlaylist] Auto-expanding lesson:', {
+        lessonToExpand,
+        currentVideoId,
+        totalLessons: lessonKeys.length
+      });
     }
-  }, [groupedVideos]);
+  }, [groupedVideos, currentVideoId]);
 
   return (
     <div className="bg-gray-800 h-full flex flex-col text-white overflow-hidden">
@@ -101,7 +119,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
       {/* Video List */}
       <div className="flex-1 overflow-y-auto playlist-scrollbar">
         {groupedVideos.map((lessonGroup) => {
-          const lessonKey = lessonGroup.lessonNumber || 'general';
+          const lessonKey = String(lessonGroup.lessonNumber || 'general');
           const isCollapsed = collapsedLessons.has(lessonKey);
           
           return (

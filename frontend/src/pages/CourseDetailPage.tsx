@@ -119,6 +119,57 @@ const CourseDetailPage = () => {
     []
   );
 
+  // Last watched video tracking
+  const getLastWatchedStorageKey = useCallback(
+    (courseId: string) => `lastWatchedVideo:${courseId}`,
+    []
+  );
+
+  const saveLastWatchedVideo = useCallback(
+    (videoId: string) => {
+      if (!id || !videoId) return;
+      try {
+        const storageKey = getLastWatchedStorageKey(id);
+        const data = {
+          videoId,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        console.log('💾 [CourseDetail] Saved last watched video:', {
+          storageKey,
+          data,
+          videoId
+        });
+      } catch (storageError) {
+        console.warn('Could not save last watched video:', storageError);
+      }
+    },
+    [id, getLastWatchedStorageKey]
+  );
+
+  const getLastWatchedVideo = useCallback(() => {
+    if (!id) return null;
+    try {
+      const storageKey = getLastWatchedStorageKey(id);
+      const raw = localStorage.getItem(storageKey);
+      console.log('🔍 [CourseDetail] Getting last watched video:', {
+        storageKey,
+        raw
+      });
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const videoId = parsed?.videoId;
+      console.log('🔍 [CourseDetail] Last watched video result:', {
+        parsed,
+        videoId
+      });
+      return videoId;
+    } catch (storageError) {
+      console.warn('Could not read last watched video:', storageError);
+      return null;
+    }
+  }, [id, getLastWatchedStorageKey]);
+
   const saveLocalResumePosition = useCallback(
     (position: number, selectedVideoId: string = currentVideoId) => {
       if (!id || !selectedVideoId || !Number.isFinite(position) || position < 0) return;
@@ -183,6 +234,40 @@ const CourseDetailPage = () => {
     });
     setResumePosition(localResume);
   }, [currentVideoId, getLocalResumePosition]);
+
+  // Save last watched video when currentVideoId changes
+  useEffect(() => {
+    if (currentVideoId) {
+      saveLastWatchedVideo(currentVideoId);
+    }
+  }, [currentVideoId, saveLastWatchedVideo]);
+
+  // Save last watched video when user leaves the page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (currentVideoId) {
+        saveLastWatchedVideo(currentVideoId);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && currentVideoId) {
+        saveLastWatchedVideo(currentVideoId);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Save when component unmounts
+      if (currentVideoId) {
+        saveLastWatchedVideo(currentVideoId);
+      }
+    };
+  }, [currentVideoId, saveLastWatchedVideo]);
   
   // Materials state
   const [materials, setMaterials] = useState<any[]>([]);
@@ -701,7 +786,7 @@ const CourseDetailPage = () => {
       // Fetch reviews after course data is loaded
       fetchReviews();
       
-      // Set current video - prioritize videoId from URL params, then existing currentVideoId, then first accessible
+      // Set current video - prioritize videoId from URL params, then last watched video, then existing currentVideoId, then first accessible
       if (videoId && transformedVideos.find((v: Video) => v.id === videoId)) {
         // Use videoId from URL params if it exists and is valid
         const videoFromUrl = transformedVideos.find((v: Video) => v.id === videoId);
@@ -711,28 +796,48 @@ const CourseDetailPage = () => {
             setCurrentVideoId(videoId);
             setCurrentVideo(videoFromUrl);
           } else {
-            // Video is locked, find first accessible video instead
-            const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
-            if (firstAccessibleVideo) {
-              setCurrentVideoId(firstAccessibleVideo.id);
-              setCurrentVideo(firstAccessibleVideo);
-            } else if (transformedVideos.length > 0) {
-              // If no accessible videos, set first video (will show locked message)
-              setCurrentVideoId(transformedVideos[0].id);
-              setCurrentVideo(transformedVideos[0]);
+            // Video is locked, try last watched video instead
+            const lastWatchedVideoId = getLastWatchedVideo();
+            const lastWatchedVideo = lastWatchedVideoId ? transformedVideos.find((v: Video) => v.id === lastWatchedVideoId) : null;
+            
+            if (lastWatchedVideo && !lastWatchedVideo.locked && lastWatchedVideo.hasAccess) {
+              console.log('🎯 [CourseDetail] Using last watched video (URL video was locked):', lastWatchedVideoId);
+              setCurrentVideoId(lastWatchedVideoId);
+              setCurrentVideo(lastWatchedVideo);
+            } else {
+              // Fallback to first accessible video
+              const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
+              if (firstAccessibleVideo) {
+                setCurrentVideoId(firstAccessibleVideo.id);
+                setCurrentVideo(firstAccessibleVideo);
+              } else if (transformedVideos.length > 0) {
+                // If no accessible videos, set first video (will show locked message)
+                setCurrentVideoId(transformedVideos[0].id);
+                setCurrentVideo(transformedVideos[0]);
+              }
             }
           }
         }
       } else if (!currentVideoId && transformedVideos.length > 0) {
-        // Fallback to first accessible video
-        const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
-        if (firstAccessibleVideo) {
-          setCurrentVideoId(firstAccessibleVideo.id);
-          setCurrentVideo(firstAccessibleVideo);
-        } else if (transformedVideos.length > 0) {
-          // If no accessible videos, set first video (will show locked message)
-          setCurrentVideoId(transformedVideos[0].id);
-          setCurrentVideo(transformedVideos[0]);
+        // Try last watched video first
+        const lastWatchedVideoId = getLastWatchedVideo();
+        const lastWatchedVideo = lastWatchedVideoId ? transformedVideos.find((v: Video) => v.id === lastWatchedVideoId) : null;
+        
+        if (lastWatchedVideo && !lastWatchedVideo.locked && lastWatchedVideo.hasAccess) {
+          console.log('🎯 [CourseDetail] Auto-opening last watched video:', lastWatchedVideoId);
+          setCurrentVideoId(lastWatchedVideoId);
+          setCurrentVideo(lastWatchedVideo);
+        } else {
+          // Fallback to first accessible video
+          const firstAccessibleVideo = transformedVideos.find((v: Video) => !v.locked && v.hasAccess);
+          if (firstAccessibleVideo) {
+            setCurrentVideoId(firstAccessibleVideo.id);
+            setCurrentVideo(firstAccessibleVideo);
+          } else if (transformedVideos.length > 0) {
+            // If no accessible videos, set first video (will show locked message)
+            setCurrentVideoId(transformedVideos[0].id);
+            setCurrentVideo(transformedVideos[0]);
+          }
         }
       } else if (currentVideoId) {
         // Use existing currentVideoId
