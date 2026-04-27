@@ -1,3 +1,5 @@
+import { buildApiUrl } from '../config/environment';
+
 // Utility functions to handle presigned URL expiry for images
 
 export const isPresignedUrlExpired = (url: string): boolean => {
@@ -13,8 +15,36 @@ export const isPresignedUrlExpired = (url: string): boolean => {
     const dateParam = urlObj.searchParams.get('X-Amz-Date');
     
     if (expiresParam && dateParam) {
-      const expiryTime = parseInt(expiresParam);
+      // X-Amz-Date is in format YYYYMMDDTHHMMSSZ
+      // X-Amz-Expires is the duration in seconds from the X-Amz-Date
+      const expiresDuration = parseInt(expiresParam);
       const currentTime = Math.floor(Date.now() / 1000);
+      
+      // Parse X-Amz-Date to timestamp
+      const amazonDate = dateParam.replace(/[:-]/g, ''); // Remove any separators
+      
+      // Validate date format
+      if (amazonDate.length < 15) {
+        console.warn('🔍 [ImageURL] Invalid X-Amz-Date format:', dateParam);
+        return false;
+      }
+      
+      const year = parseInt(amazonDate.substring(0, 4));
+      const month = parseInt(amazonDate.substring(4, 6)) - 1; // JS months are 0-indexed
+      const day = parseInt(amazonDate.substring(6, 8));
+      const hour = parseInt(amazonDate.substring(9, 11));
+      const minute = parseInt(amazonDate.substring(11, 13));
+      const second = parseInt(amazonDate.substring(13, 15));
+      
+      const requestTime = Math.floor(new Date(year, month, day, hour, minute, second).getTime() / 1000);
+      
+      // Validate the parsed date
+      if (isNaN(requestTime)) {
+        console.warn('🔍 [ImageURL] Failed to parse X-Amz-Date:', dateParam);
+        return false;
+      }
+      
+      const expiryTime = requestTime + expiresDuration;
       
       // Add 5-minute buffer before expiry
       const isExpired = currentTime >= (expiryTime - 300);
@@ -38,9 +68,9 @@ export const isPresignedUrlExpired = (url: string): boolean => {
   }
 };
 
-export const refreshImageUrl = async (imageUrl: string, courseId?: string, videoId?: string): Promise<string> => {
+export const refreshImageUrl = async (imageUrl: string, courseId?: string): Promise<string> => {
   if (!imageUrl || isPresignedUrlExpired(imageUrl)) {
-    console.log('🔄 [ImageURL] Image URL expired or invalid, refreshing:', { imageUrl, courseId, videoId });
+    console.log('🔄 [ImageURL] Image URL expired or invalid, refreshing:', { imageUrl, courseId });
     
     try {
       const token = localStorage.getItem('token');
@@ -50,14 +80,12 @@ export const refreshImageUrl = async (imageUrl: string, courseId?: string, video
       }
 
       let refreshUrl: string;
-      if (courseId && videoId) {
-        // Refresh video thumbnail
-        refreshUrl = `/api/videos/${videoId}`;
-      } else if (courseId) {
-        // Refresh course thumbnail
-        refreshUrl = `/api/courses/${courseId}`;
+      if (courseId) {
+        // For both course and video thumbnails, we get the course thumbnail
+        // since videos don't have their own thumbnails
+        refreshUrl = buildApiUrl(`/api/courses/${courseId}`);
       } else {
-        console.warn('🔄 [ImageURL] No identifiers provided for image refresh');
+        console.warn('🔄 [ImageURL] No course ID provided for image refresh');
         return imageUrl;
       }
 
@@ -72,7 +100,20 @@ export const refreshImageUrl = async (imageUrl: string, courseId?: string, video
         return imageUrl; // Return original URL as fallback
       }
 
-      const result = await response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('🔄 [ImageURL] Response is not JSON, content-type:', contentType);
+        return imageUrl; // Return original URL as fallback
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.warn('🔄 [ImageURL] Failed to parse JSON response:', parseError);
+        return imageUrl; // Return original URL as fallback
+      }
       
       // Extract the new image URL from response
       let newImageUrl = imageUrl;
@@ -106,14 +147,13 @@ export const refreshImageUrl = async (imageUrl: string, courseId?: string, video
 
 export const getValidImageUrl = async (
   imageUrl: string, 
-  courseId?: string, 
-  videoId?: string
+  courseId?: string
 ): Promise<string> => {
   if (!imageUrl) {
     return imageUrl;
   }
 
   // Check if URL is expired and refresh if needed
-  const validUrl = await refreshImageUrl(imageUrl, courseId, videoId);
+  const validUrl = await refreshImageUrl(imageUrl, courseId);
   return validUrl;
 };
