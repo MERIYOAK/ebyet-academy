@@ -683,6 +683,8 @@ const CourseDetailPage = () => {
         const courseResult = await courseResponse.json();
         courseDataFromApi = courseResult.data?.course;
         console.log('✅ [CourseDetail] Course data received');
+        console.log('🔧 [CourseDetail] Basic API videos count:', courseDataFromApi?.videos?.length || 0);
+        console.log('🔧 [CourseDetail] Basic API video IDs:', courseDataFromApi?.videos?.map((v: any) => v._id || v.id) || []);
       }
       
       // Fetch videos with DRM protection (like VideoPlayerPage)
@@ -696,9 +698,23 @@ const CourseDetailPage = () => {
         const videosResult = await drmVideoService.getCourseVideosWithDRM(id, courseVersion);
         console.log('🔧 [CourseDetail] DRM videos data received');
         console.log('🔧 [CourseDetail] videosResult.userHasPurchased:', videosResult.userHasPurchased);
+        console.log('🔧 [CourseDetail] DRM API returned videos count:', videosResult.course.videos?.length || 0);
+        console.log('🔧 [CourseDetail] DRM video IDs:', videosResult.course.videos?.map((v: any) => v.id) || []);
         
         videosWithAccess = videosResult.course.videos || [];
         userHasPurchased = videosResult.userHasPurchased || false;
+        
+        // 🔧 TEMPORARY FIX: Deduplicate videos by ID until backend fix is deployed
+        const uniqueVideosMap = new Map();
+        videosWithAccess.forEach((video: any) => {
+          if (!uniqueVideosMap.has(video.id)) {
+            uniqueVideosMap.set(video.id, video);
+          } else {
+            console.warn('⚠️ Duplicate video detected and removed:', video.id);
+          }
+        });
+        videosWithAccess = Array.from(uniqueVideosMap.values());
+        console.log('🔧 [CourseDetail] After deduplication:', videosWithAccess.length, 'unique videos');
       } catch (drmError) {
         console.log('⚠️ [CourseDetail] Could not fetch DRM videos (may be unauthenticated), fetching basic course info...');
         console.log('⚠️ [CourseDetail] DRM Error:', drmError);

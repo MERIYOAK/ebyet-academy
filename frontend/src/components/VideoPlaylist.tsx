@@ -50,6 +50,21 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   const { t, i18n } = useTranslation();
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   
+  // Debug logging to detect duplicate videos
+  console.log('🔍 VideoPlaylist videos count:', videos.length);
+  console.log('🔍 Video IDs:', videos.map(v => v.id));
+  
+  // Check for duplicates
+  const uniqueIds = new Set(videos.map(v => v.id));
+  console.log('🔍 Unique videos count:', uniqueIds.size);
+  
+  if (videos.length !== uniqueIds.size) {
+    console.warn('⚠️ DUPLICATE VIDEOS DETECTED!');
+    console.log('🔍 Duplicate video details:', videos.filter((video, index) => 
+      videos.findIndex(v => v.id === video.id) !== index
+    ));
+  }
+  
   // Collapsible lessons state - initialize with all lessons collapsed by default
   const [collapsedLessons, setCollapsedLessons] = useState<Set<string>>(() => {
     // This will be populated after groupedVideos is calculated

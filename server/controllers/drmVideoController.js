@@ -230,10 +230,31 @@ exports.getCourseVideosWithDRM = async (req, res) => {
       });
     }
 
-    // Get all videos for the course (versioning system removed)
-    const videos = await Video.find({ 
-      courseId: courseId
+    // Debug: Check what video statuses actually exist
+    const allVideos = await Video.find({ courseId: courseId });
+    console.log(`🔍 [DRM Controller] Course ${courseId}: Total videos in DB: ${allVideos.length}`);
+    console.log(`🔍 [DRM Controller] Video statuses:`, allVideos.map(v => ({
+      id: v._id.toString().substring(0, 8),
+      status: v.status,
+      processingStatus: v.processingStatus
+    })));
+
+    // Try more permissive query first - just filter by status
+    let videos = await Video.find({ 
+      courseId: courseId,
+      status: 'active'
     }).sort({ order: 1 });
+    
+    console.log(`🔍 [DRM Controller] Course ${courseId}: Found ${videos.length} videos with status: 'active'`);
+    
+    // If no active videos, try without status filter (temporary fallback)
+    if (videos.length === 0) {
+      console.log(`⚠️ [DRM Controller] No active videos found, falling back to all videos`);
+      videos = await Video.find({ 
+        courseId: courseId
+      }).sort({ order: 1 });
+      console.log(`🔍 [DRM Controller] Fallback: Found ${videos.length} total videos`);
+    }
 
     if (!videos || videos.length === 0) {
       return res.json({
