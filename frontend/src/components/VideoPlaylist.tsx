@@ -61,20 +61,10 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   });
   const deduplicatedVideos = Array.from(uniqueVideosMap.values());
   
-  // Debug logging to detect duplicate videos
-  console.log('🔍 VideoPlaylist videos count (before dedup):', videos.length);
-  console.log('🔍 VideoPlaylist videos count (after dedup):', deduplicatedVideos.length);
-  console.log('🔍 Video IDs (first 10):', deduplicatedVideos.slice(0, 10).map(v => v.id));
-  
-  // Check for duplicates
+  // Check for duplicates (quiet mode)
   const uniqueIds = new Set(deduplicatedVideos.map(v => v.id));
-  console.log('🔍 Unique videos count:', uniqueIds.size);
-  
   if (deduplicatedVideos.length !== uniqueIds.size) {
-    console.warn('⚠️ DUPLICATE VIDEOS STILL DETECTED!');
-    console.log('🔍 Duplicate video details:', deduplicatedVideos.filter((video, index) => 
-      deduplicatedVideos.findIndex(v => v.id === video.id) !== index
-    ));
+    console.warn('⚠️ VideoPlaylist: DUPLICATE VIDEOS DETECTED!');
   }
   
   // Collapsible lessons state - initialize with all lessons collapsed by default
@@ -85,13 +75,18 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
 
   // Toggle lesson collapse/expand
   const toggleLessonCollapse = (lessonKey: string) => {
+    console.log('🔧 [VideoPlaylist] toggleLessonCollapse called with:', lessonKey);
     setCollapsedLessons(prev => {
+      console.log('🔧 [VideoPlaylist] Previous collapsed lessons:', Array.from(prev));
       const newSet = new Set(prev);
       if (newSet.has(lessonKey)) {
         newSet.delete(lessonKey);
+        console.log('🔧 [VideoPlaylist] Expanding lesson:', lessonKey);
       } else {
         newSet.add(lessonKey);
+        console.log('🔧 [VideoPlaylist] Collapsing lesson:', lessonKey);
       }
+      console.log('🔧 [VideoPlaylist] New collapsed lessons:', Array.from(newSet));
       return newSet;
     });
   };
@@ -102,7 +97,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
     return result;
   }, [deduplicatedVideos]);
 
-  // Initialize collapsedLessons with all lesson keys except the one containing current video when groupedVideos is calculated
+  // Initialize collapsed state when groupedVideos changes
   useEffect(() => {
     if (groupedVideos.length > 0) {
       const lessonKeys = groupedVideos.map(lesson => String(lesson.lessonNumber || 'general'));
@@ -122,15 +117,18 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
       // Remove the lesson key containing current video from the collapsed set to expand it
       const collapsedKeys = new Set(lessonKeys);
       collapsedKeys.delete(lessonToExpand);
-      setCollapsedLessons(collapsedKeys);
       
-      console.log(' [VideoPlaylist] Auto-expanding lesson:', {
-        lessonToExpand,
-        currentVideoId,
-        totalLessons: lessonKeys.length
+      // Only update if the collapsed state actually changed
+      setCollapsedLessons(prev => {
+        const prevKeys = Array.from(prev).sort();
+        const newKeys = Array.from(collapsedKeys).sort();
+        if (JSON.stringify(prevKeys) !== JSON.stringify(newKeys)) {
+          return collapsedKeys;
+        }
+        return prev;
       });
     }
-  }, [groupedVideos, currentVideoId]);
+  }, [groupedVideos.length, currentVideoId]); // Only depend on length and currentVideoId
 
   return (
     <div className="bg-gray-800 h-full flex flex-col text-white overflow-hidden">
@@ -148,13 +146,24 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
         {groupedVideos.map((lessonGroup) => {
           const lessonKey = String(lessonGroup.lessonNumber || 'general');
           const isCollapsed = collapsedLessons.has(lessonKey);
-          
+
           return (
             <div key={lessonKey} className="transition-all duration-300 ease-in-out">
               {/* Lesson Header - Clickable to toggle */}
               <div 
                 className="bg-gray-900 px-3 py-2 border-b border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200"
-                onClick={() => toggleLessonCollapse(lessonKey)}
+                onClick={() => {
+                  console.log('🔧 [VideoPlaylist] Click event triggered on lesson:', lessonKey);
+                  toggleLessonCollapse(lessonKey);
+                }}
+                style={{ 
+                  position: 'relative', 
+                  zIndex: 10, 
+                  pointerEvents: 'auto',
+                  userSelect: 'none'
+                }}
+                onMouseEnter={() => console.log('🔧 [VideoPlaylist] Mouse enter lesson:', lessonKey)}
+                onMouseLeave={() => console.log('🔧 [VideoPlaylist] Mouse leave lesson:', lessonKey)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
