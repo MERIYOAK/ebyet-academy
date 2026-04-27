@@ -50,18 +50,30 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   const { t, i18n } = useTranslation();
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   
+  // 🔧 IMMEDIATE FIX: Deduplicate videos by ID to prevent triple rendering
+  const uniqueVideosMap = new Map();
+  videos.forEach((video) => {
+    if (!uniqueVideosMap.has(video.id)) {
+      uniqueVideosMap.set(video.id, video);
+    } else {
+      console.warn('⚠️ VideoPlaylist: Duplicate video detected and removed:', video.id);
+    }
+  });
+  const deduplicatedVideos = Array.from(uniqueVideosMap.values());
+  
   // Debug logging to detect duplicate videos
-  console.log('🔍 VideoPlaylist videos count:', videos.length);
-  console.log('🔍 Video IDs:', videos.map(v => v.id));
+  console.log('🔍 VideoPlaylist videos count (before dedup):', videos.length);
+  console.log('🔍 VideoPlaylist videos count (after dedup):', deduplicatedVideos.length);
+  console.log('🔍 Video IDs (first 10):', deduplicatedVideos.slice(0, 10).map(v => v.id));
   
   // Check for duplicates
-  const uniqueIds = new Set(videos.map(v => v.id));
+  const uniqueIds = new Set(deduplicatedVideos.map(v => v.id));
   console.log('🔍 Unique videos count:', uniqueIds.size);
   
-  if (videos.length !== uniqueIds.size) {
-    console.warn('⚠️ DUPLICATE VIDEOS DETECTED!');
-    console.log('🔍 Duplicate video details:', videos.filter((video, index) => 
-      videos.findIndex(v => v.id === video.id) !== index
+  if (deduplicatedVideos.length !== uniqueIds.size) {
+    console.warn('⚠️ DUPLICATE VIDEOS STILL DETECTED!');
+    console.log('🔍 Duplicate video details:', deduplicatedVideos.filter((video, index) => 
+      deduplicatedVideos.findIndex(v => v.id === video.id) !== index
     ));
   }
   
@@ -86,9 +98,9 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   
   // Group videos by lesson
   const { groupedVideos } = React.useMemo(() => {
-    const result = groupVideosByLesson(videos);
+    const result = groupVideosByLesson(deduplicatedVideos);
     return result;
-  }, [videos]);
+  }, [deduplicatedVideos]);
 
   // Initialize collapsedLessons with all lesson keys except the one containing current video when groupedVideos is calculated
   useEffect(() => {
