@@ -704,7 +704,7 @@ const CourseDetailPage = () => {
         videosWithAccess = videosResult.course.videos || [];
         userHasPurchased = videosResult.userHasPurchased || false;
         
-        // 🔧 TEMPORARY FIX: Deduplicate videos by ID until backend fix is deployed
+        // 🔧 FIX: Deduplicate videos by ID to prevent triple rendering
         const uniqueVideosMap = new Map();
         videosWithAccess.forEach((video: any) => {
           if (!uniqueVideosMap.has(video.id)) {

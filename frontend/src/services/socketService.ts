@@ -66,20 +66,7 @@ class SocketService {
       }
 
       if (this.isConnecting) {
-        // Instead of rejecting, wait for the existing connection to complete
-        console.log('🔌 Connection already in progress, waiting...');
-        const checkConnection = () => {
-          if (this.socket?.connected) {
-            resolve();
-          } else if (!this.isConnecting) {
-            // Connection failed, try again
-            this.connect(userData).then(resolve).catch(reject);
-          } else {
-            // Still connecting, wait longer
-            setTimeout(checkConnection, 100);
-          }
-        };
-        setTimeout(checkConnection, 100);
+        reject(new Error('Connection already in progress'));
         return;
       }
 
