@@ -704,17 +704,33 @@ const CourseDetailPage = () => {
         videosWithAccess = videosResult.course.videos || [];
         userHasPurchased = videosResult.userHasPurchased || false;
         
-        // 🔧 FIX: Deduplicate videos by ID to prevent triple rendering
+        // 🔧 FIX: Deduplicate videos by title to handle different IDs for same content
         const uniqueVideosMap = new Map();
         videosWithAccess.forEach((video: any) => {
-          if (!uniqueVideosMap.has(video.id)) {
+          const videoTitle = typeof video.title === 'string' ? video.title : video.title?.en || '';
+          
+          // Check if we already have a video with this title
+          let isDuplicate = false;
+          for (const [existingId, existingVideo] of uniqueVideosMap.entries()) {
+            const existingTitle = typeof existingVideo.title === 'string' ? existingVideo.title : existingVideo.title?.en || '';
+            if (existingTitle === videoTitle) {
+              isDuplicate = true;
+              console.warn('⚠️ Duplicate video detected by title:', {
+                title: videoTitle,
+                existingId,
+                newId: video.id,
+                keeping: existingId
+              });
+              break;
+            }
+          }
+          
+          if (!isDuplicate) {
             uniqueVideosMap.set(video.id, video);
-          } else {
-            console.warn('⚠️ Duplicate video detected and removed:', video.id);
           }
         });
         videosWithAccess = Array.from(uniqueVideosMap.values());
-        console.log('🔧 [CourseDetail] After deduplication:', videosWithAccess.length, 'unique videos');
+        console.log('🔧 [CourseDetail] After title-based deduplication:', videosWithAccess.length, 'unique videos');
       } catch (drmError) {
         console.log('⚠️ [CourseDetail] Could not fetch DRM videos (may be unauthenticated), fetching basic course info...');
         console.log('⚠️ [CourseDetail] DRM Error:', drmError);
