@@ -1,4 +1,4 @@
-const emailService = require('../services/emailService');
+﻿const emailService = require('../services/emailService');
 
 /**
  * Contact Controller
@@ -65,14 +65,12 @@ class ContactController {
       const emailSent = await emailService.sendContactFormEmail(sanitizedData);
 
       if (emailSent) {
-        console.log(`✅ Contact form submitted successfully from: ${sanitizedData.email}`);
         
         return res.status(200).json({
           success: true,
           message: 'Thank you for your message! We will get back to you soon.'
         });
       } else {
-        console.log(`❌ Failed to send contact form email from: ${sanitizedData.email}`);
         
         return res.status(500).json({
           success: false,
@@ -81,7 +79,7 @@ class ContactController {
       }
 
     } catch (error) {
-      console.error('❌ Contact form submission error:', error);
+      console.error('âŒ Contact form submission error:', error);
       
       return res.status(500).json({
         success: false,
@@ -109,7 +107,7 @@ class ContactController {
       });
 
     } catch (error) {
-      console.error('❌ Contact form status error:', error);
+      console.error('âŒ Contact form status error:', error);
       
       return res.status(500).json({
         success: false,
@@ -160,7 +158,7 @@ class ContactController {
       }
 
     } catch (error) {
-      console.error('❌ Test email error:', error);
+      console.error('âŒ Test email error:', error);
       
       return res.status(500).json({
         success: false,

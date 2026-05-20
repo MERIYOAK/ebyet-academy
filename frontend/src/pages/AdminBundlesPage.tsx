@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../config/environment';
 import { Link } from 'react-router-dom';
 import { Plus, Eye, Edit, Trash2, Filter, BookOpen, X } from 'lucide-react';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { formatCHF } from '../utils/formatCHF';
 import Toast from '../components/Toast';
-import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Bundle {
   _id: string;
-  title: string; // Processed to English only
-  description: string; // Processed to English only
+  title: string;
+  description: string;
   price: number;
   originalValue?: number;
   status: 'active' | 'inactive' | 'archived';
@@ -20,6 +20,13 @@ interface Bundle {
   totalEnrollments: number;
   createdAt: string;
   updatedAt: string;
+}
+
+interface RawApiBundle extends Omit<Bundle, 'title' | 'description'> {
+  title: string | { en: string; tg?: string };
+  description: string | { en: string; tg?: string };
+  longDescription?: string | { en: string; tg?: string };
+  thumbnailS3Key?: string;
 }
 
 const AdminBundlesPage: React.FC = () => {
@@ -34,7 +41,6 @@ const AdminBundlesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   
   // Delete functionality
   const [bundleToDelete, setBundleToDelete] = useState<Bundle | null>(null);
@@ -43,11 +49,11 @@ const AdminBundlesPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Fetch bundles from API
-  const fetchBundles = async (page: number = currentPage, limit: number = itemsPerPage) => {
+  const fetchBundles = useCallback(async () => {
     try {
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
-      
+
       if (!adminToken) {
         throw new Error('Admin token not found');
       }
@@ -55,8 +61,8 @@ const AdminBundlesPage: React.FC = () => {
       // Build query parameters
       const queryParams = new URLSearchParams({
         status: statusFilter === 'all' ? 'all' : statusFilter,
-        page: page.toString(),
-        limit: limit.toString()
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString()
       });
 
       const response = await fetch(buildApiUrl(`/api/bundles?${queryParams.toString()}`), {
@@ -73,61 +79,59 @@ const AdminBundlesPage: React.FC = () => {
       const data = await response.json();
       console.log('📦 [AdminBundlesPage] Fetched bundles data:', data);
       console.log('📦 [AdminBundlesPage] Bundles array:', data.data?.bundles);
-      
+
       const bundlesList = data.data.bundles || [];
       console.log(`📦 [AdminBundlesPage] Processing ${bundlesList.length} bundles`);
-      
+
       // Helper function to parse and extract English text
-      const extractEnglish = (text: any): string => {
+      type BilingualText = string | { en: string; tg?: string } | null | undefined;
+      const extractEnglish = (text: BilingualText): string => {
         if (!text) return '';
         if (typeof text === 'string') {
-          // Check if it's a JSON string
           if (text.startsWith('{') || text.startsWith('"')) {
             try {
-              const parsed = JSON.parse(text);
-              return typeof parsed === 'object' && parsed !== null && 'en' in parsed ? parsed.en : text;
-            } catch (e) {
+              const parsed = JSON.parse(text) as BilingualText;
+              if (typeof parsed === 'object' && parsed !== null) {
+                return parsed.en || text;
+              }
+              return text;
+            } catch {
               return text;
             }
           }
           return text;
         }
-        if (typeof text === 'object' && text !== null && 'en' in text) {
-          return text.en || '';
-        }
-        return '';
+        return text.en || '';
       };
-      
+
       // Process bundles to extract English text only
-      const processedBundles = bundlesList.map((bundle: any) => {
+      const processedBundles = bundlesList.map((bundle: RawApiBundle) => {
         const processed = {
           ...bundle,
           title: extractEnglish(bundle.title),
           description: extractEnglish(bundle.description),
           longDescription: bundle.longDescription ? extractEnglish(bundle.longDescription) : undefined
         };
-        
-        console.log(`📦 [AdminBundlesPage] Bundle ${processed._id}:`, {
-          id: processed._id,
+
+        console.log(`📦 [AdminBundlesPage] Bundle ${bundle._id}:`, {
+          id: bundle._id,
           title: processed.title,
-          hasThumbnailURL: !!processed.thumbnailURL,
-          thumbnailURL: processed.thumbnailURL,
-          hasThumbnailS3Key: !!processed.thumbnailS3Key,
-          thumbnailS3Key: processed.thumbnailS3Key
+          hasThumbnailURL: !!bundle.thumbnailURL,
+          thumbnailURL: bundle.thumbnailURL,
+          hasThumbnailS3Key: !!bundle.thumbnailS3Key,
+          thumbnailS3Key: bundle.thumbnailS3Key
         });
-        
+
         return processed;
       });
-      
+
       setBundles(processedBundles);
-      
+
       // Update pagination info
       if (data.data.pagination) {
         setTotalPages(data.data.pagination.pages);
-        setTotalItems(data.data.pagination.total);
       } else {
         setTotalPages(1);
-        setTotalItems(data.data.bundles?.length || 0);
       }
 
       setError(null);
@@ -138,11 +142,11 @@ const AdminBundlesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, statusFilter]);
 
   useEffect(() => {
     fetchBundles();
-  }, [currentPage, itemsPerPage, statusFilter]);
+  }, [fetchBundles]);
 
   // Handle bundle deletion
   const handleDeleteBundle = async (bundleId: string) => {
@@ -193,14 +197,14 @@ const AdminBundlesPage: React.FC = () => {
 
   // Sort bundles
   const sortedBundles = [...filteredBundles].sort((a, b) => {
-    let aValue: any = a[sortBy as keyof Bundle];
-    let bValue: any = b[sortBy as keyof Bundle];
-    
+    let aValue: string | number = a[sortBy as keyof Bundle] as string | number ?? '';
+    let bValue: string | number = b[sortBy as keyof Bundle] as string | number ?? '';
+
     if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
       aValue = new Date(aValue).getTime();
       bValue = new Date(bValue).getTime();
     }
-    
+
     if (sortOrder === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -316,6 +320,7 @@ const AdminBundlesPage: React.FC = () => {
               {/* Status Filter */}
               <select
                 value={statusFilter}
+                title="Filter by status"
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
@@ -331,6 +336,7 @@ const AdminBundlesPage: React.FC = () => {
               {/* Sort */}
               <select
                 value={`${sortBy}-${sortOrder}`}
+                title="Sort order"
                 onChange={(e) => {
                   const [field, order] = e.target.value.split('-');
                   setSortBy(field);
@@ -441,11 +447,11 @@ const AdminBundlesPage: React.FC = () => {
                   <div className="mb-4">
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-white">
-                        ${bundle.price.toFixed(2)}
+                        {formatCHF(bundle.price)}
                       </span>
                       {bundle.originalValue && (
                         <span className="text-sm text-gray-400 line-through">
-                          ${bundle.originalValue.toFixed(2)}
+                          {formatCHF(bundle.originalValue)}
                         </span>
                       )}
                     </div>
@@ -489,6 +495,7 @@ const AdminBundlesPage: React.FC = () => {
                         setBundleToDelete(bundle);
                         setShowDeleteModal(true);
                       }}
+                      aria-label="Delete bundle"
                       className="px-3 py-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/20 rounded-lg text-sm font-medium transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -514,6 +521,7 @@ const AdminBundlesPage: React.FC = () => {
               <span className="text-sm text-gray-400">Items per page:</span>
               <select
                 value={itemsPerPage}
+                title="Items per page"
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
@@ -561,7 +569,7 @@ const AdminBundlesPage: React.FC = () => {
             onConfirm={() => bundleToDelete && handleDeleteBundle(bundleToDelete._id)}
             itemName={bundleToDelete.title}
             itemType="bundle"
-            isDeleting={isDeleting}
+            isLoading={isDeleting}
           />
         )}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 
 interface ProgressOverlayProps {
   isVisible: boolean;
@@ -8,7 +8,6 @@ interface ProgressOverlayProps {
   title: string;
   message: string;
   onOk: () => void;
-  onCancel?: () => void;
 }
 
 const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
@@ -18,7 +17,6 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
   title,
   message,
   onOk,
-  onCancel
 }) => {
   if (!isVisible) return null;
 

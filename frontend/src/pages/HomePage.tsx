@@ -10,7 +10,6 @@ import { useFeaturedCourses } from '../hooks/useCourses';
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 import { useFeaturedBundles } from '../hooks/useBundles';
 import { buildApiUrl, config } from '../config/environment';
-import socketService from '../services/socketService';
 import heroImage from '../assets/images/hero-image.jpeg';
 
 // Import student images
@@ -50,7 +49,7 @@ const HomePage = () => {
   const [announcementsLoading, setAnnouncementsLoading] = useState(true);
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const [isAnnouncementAutoPlaying, setIsAnnouncementAutoPlaying] = useState(true);
-  const rotationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const rotationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Quotes slideshow state
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
@@ -93,7 +92,7 @@ const HomePage = () => {
   const fetchAnnouncements = useCallback(async () => {
     try {
       setAnnouncementsLoading(true);
-      const response = await fetch(buildApiUrl('/api/announcements/active'));
+      const response = await fetch(buildApiUrl('/api/announcements/active'), { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch announcements');
@@ -102,15 +101,7 @@ const HomePage = () => {
       const data = await response.json();
       const activeAnnouncements = (data.announcements || []).filter((a: Announcement) => a.isActive);
       
-      // Preserve current index if possible during updates
-      setAnnouncements(prevAnnouncements => {
-        // If we had announcements before, try to maintain the current index
-        if (prevAnnouncements.length > 0 && activeAnnouncements.length > 0) {
-          console.log('🔄 Preserving announcement index during update');
-          return activeAnnouncements;
-        }
-        return activeAnnouncements;
-      });
+      setAnnouncements(activeAnnouncements);
     } catch (error) {
       console.error('Error fetching announcements:', error);
       setAnnouncements([]);
@@ -123,84 +114,34 @@ const HomePage = () => {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
 
-  // Socket.IO event listeners for real-time announcement updates
+  // Listen for announcement updates from the global socket hook
   useEffect(() => {
-    // Connect to socket service
-    const token = localStorage.getItem('token') || localStorage.getItem('userToken');
-    if (token) {
-      try {
-        const userData = { 
-          userId: JSON.parse(atob(token.split('.')[1])).userId || 'user',
-          role: 'user' 
-        };
-        socketService.connect(userData);
-      } catch (error) {
-        console.warn('Failed to parse user token for socket connection:', error);
-      }
-    }
-
-    // Handle content update events (all events come through 'contentUpdate')
-    const handleContentUpdate = (payload: any) => {
-      console.log('📢 HomePage received content update:', payload);
-      
-      // Check if this is an announcement-related event
-      if (payload.type === 'NEW_ANNOUNCEMENT' || 
-          payload.type === 'ANNOUNCEMENT_UPDATED' || 
-          payload.type === 'ANNOUNCEMENT_DELETED') {
-        console.log('📢 HomePage received announcement event:', payload.type);
-        // Refresh announcements to get the latest data
-        fetchAnnouncements();
-      }
+    const ANNOUNCEMENT_EVENTS = new Set(['NEW_ANNOUNCEMENT', 'ANNOUNCEMENT_UPDATED', 'ANNOUNCEMENT_DELETED']);
+    const handler = (e: Event) => {
+      const { type } = (e as CustomEvent).detail;
+      if (ANNOUNCEMENT_EVENTS.has(type)) fetchAnnouncements();
     };
-
-    // Add event listener for content updates
-    socketService.addEventListener('contentUpdate', handleContentUpdate);
-
-    // Cleanup function
-    return () => {
-      socketService.removeEventListener('contentUpdate', handleContentUpdate);
-    };
+    window.addEventListener('socketContentUpdate', handler);
+    return () => window.removeEventListener('socketContentUpdate', handler);
   }, [fetchAnnouncements]);
 
-  // Auto-rotate announcements (infinite loop for multiple announcements)
+  // Auto-rotate announcements
   useEffect(() => {
-    console.log('🔍 Announcement rotation check:', {
-      autoPlay: isAnnouncementAutoPlaying,
-      count: announcements.length,
-      currentRef: rotationIntervalRef.current
-    });
-
-    // Clear any existing interval
     if (rotationIntervalRef.current) {
-      console.log('🗑️ Clearing existing interval');
       clearInterval(rotationIntervalRef.current);
       rotationIntervalRef.current = null;
     }
 
-    // Only activate infinite loop if there are multiple announcements AND auto-play is enabled
-    if (!isAnnouncementAutoPlaying) {
-      console.log('📢 Announcement rotation disabled: Auto-play is off');
+    if (!isAnnouncementAutoPlaying || announcements.length <= 1) {
       return;
     }
-    
-    if (announcements.length <= 1) {
-      console.log('📢 Announcement rotation disabled: Not enough announcements (', announcements.length, ')');
-      return;
-    }
-    
-    console.log('🔄 Starting infinite announcement loop for', announcements.length, 'announcements');
-    
+
     rotationIntervalRef.current = setInterval(() => {
-      setCurrentAnnouncementIndex((prev) => {
-        const nextIndex = (prev + 1) % announcements.length;
-        console.log('📢 Announcement rotation:', prev, '→', nextIndex, '(Total:', announcements.length, ')');
-        return nextIndex;
-      });
-    }, 5000); // Change every 5 seconds
+      setCurrentAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+    }, 5000);
 
     return () => {
       if (rotationIntervalRef.current) {
-        console.log('⏹️ Stopping announcement rotation');
         clearInterval(rotationIntervalRef.current);
         rotationIntervalRef.current = null;
       }
@@ -558,8 +499,8 @@ const HomePage = () => {
       </section>
 
       {/* Investing Quotes Slideshow */}
-      <section 
-        className="relative w-full overflow-hidden py-4 tiny:py-6 xs:py-8 sm:py-10 md:py-12 bg-gray-50 dark:bg-gray-900"
+      <section
+        className="relative w-full overflow-hidden pt-10 tiny:pt-14 xs:pt-16 sm:pt-10 md:pt-12 pb-4 tiny:pb-6 xs:pb-8 sm:pb-10 md:pb-12 bg-gray-50 dark:bg-gray-900"
         onMouseEnter={() => setIsQuoteAutoPlaying(false)}
         onMouseLeave={() => setIsQuoteAutoPlaying(true)}
       >

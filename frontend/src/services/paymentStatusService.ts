@@ -9,7 +9,7 @@ interface PaymentStatus {
 
 class PaymentStatusService {
   private static instance: PaymentStatusService;
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private readonly CHECK_INTERVAL = 2000; // Check every 2 seconds
   private readonly MAX_CHECKS = 30; // Maximum 1 minute of checking
   private checkCount = 0;
@@ -56,7 +56,8 @@ class PaymentStatusService {
   /**
    * Check the current payment status
    */
-  private async checkPaymentStatus(courseId: string, sessionId?: string): Promise<PaymentStatus> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private async checkPaymentStatus(courseId: string, _sessionId?: string): Promise<PaymentStatus> {
     try {
       const token = localStorage.getItem('token');
       if (!token) {

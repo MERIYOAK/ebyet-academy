@@ -35,6 +35,23 @@ interface Video {
   };
 }
 
+interface RawApiVideo {
+  id: string;
+  _id?: string;
+  title: string | { en: string; tg: string };
+  duration?: number;
+  url?: string;
+  videoUrl?: string;
+  hasAccess?: boolean;
+  isFreePreview?: boolean;
+  drm?: {
+    enabled?: boolean;
+    sessionId?: string | null;
+    watermarkData?: string | null;
+    encryptedUrl?: string | null;
+  };
+}
+
 interface CourseData {
   title: string | { en: string; tg: string };
   videos: Video[];
@@ -59,7 +76,7 @@ const VideoPlayerPage = () => {
   const [playbackRate, setPlaybackRate] = useState(1);
   
   // DRM and Security states
-  const [forensicWatermark] = useState<any>(null);
+  const [forensicWatermark] = useState<{ hash: string } | undefined>(undefined);
   const [showPlaylist, setShowPlaylist] = useState(true); // Always show playlist by default
   const [courseData, setCourseData] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +104,7 @@ const VideoPlayerPage = () => {
   const pendingProgressRequest = useRef<AbortController | null>(null);
   const progressUpdateTimeout = useRef<number | null>(null);
   const lastProgressUpdate = useRef(0);
-  const PROGRESS_UPDATE_INTERVAL = 5000; // 5 seconds minimum between updates (reduced for testing)
+  const PROGRESS_UPDATE_INTERVAL = 30000; // 30 seconds between updates while playing
 
   const getResumeStorageKey = useCallback(
     (courseId: string, selectedVideoId: string) => `videoResume:${courseId}:${selectedVideoId}`,
@@ -212,15 +229,15 @@ const VideoPlayerPage = () => {
   };
 
   // Enhanced error handling functions
-  const getVideoErrorDetails = (error: any): { type: string; message: string; userMessage: string } => {
-    const video = error?.target as HTMLVideoElement;
+  const getVideoErrorDetails = (error: unknown): { type: string; message: string; userMessage: string } => {
+    const video = (error as Event)?.target as HTMLVideoElement;
     const errorCode = video?.error?.code;
     
     // If no video element is available, return a generic error
     if (!video) {
       return {
         type: 'UNKNOWN',
-        message: error?.message || 'Unknown video error',
+        message: (error as Error)?.message || 'Unknown video error',
         userMessage: 'An error occurred while loading the video. Please try again.'
       };
     }
@@ -333,7 +350,7 @@ const VideoPlayerPage = () => {
       // If we can't parse the expiry, assume it's not expired
       // Could not parse presigned URL expiry parameters
       return false;
-    } catch (error) {
+    } catch {
       // Could not parse presigned URL for expiry check
       return false;
     }
@@ -463,7 +480,7 @@ const VideoPlayerPage = () => {
     }
   };
 
-  const handleVideoError = (error: any) => {
+  const handleVideoError = (error: unknown) => {
     console.error('❌ [VideoPlayer] Video error occurred:', error);
 
     // Get detailed error information
@@ -598,17 +615,19 @@ const VideoPlayerPage = () => {
               
               // Update current video's progress if we have video progress data
               if (result.data.videoProgress && currentVideoId) {
-                updatedCourseData.videos = prev.videos.map(video => 
-                  video.id === currentVideoId 
-                    ? { 
-                        ...video, 
+                updatedCourseData.videos = prev.videos.map(video =>
+                  video.id === currentVideoId
+                    ? {
+                        ...video,
+                        // completed is a one-way flag: once true it never goes back to false
+                        completed: video.completed || result.data.videoProgress.isCompleted,
                         progress: {
                           ...video.progress,
                           watchedPercentage: result.data.videoProgress.watchedPercentage,
                           completionPercentage: result.data.videoProgress.completionPercentage,
                           watchedDuration: result.data.videoProgress.watchedDuration,
                           totalDuration: result.data.videoProgress.totalDuration,
-                          isCompleted: result.data.videoProgress.isCompleted,
+                          isCompleted: video.progress?.isCompleted || result.data.videoProgress.isCompleted,
                           lastPosition: result.data.videoProgress.lastPosition ?? watchedDuration
                         }
                       }
@@ -628,8 +647,8 @@ const VideoPlayerPage = () => {
           console.log('⏭️ [Udemy-Style] Progress update skipped by server');
         }
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.log('🔄 [Udemy-Style] Progress request was cancelled');
       } else {
         console.error('❌ [Udemy-Style] Error updating progress:', error);
@@ -698,17 +717,18 @@ const VideoPlayerPage = () => {
             
             // Update current video's progress if we have video progress data
             if (result.data.videoProgress && currentVideoId) {
-              updatedCourseData.videos = prev.videos.map(video => 
-                video.id === currentVideoId 
-                  ? { 
-                      ...video, 
+              updatedCourseData.videos = prev.videos.map(video =>
+                video.id === currentVideoId
+                  ? {
+                      ...video,
+                      completed: video.completed || result.data.videoProgress.isCompleted,
                       progress: {
                         ...video.progress,
                         watchedPercentage: result.data.videoProgress.watchedPercentage,
                         completionPercentage: result.data.videoProgress.completionPercentage,
                         watchedDuration: result.data.videoProgress.watchedDuration,
                         totalDuration: result.data.videoProgress.totalDuration,
-                        isCompleted: result.data.videoProgress.isCompleted,
+                        isCompleted: video.progress?.isCompleted || result.data.videoProgress.isCompleted,
                         lastPosition: result.data.videoProgress.lastPosition ?? watchedDuration
                       }
                     }
@@ -725,8 +745,8 @@ const VideoPlayerPage = () => {
           }
         }
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.log('🔄 [Udemy-Style] Immediate progress request was cancelled');
       } else {
         console.error('❌ [Udemy-Style] Error saving progress immediately:', error);
@@ -793,8 +813,8 @@ const VideoPlayerPage = () => {
         console.log('🔧 [VideoPlayer] Video access details:', {
           totalVideos: videosWithAccess.length,
           userHasPurchased,
-          videosWithUrls: videosWithAccess.filter((v: any) => v.drm?.encryptedUrl).length,
-          videosWithAccess: videosWithAccess.filter((v: any) => v.hasAccess).length,
+          videosWithUrls: videosWithAccess.filter((v: RawApiVideo) => v.drm?.encryptedUrl).length,
+          videosWithAccess: videosWithAccess.filter((v: RawApiVideo) => v.hasAccess).length,
           drmEnabled: videosResult.drm.enabled
         });
         
@@ -820,13 +840,13 @@ const VideoPlayerPage = () => {
         // Create a progress map for quick lookup
         const progressMap = new Map();
         if (progressResult?.data?.videos) {
-          progressResult.data.videos.forEach((video: any) => {
+          progressResult.data.videos.forEach((video: { _id: string; progress: Video['progress'] }) => {
             progressMap.set(video._id, video.progress);
           });
         }
         
         // Transform videos to match expected format with DRM access control
-        const transformedVideos = videosWithAccess.map((video: any) => {
+        const transformedVideos = videosWithAccess.map((video: RawApiVideo) => {
           // Debug: Log access details for each video
           console.log(`🔧 [VideoPlayer] Processing DRM video "${video.title}":`, {
             videoId: video.id,
@@ -881,16 +901,16 @@ const VideoPlayerPage = () => {
             // DRM data
             drm: {
               enabled: video.drm?.enabled || false,
-              sessionId: video.drm?.sessionId,
-              watermarkData: video.drm?.watermarkData,
-              encryptedUrl: video.drm?.encryptedUrl
+              sessionId: video.drm?.sessionId ?? undefined,
+              watermarkData: video.drm?.watermarkData ?? undefined,
+              encryptedUrl: video.drm?.encryptedUrl ?? undefined
             }
           };
         });
         
         // Calculate overall progress from available videos
-        const availableVideos = transformedVideos.filter((v: any) => v.hasAccess || userHasPurchased);
-        const completedVideos = availableVideos.filter((v: any) => v.completed).length;
+        const availableVideos = transformedVideos.filter((v: Video) => v.hasAccess || userHasPurchased);
+        const completedVideos = availableVideos.filter((v: Video) => v.completed).length;
         const overallProgress = {
           totalVideos: availableVideos.length,
           completedVideos,
@@ -927,11 +947,11 @@ const VideoPlayerPage = () => {
         
         // Validate that the requested videoId exists in the course
         if (videoId && transformedVideos.length > 0) {
-          const requestedVideo = transformedVideos.find((v: any) => v.id === videoId);
+          const requestedVideo = transformedVideos.find((v: Video) => v.id === videoId);
           if (!requestedVideo) {
             console.log('⚠️ [VideoPlayer] Requested video not found, redirecting to first available video');
             console.log(`   - Requested videoId: ${videoId}`);
-            console.log(`   - Available videos: ${transformedVideos.map((v: any) => v.id).join(', ')}`);
+            console.log(`   - Available videos: ${transformedVideos.map((v: Video) => v.id).join(', ')}`);
             
             // Show a brief message and redirect to the first available video
             setError('The requested video is no longer available. Redirecting to the first video...');
@@ -972,6 +992,7 @@ const VideoPlayerPage = () => {
     if (id) {
       fetchCourseData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, videoId, currentVideoId]);
 
   // Periodic progress refresh to update UI progress bars
@@ -1004,7 +1025,7 @@ const VideoPlayerPage = () => {
           if (progressResult?.data?.videos) {
             // Create progress map for quick lookup
             const progressMap = new Map();
-            progressResult.data.videos.forEach((video: any) => {
+            progressResult.data.videos.forEach((video: { _id: string; progress: Video['progress'] }) => {
               progressMap.set(video._id, video.progress);
             });
 
@@ -1017,8 +1038,12 @@ const VideoPlayerPage = () => {
                 if (freshProgress) {
                   return {
                     ...video,
-                    progress: freshProgress,
-                    completed: freshProgress.isCompleted
+                    // completed is a one-way flag: once true it never goes back to false
+                    completed: video.completed || freshProgress.isCompleted,
+                    progress: {
+                      ...freshProgress,
+                      isCompleted: video.completed || freshProgress.isCompleted,
+                    }
                   };
                 }
                 return video;
@@ -1042,8 +1067,8 @@ const VideoPlayerPage = () => {
       }
     };
 
-    // Refresh progress every 5 seconds
-    const interval = setInterval(refreshProgress, 5000);
+    // Refresh progress every 30 seconds
+    const interval = setInterval(refreshProgress, 30000);
 
     // Initial refresh after 2 seconds
     const initialTimeout = setTimeout(refreshProgress, 2000);
@@ -1099,6 +1124,7 @@ const VideoPlayerPage = () => {
       clearInterval(interval);
       clearTimeout(initialTimeout);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideoId, courseData]);
 
   // Fetch resume position when current video changes
@@ -1203,6 +1229,7 @@ const VideoPlayerPage = () => {
         });
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideoId]); // Only depend on currentVideoId to prevent excessive logging
 
   // Debug logging for video URL issues - only when video changes
@@ -1293,6 +1320,7 @@ const VideoPlayerPage = () => {
         availableVideoIds: courseData?.videos?.map(v => v.id) || []
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideoId]); // Only depend on currentVideoId to prevent excessive logging
 
 
@@ -1435,7 +1463,7 @@ const VideoPlayerPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // Mark video as completed
+      // Mark video as completed on the server
       await fetch(buildApiUrl('/api/progress/complete-video'), {
         method: 'POST',
         headers: {
@@ -1446,6 +1474,39 @@ const VideoPlayerPage = () => {
           courseId: id,
           videoId: currentVideoId
         })
+      });
+
+      // Immediately update local state so the playlist shows the completed badge
+      // without waiting for the next 30-second progress refresh
+      const completedVideoId = currentVideoId;
+      setCourseData(prev => {
+        if (!prev) return null;
+        const updatedVideos = prev.videos.map(video =>
+          video.id === completedVideoId
+            ? {
+                ...video,
+                completed: true,
+                progress: {
+                  ...video.progress,
+                  isCompleted: true,
+                  completionPercentage: 100,
+                  watchedPercentage: 100,
+                }
+              }
+            : video
+        );
+        const completedCount = updatedVideos.filter(v => v.completed).length;
+        return {
+          ...prev,
+          videos: updatedVideos,
+          overallProgress: {
+            ...prev.overallProgress,
+            completedVideos: completedCount,
+            totalProgress: prev.videos.length > 0
+              ? Math.round((completedCount / prev.videos.length) * 100)
+              : 0,
+          }
+        };
       });
 
       // Get next video
@@ -1460,11 +1521,7 @@ const VideoPlayerPage = () => {
         const nextVideo = nextVideoResult.data.nextVideo;
 
         if (nextVideo) {
-          // Navigate to next video
           navigate(`/course/${id}/watch/${nextVideo._id}`);
-        } else {
-          // Course completed
-          console.log('🎉 Course completed!');
         }
       }
     } catch (error) {
@@ -1600,6 +1657,7 @@ const VideoPlayerPage = () => {
         }));
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, currentVideoId, isPlaying]);
 
   // Reset error states when course or video changes
@@ -1638,6 +1696,7 @@ const VideoPlayerPage = () => {
     } else {
       // No progress data available
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideoId]); // Only depend on currentVideoId to prevent excessive updates
 
   // Video preloading and caching
@@ -1703,6 +1762,7 @@ const VideoPlayerPage = () => {
     checkAndRefreshUrl();
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideo?.videoUrl, currentVideoId]);
 
   if (loading) {

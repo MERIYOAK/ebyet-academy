@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const courseVersionSchema = new mongoose.Schema({
   courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
@@ -161,7 +161,6 @@ courseVersionSchema.methods.updateStatistics = async function() {
     status: { $ne: 'deleted' }
   });
   
-  console.log(`📊 [updateStatistics] Version ${this.versionNumber}: Found ${videos.length} videos`);
   
   this.totalVideos = videos.length;
   
@@ -201,7 +200,6 @@ courseVersionSchema.methods.updateStatistics = async function() {
     return total + (isNaN(fileSize) ? 0 : fileSize);
   }, 0);
   
-  console.log(`📊 [updateStatistics] Version ${this.versionNumber} stats: ${this.totalVideos} videos, ${this.totalDuration}s duration, ${this.fileSize} bytes`);
   
   return this.save();
 };

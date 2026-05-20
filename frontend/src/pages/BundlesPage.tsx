@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import BundleCard from '../components/BundleCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
-import { useBundles, useFeaturedBundles, BundleFilters, ApiBundle } from '../hooks/useBundles';
-import socketService from '../services/socketService';
+import { useBundles, BundleFilters, ApiBundle } from '../hooks/useBundles';
 
 const BundlesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -62,49 +61,15 @@ const BundlesPage: React.FC = () => {
     return Array.from(new Set(cats)).sort();
   }, [bundles]);
 
-  // Socket.IO for real-time bundle updates
+  // Listen for real-time bundle updates via global socket hook
   useEffect(() => {
-    const connectSocket = async () => {
-      try {
-        const userData = {
-          userId: localStorage.getItem('userId') || 'anonymous',
-          role: localStorage.getItem('userRole') || 'user'
-        };
-
-        await socketService.connect(userData);
-        
-        // Listen for bundle-related updates
-        const handleBundleUpdate = (payload: any) => {
-          console.log('📢 BundlesPage received update:', payload);
-          
-          // Refresh bundles for any bundle update
-          if (payload.type === 'NEW_BUNDLE' || payload.type === 'BUNDLE_UPDATED' || payload.type === 'BUNDLE_DELETED') {
-            console.log('🔄 Refreshing bundles due to bundle update/deletion');
-            refetch();
-          }
-        };
-
-        // Register event listeners
-        socketService.addEventListener('NEW_BUNDLE', handleBundleUpdate);
-        socketService.addEventListener('BUNDLE_UPDATED', handleBundleUpdate);
-        socketService.addEventListener('BUNDLE_DELETED', handleBundleUpdate);
-        socketService.addEventListener('contentUpdate', handleBundleUpdate);
-
-        console.log('🔌 BundlesPage connected to Socket.IO for real-time updates');
-      } catch (error) {
-        console.error('❌ Failed to connect to Socket.IO in BundlesPage:', error);
-      }
+    const BUNDLE_EVENTS = new Set(['NEW_BUNDLE', 'BUNDLE_UPDATED', 'BUNDLE_DELETED']);
+    const handler = (e: Event) => {
+      const { type } = (e as CustomEvent).detail;
+      if (BUNDLE_EVENTS.has(type)) refetch();
     };
-
-    connectSocket();
-
-    // Cleanup on unmount
-    return () => {
-      socketService.removeEventListener('NEW_BUNDLE', () => {});
-      socketService.removeEventListener('BUNDLE_UPDATED', () => {});
-      socketService.removeEventListener('BUNDLE_DELETED', () => {});
-      socketService.removeEventListener('contentUpdate', () => {});
-    };
+    window.addEventListener('socketContentUpdate', handler);
+    return () => window.removeEventListener('socketContentUpdate', handler);
   }, [refetch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,10 +105,11 @@ const BundlesPage: React.FC = () => {
   const handleGoToPage = useCallback(() => {
     const page = parseInt(goToPageInput);
     if (page >= 1 && page <= totalPages) {
-      handlePageChange(page);
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setGoToPageInput('');
     } else {
-      setGoToPageInput(''); // Clear invalid input
+      setGoToPageInput('');
     }
   }, [goToPageInput, totalPages]);
 
@@ -194,6 +160,7 @@ const BundlesPage: React.FC = () => {
                       {searchTerm && (
                         <button
                           onClick={() => setSearchTerm('')}
+                          aria-label="Clear search"
                           className="ml-2 p-1 text-gray-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all duration-200"
                         >
                           <X className="h-4 w-4" />
@@ -432,6 +399,7 @@ const BundlesPage: React.FC = () => {
                   <label className="text-sm text-gray-300">{t('courses.pagination.show', 'Show')}:</label>
                   <select
                     value={itemsPerPage}
+                    title="Items per page"
                     onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
                     className="px-3 py-1.5 bg-gray-900 text-white border border-gray-700 rounded-md text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   >

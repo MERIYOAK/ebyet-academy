@@ -44,28 +44,20 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
   videos,
   currentVideoId,
   onVideoSelect,
-  courseProgress: _courseProgress,
   isMobileOverlay,
 }) => {
   const { t, i18n } = useTranslation();
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   
-  // 🔧 IMMEDIATE FIX: Deduplicate videos by ID to prevent triple rendering
-  const uniqueVideosMap = new Map();
-  videos.forEach((video) => {
-    if (!uniqueVideosMap.has(video.id)) {
-      uniqueVideosMap.set(video.id, video);
-    } else {
-      console.warn('⚠️ VideoPlaylist: Duplicate video detected and removed:', video.id);
-    }
-  });
-  const deduplicatedVideos = Array.from(uniqueVideosMap.values());
-  
-  // Check for duplicates (quiet mode)
-  const uniqueIds = new Set(deduplicatedVideos.map(v => v.id));
-  if (deduplicatedVideos.length !== uniqueIds.size) {
-    console.warn('⚠️ VideoPlaylist: DUPLICATE VIDEOS DETECTED!');
-  }
+  // Deduplicate videos by ID — must be memoized so groupedVideos stays stable
+  // across re-renders, otherwise the useEffect resets collapsed state on every click.
+  const deduplicatedVideos = React.useMemo(() => {
+    const seen = new Map();
+    videos.forEach((video) => {
+      if (!seen.has(video.id)) seen.set(video.id, video);
+    });
+    return Array.from(seen.values());
+  }, [videos]);
   
   // Collapsible lessons state - initialize with all lessons collapsed by default
   const [collapsedLessons, setCollapsedLessons] = useState<Set<string>>(() => {
@@ -75,18 +67,13 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
 
   // Toggle lesson collapse/expand
   const toggleLessonCollapse = (lessonKey: string) => {
-    console.log('🔧 [VideoPlaylist] toggleLessonCollapse called with:', lessonKey);
     setCollapsedLessons(prev => {
-      console.log('🔧 [VideoPlaylist] Previous collapsed lessons:', Array.from(prev));
       const newSet = new Set(prev);
       if (newSet.has(lessonKey)) {
         newSet.delete(lessonKey);
-        console.log('🔧 [VideoPlaylist] Expanding lesson:', lessonKey);
       } else {
         newSet.add(lessonKey);
-        console.log('🔧 [VideoPlaylist] Collapsing lesson:', lessonKey);
       }
-      console.log('🔧 [VideoPlaylist] New collapsed lessons:', Array.from(newSet));
       return newSet;
     });
   };
@@ -128,7 +115,7 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
         return prev;
       });
     }
-  }, [groupedVideos.length, currentVideoId]); // Only depend on length and currentVideoId
+  }, [groupedVideos, currentVideoId]);
 
   return (
     <div className="bg-gray-800 h-full flex flex-col text-white overflow-hidden">
@@ -150,20 +137,9 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
           return (
             <div key={lessonKey} className="transition-all duration-300 ease-in-out">
               {/* Lesson Header - Clickable to toggle */}
-              <div 
-                className="bg-gray-900 px-3 py-2 border-b border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200"
-                onClick={() => {
-                  console.log('🔧 [VideoPlaylist] Click event triggered on lesson:', lessonKey);
-                  toggleLessonCollapse(lessonKey);
-                }}
-                style={{ 
-                  position: 'relative', 
-                  zIndex: 10, 
-                  pointerEvents: 'auto',
-                  userSelect: 'none'
-                }}
-                onMouseEnter={() => console.log('🔧 [VideoPlaylist] Mouse enter lesson:', lessonKey)}
-                onMouseLeave={() => console.log('🔧 [VideoPlaylist] Mouse leave lesson:', lessonKey)}
+              <div
+                className="bg-gray-900 px-3 py-2 border-b border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200 select-none"
+                onClick={() => toggleLessonCollapse(lessonKey)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -259,9 +235,15 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
                                 </span>
                               )}
                             </h4>
-                            <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                            <div className="flex items-center flex-wrap gap-x-1 text-gray-400 text-xs">
                               <Clock className="h-3 w-3" />
                               <span>{formatDuration(video.duration)}</span>
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-0.5 text-green-400 font-medium">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span className="text-[10px]">{t('course_detail.completed', 'Completed')}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -332,9 +314,15 @@ const VideoPlaylist: React.FC<VideoPlaylistProps> = ({
                                 </span>
                               )}
                             </h4>
-                            <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                            <div className="flex items-center flex-wrap gap-x-1 text-gray-400 text-xs">
                               <Clock className="h-3 w-3" />
                               <span>{formatDuration(video.duration)}</span>
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-0.5 text-green-400 font-medium">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span className="text-[10px]">{t('course_detail.completed', 'Completed')}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

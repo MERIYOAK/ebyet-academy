@@ -1,33 +1,24 @@
 /**
  * Version Routes
- * Provides version information for client-side update detection
+ * Provides version information for client-side deployment change detection.
+ *
+ * All values are captured once at module load time so they remain stable
+ * across requests (buildTime must not change per-request or the frontend
+ * will see a false "new deployment" on every poll).
  */
 
 const express = require('express');
 const router = express.Router();
 
-// Get version information
-router.get('/', (req, res) => {
-  try {
-    const versionInfo = {
-      version: process.env.APP_VERSION || '1.0.0',
-      buildTime: process.env.BUILD_TIME || new Date().toISOString(),
-      buildHash: process.env.BUILD_HASH || 'development',
-      environment: process.env.NODE_ENV || 'development',
-      deployTime: new Date().toISOString()
-    };
+const versionInfo = {
+  version:     process.env.APP_VERSION    || '1.0.0',
+  buildHash:   (process.env.RENDER_GIT_COMMIT || '').slice(0, 7) || process.env.BUILD_HASH || 'development',
+  buildTime:   process.env.BUILD_TIME     || new Date().toISOString(),
+  environment: process.env.NODE_ENV       || 'development',
+};
 
-    res.json({
-      success: true,
-      data: versionInfo
-    });
-  } catch (error) {
-    console.error('Version endpoint error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get version information'
-    });
-  }
+router.get('/', (req, res) => {
+  res.json({ success: true, data: versionInfo });
 });
 
 module.exports = router;

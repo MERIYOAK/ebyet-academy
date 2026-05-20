@@ -16,7 +16,7 @@ interface DashboardCardProps {
   completedLessons: number;
   lastWatched?: string | null;
   duration: string;
-  videos?: any[];
+  videos?: { _id: string; title: string }[];
   isCompleted?: boolean;
 }
 
@@ -28,7 +28,6 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   totalLessons,
   completedLessons,
   duration,
-  videos,
   isCompleted = false
 }) => {
   const { t, i18n } = useTranslation();
@@ -197,7 +196,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
       <div className="relative h-32 xxs:h-36 sm:h-40">
         <img
           src={thumbnail}
-          alt={title}
+          alt={localizedTitle}
           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
             courseCompleted ? 'filter brightness-110' : ''
           }`}

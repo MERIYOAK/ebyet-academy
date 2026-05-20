@@ -1,9 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../config/environment';
 
 import { useParams, Link } from 'react-router-dom';
-import { Users, Calendar, DollarSign, Eye, Play, Plus, Settings, BookOpen, FileText, Download, ExternalLink } from 'lucide-react';
+import { Users, Calendar, DollarSign, Eye, Play, Plus, Settings, BookOpen, FileText, ExternalLink } from 'lucide-react';
 import { getEnglishText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
+
+interface VideoItem {
+  _id?: string;
+  id?: string;
+  title?: string | { en: string; tg: string };
+  description?: string | { en: string; tg: string };
+  duration?: string;
+  isFreePreview?: boolean;
+  order?: number;
+}
+
+interface Material {
+  id?: string;
+  title?: string | { en: string; tg: string };
+  description?: string | { en: string; tg: string };
+  formattedSize?: string;
+  fileSize?: number;
+  fileType?: { type?: string };
+  fileExtension?: string;
+  downloadUrl?: string;
+}
 
 interface Course {
   _id: string;
@@ -18,11 +40,9 @@ interface Course {
   slug: string;
   category?: string;
   tags?: string[];
-  videos?: any[];
-  currentVersion?: {
-    videos?: any[];
-    [key: string]: any;
-  };
+  version?: number;
+  videos?: VideoItem[];
+  currentVersion?: number;
 }
 
 const AdminCourseViewPage: React.FC = () => {
@@ -31,11 +51,11 @@ const AdminCourseViewPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'videos' | 'materials'>('overview');
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
 
   // Fetch course details
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
@@ -95,16 +115,16 @@ const AdminCourseViewPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     if (courseId) {
       fetchCourse();
     }
-  }, [courseId]);
+  }, [courseId, fetchCourse]);
 
   // Fetch materials
-  const fetchMaterials = async () => {
+  const fetchMaterials = useCallback(async () => {
     if (!courseId || !course) return;
     
     try {
@@ -155,13 +175,13 @@ const AdminCourseViewPage: React.FC = () => {
     } finally {
       setLoadingMaterials(false);
     }
-  };
+  }, [courseId, course]);
 
   useEffect(() => {
     if (course && activeTab === 'materials') {
       fetchMaterials();
     }
-  }, [course, activeTab, courseId]);
+  }, [course, activeTab, courseId, fetchMaterials]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -236,7 +256,8 @@ const AdminCourseViewPage: React.FC = () => {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                type="button"
+                onClick={() => setActiveTab(tab.id as 'overview' | 'videos' | 'materials')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   activeTab === tab.id
                     ? 'border-cyan-500 text-cyan-400'
@@ -332,7 +353,7 @@ const AdminCourseViewPage: React.FC = () => {
                       <DollarSign className="h-5 w-5 text-green-400 mr-2" />
                       <span className="text-gray-300">Price</span>
                     </div>
-                    <span className="font-semibold text-white">${course.price || 0}</span>
+                    <span className="font-semibold text-white">{formatCHF(course.price || 0)}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
                     <div className="flex items-center">
@@ -417,12 +438,12 @@ const AdminCourseViewPage: React.FC = () => {
             <div className="p-6">
               {(() => {
                 // Get videos from either course.videos or course.currentVersion.videos
-                const videos = course.videos || course.currentVersion?.videos || [];
+                const videos = course.videos || [];
                 console.log('Videos to render:', videos);
                 
                 return videos.length > 0 ? (
                   <div className="space-y-4">
-                    {videos.map((video: any, index: number) => {
+                    {videos.map((video: VideoItem | string, index: number) => {
                       // Debug logging
                       console.log('Video object:', video);
                       
@@ -445,7 +466,7 @@ const AdminCourseViewPage: React.FC = () => {
                         if (typeof titleData === 'string' && (titleData.startsWith('{') || titleData.startsWith('"'))) {
                           try {
                             titleData = JSON.parse(titleData);
-                          } catch (e) {
+                          } catch {
                             // Not JSON, use as is
                           }
                         }
@@ -460,7 +481,7 @@ const AdminCourseViewPage: React.FC = () => {
                         if (descData && typeof descData === 'string' && (descData.startsWith('{') || descData.startsWith('"'))) {
                           try {
                             descData = JSON.parse(descData);
-                          } catch (e) {
+                          } catch {
                             // Not JSON, use as is
                           }
                         }
@@ -510,6 +531,7 @@ const AdminCourseViewPage: React.FC = () => {
                               </Link>
                             ) : (
                               <button
+                                type="button"
                                 disabled
                                 className="inline-flex items-center px-3 py-2 border border-gray-600 text-sm font-medium rounded-lg text-gray-500 bg-gray-700 cursor-not-allowed"
                                 title="Video ID not available"
@@ -561,7 +583,7 @@ const AdminCourseViewPage: React.FC = () => {
                 </div>
               ) : materials.length > 0 ? (
                 <div className="space-y-4">
-                  {materials.map((material: any, index: number) => (
+                  {materials.map((material, index) => (
                     <div key={material.id || `material-${index}`} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors duration-200 border border-gray-600">
                       <div className="flex items-center space-x-4 flex-1 min-w-0">
                         <div className="flex-shrink-0">
@@ -572,7 +594,7 @@ const AdminCourseViewPage: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-white truncate">{getEnglishText(material.title)}</h3>
                           <div className="flex items-center space-x-4 mt-1 text-sm text-gray-400">
-                            <span>{material.formattedSize || `${(material.fileSize / 1024).toFixed(2)} KB`}</span>
+                            <span>{material.formattedSize || (material.fileSize != null ? `${(material.fileSize / 1024).toFixed(2)} KB` : 'Unknown size')}</span>
                             <span>•</span>
                             <span>{material.fileType?.type || 'File'}</span>
                             {material.fileExtension && (

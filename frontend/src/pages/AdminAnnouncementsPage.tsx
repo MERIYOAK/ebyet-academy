@@ -354,7 +354,7 @@ const AdminAnnouncementsPage: React.FC = () => {
                     <button
                       onClick={() => handleToggleActive(announcement)}
                       className="p-2 text-gray-400 hover:text-white transition-colors"
-                      title={announcement.isActive ? 'Deactivate' : 'Activate'}
+                      aria-label={announcement.isActive ? 'Deactivate' : 'Activate'}
                     >
                       {announcement.isActive ? (
                         <EyeOff className="h-4 w-4" />
@@ -365,7 +365,7 @@ const AdminAnnouncementsPage: React.FC = () => {
                     <button
                       onClick={() => handleEdit(announcement)}
                       className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
-                      title="Edit"
+                      aria-label="Edit"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
@@ -375,7 +375,7 @@ const AdminAnnouncementsPage: React.FC = () => {
                         setShowDeleteModal(true);
                       }}
                       className="p-2 text-red-400 hover:text-red-300 transition-colors"
-                      title="Delete"
+                      aria-label="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -400,6 +400,7 @@ const AdminAnnouncementsPage: React.FC = () => {
                   setShowModal(false);
                   resetForm();
                 }}
+                aria-label="Close"
                 className="text-gray-400 hover:text-white"
               >
                 <X className="h-5 w-5" />
@@ -422,8 +423,9 @@ const AdminAnnouncementsPage: React.FC = () => {
 
               {/* Order */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Order</label>
+                <label htmlFor="announcement-order" className="block text-sm font-medium text-gray-300 mb-2">Order</label>
                 <input
+                  id="announcement-order"
                   type="number"
                   value={formData.order}
                   onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
@@ -529,7 +531,7 @@ const AdminAnnouncementsPage: React.FC = () => {
           setDeleteTarget(null);
         }}
         onConfirm={handleDelete}
-        isDeleting={isDeleting}
+        isLoading={isDeleting}
         itemName={deleteTarget ? deleteTarget.title.en : ''}
       />
 

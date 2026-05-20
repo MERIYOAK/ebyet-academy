@@ -1,4 +1,4 @@
-const User = require('../models/User');
+﻿const User = require('../models/User');
 const Course = require('../models/Course');
 const AuditLog = require('../models/AuditLog');
 const { uploadFileWithOrganization, deleteFileFromS3, getPublicUrl } = require('../utils/s3');
@@ -20,7 +20,20 @@ exports.updateUserProfile = async (req, res) => {
       { name, email },
       { new: true, runValidators: true }
     ).select('-password');
-    
+
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService && user) {
+        socketService.notifyUserUpdated({
+          id: user._id,
+          name: user.name,
+          email: user.email
+        });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast USER_UPDATED:', socketError);
+    }
+
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Failed to update profile', error: err.message });
@@ -196,17 +209,26 @@ exports.getUserById = async (req, res) => {
 exports.updateUserByAdmin = async (req, res) => {
   try {
     const { name, email, role } = req.body;
-    
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { name, email, role },
       { new: true, runValidators: true }
     ).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        socketService.notifyUserUpdated({ id: user._id, name: user.name, email: user.email });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast USER_UPDATED:', socketError);
+    }
+
     res.json({
       success: true,
       message: 'User updated successfully',
@@ -260,9 +282,16 @@ exports.updateUserStatus = async (req, res) => {
     user.status = status;
     user.tokenVersion = (user.tokenVersion || 1) + 1; // Increment token version
     await user.save();
-    
-    console.log(`🔒 User ${user.email} status changed to ${status}, token version incremented to ${user.tokenVersion}`);
-    
+
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        socketService.notifyUserUpdated({ id: user._id, name: user.name, email: user.email });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast USER_UPDATED:', socketError);
+    }
+
     res.json({
       success: true,
       message: 'User status updated successfully',
@@ -397,7 +426,6 @@ exports.grantCourseAccess = async (req, res) => {
       // Don't fail the request if audit logging fails
     }
     
-    console.log(`✅ Admin granted course access: ${user.email} -> ${courseTitle}`);
     
     res.json({
       success: true,
@@ -497,7 +525,6 @@ exports.revokeCourseAccess = async (req, res) => {
       // Don't fail the request if audit logging fails
     }
     
-    console.log(`✅ Admin revoked course access: ${user.email} -> ${courseTitle}`);
     
     res.json({
       success: true,

@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 
 interface ContentUpdatePayload {
   type: string;
-  data: any;
+  data: unknown;
   timestamp: string;
 }
 
@@ -22,7 +22,8 @@ class SocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isConnecting = false;
-  private eventListeners: Map<string, Function[]> = new Map();
+  private pendingCallbacks: Array<{ resolve: () => void; reject: (err: Error) => void }> = [];
+  private eventListeners: Map<string, ((payload: ContentUpdatePayload) => void)[]> = new Map();
 
   constructor() {
     this.setupEventListeners();
@@ -65,16 +66,17 @@ class SocketService {
         return;
       }
 
+      // Queue caller — will be resolved/rejected when the in-flight connection settles
       if (this.isConnecting) {
-        reject(new Error('Connection already in progress'));
+        this.pendingCallbacks.push({ resolve, reject });
         return;
       }
 
       this.isConnecting = true;
+      this.pendingCallbacks = [{ resolve, reject }];
 
-      // Dynamic server URL for production/development
       const serverUrl = this.getServerUrl();
-      
+
       this.socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
         upgrade: true,
@@ -85,17 +87,15 @@ class SocketService {
 
       this.socket.on('connect', () => {
         console.log('🔌 Connected to Socket.IO server');
-        console.log('🔌 Socket ID:', this.socket?.id);
-        console.log('🔌 Connection status:', this.socket?.connected);
         this.isConnecting = false;
         this.reconnectAttempts = 0;
 
-        // Authenticate user if data provided
         if (userData) {
           this.authenticate(userData);
         }
 
-        resolve();
+        this.pendingCallbacks.forEach(cb => cb.resolve());
+        this.pendingCallbacks = [];
       });
 
       this.socket.on('disconnect', (reason) => {
@@ -107,7 +107,8 @@ class SocketService {
         console.error('🔌 Socket.IO connection error:', error);
         this.isConnecting = false;
         this.handleConnectionError(error);
-        reject(error);
+        this.pendingCallbacks.forEach(cb => cb.reject(error));
+        this.pendingCallbacks = [];
       });
 
       this.socket.on('contentUpdate', (payload: ContentUpdatePayload) => {
@@ -126,6 +127,7 @@ class SocketService {
     }
     this.isConnecting = false;
     this.reconnectAttempts = 0;
+    this.pendingCallbacks = [];
   }
 
   /**
@@ -148,7 +150,7 @@ class SocketService {
   /**
    * Add event listener for content updates
    */
-  addEventListener(event: string, callback: Function): void {
+  addEventListener(event: string, callback: (payload: ContentUpdatePayload) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
@@ -158,7 +160,7 @@ class SocketService {
   /**
    * Remove event listener
    */
-  removeEventListener(event: string, callback: Function): void {
+  removeEventListener(event: string, callback: (payload: ContentUpdatePayload) => void): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       const index = listeners.indexOf(callback);
@@ -216,6 +218,7 @@ class SocketService {
   /**
    * Handle connection errors
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private handleConnectionError(_error: Error): void {
     this.attemptReconnection();
   }

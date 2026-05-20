@@ -7,6 +7,18 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Toast from '../components/Toast';
 import useCourseDeletion from '../hooks/useCourseDeletion';
 import { getEnglishText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
+
+interface DeletionSummary {
+  videos: number;
+  materials: number;
+  certificates: number;
+  versions: number;
+  progressRecords: number;
+  usersAffected: number;
+  bundlesAffected: number;
+  s3Files: number;
+}
 
 interface Course {
   _id: string;
@@ -39,12 +51,12 @@ const AdminCoursesPage: React.FC = () => {
   const { deleteCourse, isLoading: isDeleting, error: deleteError } = useCourseDeletion();
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletionSummary, setDeletionSummary] = useState<any>(null);
+  const [deletionSummary, setDeletionSummary] = useState<DeletionSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // Debounced search
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch deletion summary when delete button is clicked
   const handleDeleteClick = async (course: Course) => {
@@ -204,7 +216,7 @@ const AdminCoursesPage: React.FC = () => {
       console.log('📊 Pagination:', data.data?.pagination);
       console.log('📊 Current statusFilter:', statusFilter);
       console.log('📊 Received courses with statuses:');
-      data.data?.courses?.forEach((course: any, index: number) => {
+      data.data?.courses?.forEach((course: Course, index: number) => {
         const title = typeof course.title === 'object' ? course.title.en || course.title.tg || 'Untitled' : course.title;
         console.log(`   ${index + 1}. "${title}" - Status: "${course.status}"`);
       });
@@ -449,6 +461,7 @@ const AdminCoursesPage: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => handleStatusFilterChange(e.target.value)}
+                    aria-label="Filter by status"
                     className="w-full px-3 xxs:px-4 py-2 xxs:py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none text-sm xxs:text-base"
                   >
                     <option value="all">All Status</option>
@@ -611,7 +624,7 @@ const AdminCoursesPage: React.FC = () => {
 
                 {/* Stats */}
                 <div className="flex items-center justify-between text-xs xxs:text-sm text-gray-500 mb-3 xxs:mb-4">
-                  <span>${course.price || 0}</span>
+                  <span>{formatCHF(course.price || 0)}</span>
                   <span>{course.totalEnrollments || 0} enrolled</span>
                 </div>
 
@@ -679,6 +692,7 @@ const AdminCoursesPage: React.FC = () => {
               <select
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                aria-label="Items per page"
                 className="px-3 py-1 bg-gray-800 text-white border border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
                 <option value={6}>6 per page</option>
@@ -710,7 +724,7 @@ const AdminCoursesPage: React.FC = () => {
                   const pages = [];
                   const maxVisiblePages = 5;
                   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
                   
                   // Adjust start page if we're near the end
                   if (endPage - startPage + 1 < maxVisiblePages) {

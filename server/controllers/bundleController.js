@@ -50,8 +50,7 @@ const createBundle = async (req, res) => {
         longDescription = JSON.parse(longDescription);
       }
     } catch (e) {
-      // If parsing fails, treat as regular string (backward compatibility)
-      console.log('[createBundle] Title/description not JSON, using as string');
+      // not JSON — treat as plain string
     }
 
     // Validate required fields - check for bilingual format
@@ -99,8 +98,6 @@ const createBundle = async (req, res) => {
 
     await bundle.save();
 
-    const bundleTitleDisplay = typeof bundle.title === 'string' ? bundle.title : (bundle.title?.en || bundle.title?.tg || '');
-    console.log(`✅ Bundle created: ${bundleTitleDisplay} (ID: ${bundle._id}) by ${adminEmail}`);
 
     // Emit Socket.IO event for real-time update
     const socketService = getSocketService(req);
@@ -164,8 +161,6 @@ const createBundle = async (req, res) => {
  */
 const uploadThumbnail = async (req, res) => {
   try {
-    console.log('\n🖼️  Bundle thumbnail upload request received...');
-    
     const { bundleId } = req.params;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
 
@@ -226,13 +221,21 @@ const uploadThumbnail = async (req, res) => {
     if (oldThumbnailS3Key) {
       try {
         await deleteFileFromS3(oldThumbnailS3Key);
-        console.log(`✅ Old thumbnail deleted: ${oldThumbnailS3Key}`);
       } catch (deleteError) {
-        console.error('⚠️  Failed to delete old thumbnail:', deleteError);
+        console.error('Failed to delete old bundle thumbnail:', deleteError);
       }
     }
 
-    console.log(`✅ Bundle thumbnail upload completed: ${bundle.title} by ${adminEmail}`);
+    // Notify connected clients so the bundle detail page refreshes its thumbnail
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyBundleUpdate({
+        id: bundle._id,
+        title: bundle.title,
+        thumbnail: thumbnailURL,
+        thumbnailURL: thumbnailURL
+      });
+    }
 
     res.json({
       success: true,
@@ -258,8 +261,6 @@ const uploadThumbnail = async (req, res) => {
  */
 const getAllBundles = async (req, res) => {
   try {
-    console.log('🔍 getAllBundles called with query:', req.query);
-    
     const { 
       status, 
       category, 
@@ -301,7 +302,6 @@ const getAllBundles = async (req, res) => {
       ];
     }
 
-    console.log('📊 Database query:', JSON.stringify(query, null, 2));
 
     const bundles = await Bundle.find(query)
       .populate('courseIds', 'title description thumbnailURL price category level tags totalEnrollments')
@@ -318,8 +318,6 @@ const getAllBundles = async (req, res) => {
       return bundleObj;
     });
 
-    console.log(`📚 Found ${bundles.length} bundles from database`);
-
     // Get user's purchased bundles to add purchase status (Udemy-style: show all bundles)
     let purchasedBundleIds = [];
     const authHeader = req.headers.authorization;
@@ -328,63 +326,33 @@ const getAllBundles = async (req, res) => {
         const token = authHeader.substring(7);
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
         if (decoded && decoded.userId) {
-          console.log('🔍 User is logged in, checking purchase status');
-          console.log('🔍 User ID:', decoded.userId);
-          
-          // Get user's purchased bundles
           const User = require('../models/User');
           const user = await User.findById(decoded.userId);
-          
           if (user && user.purchasedBundles && user.purchasedBundles.length > 0) {
             purchasedBundleIds = user.purchasedBundles.map(id => id.toString());
-            console.log('🔍 User has purchased bundles:', purchasedBundleIds);
-          } else {
-            console.log('🔍 User has no purchased bundles');
           }
         }
       } catch (error) {
-        console.log('🔍 Invalid token, showing all bundles without purchase status');
+        // invalid token — show bundles without purchase status
       }
-    } else {
-      console.log('🔍 No authentication token, showing all bundles without purchase status');
     }
 
-    // Ensure all bundles have proper thumbnail URLs (use presigned URLs) and add purchase status
     const bundlesWithFixedThumbnails = await Promise.all(bundlesWithEnrollmentStatus.map(async (bundle) => {
-      console.log(`🔍 [getAllBundles] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
-      console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
-      console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
-      console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
-      
       if (bundle.thumbnailS3Key) {
         try {
-          console.log(`   - Generating presigned URL for thumbnail...`);
-          // Generate presigned URL for thumbnail (works without public access)
           bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
-          console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
         } catch (error) {
-          console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
-          // Fallback to public URL if presigned URL generation fails
+          console.error(`Error generating thumbnail URL for bundle ${bundle._id}:`, error);
           bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
-          console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
         }
-      } else {
-        console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
       }
-      
-      console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
-      
-      // Add purchase status (Udemy-style: show all bundles with purchase indicator)
       const bundleObj = bundle.toObject ? bundle.toObject() : bundle;
       bundleObj.isPurchased = purchasedBundleIds.includes(bundle._id.toString());
-      
       return bundleObj;
     }));
 
     const total = await Bundle.countDocuments(query);
-    console.log(`📊 Total bundles in database: ${total}`);
 
     res.json({
       success: true,
@@ -432,7 +400,6 @@ const getFeaturedBundles = async (req, res) => {
       return bundleObj;
     });
 
-    // Get user's purchased bundles to add purchase status (Udemy-style: show all bundles)
     let purchasedBundleIds = [];
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -440,62 +407,31 @@ const getFeaturedBundles = async (req, res) => {
         const token = authHeader.substring(7);
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
         if (decoded && decoded.userId) {
-          console.log('🔍 [getFeaturedBundles] User is logged in, checking purchase status');
-          console.log('🔍 [getFeaturedBundles] User ID:', decoded.userId);
-          
-          // Get user's purchased bundles
           const User = require('../models/User');
           const user = await User.findById(decoded.userId);
-          
           if (user && user.purchasedBundles && user.purchasedBundles.length > 0) {
             purchasedBundleIds = user.purchasedBundles.map(id => id.toString());
-            console.log('🔍 [getFeaturedBundles] User has purchased bundles:', purchasedBundleIds);
-          } else {
-            console.log('🔍 [getFeaturedBundles] User has no purchased bundles');
           }
         }
       } catch (error) {
-        console.log('🔍 [getFeaturedBundles] Invalid token, showing all bundles without purchase status');
+        // invalid token — show bundles without purchase status
       }
-    } else {
-      console.log('🔍 [getFeaturedBundles] No authentication token, showing all bundles without purchase status');
     }
 
-    // Ensure all bundles have proper thumbnail URLs (use presigned URLs) and add purchase status
     const bundlesWithFixedThumbnails = await Promise.all(bundlesWithEnrollmentStatus.map(async (bundle) => {
-      console.log(`🔍 [getFeaturedBundles] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
-      console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
-      console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
-      console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
-      
       if (bundle.thumbnailS3Key) {
         try {
-          console.log(`   - Generating presigned URL for thumbnail...`);
-          // Generate presigned URL for thumbnail (works without public access)
           bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
-          console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
         } catch (error) {
-          console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
-          // Fallback to public URL if presigned URL generation fails
+          console.error(`Error generating thumbnail URL for bundle ${bundle._id}:`, error);
           bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
-          console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
         }
-      } else {
-        console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
       }
-      
-      console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
-      
-      // Add purchase status (Udemy-style: show all bundles with purchase indicator)
       const bundleObj = bundle.toObject ? bundle.toObject() : bundle;
       bundleObj.isPurchased = purchasedBundleIds.includes(bundle._id.toString());
-      
       return bundleObj;
     }));
-
-    console.log(`✅ [getFeaturedBundles] Returning ${bundlesWithFixedThumbnails.length} bundles with thumbnails`);
     res.json({
       success: true,
       data: {
@@ -565,30 +501,14 @@ const getBundleById = async (req, res) => {
     // Populate course details
     await bundle.populate('courseIds', 'title description thumbnailURL price category level tags totalEnrollments videos');
 
-    console.log(`🔍 [getBundleById] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
-    console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
-    console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
-    console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
-
-    // Generate presigned URL for thumbnail if S3 key exists
     if (bundle.thumbnailS3Key) {
       try {
-        console.log(`   - Generating presigned URL for thumbnail...`);
-        // Generate presigned URL for thumbnail (works without public access)
         bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
-        console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
       } catch (error) {
-        console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
-        console.error(`   - Error details:`, error.message, error.stack);
-        // Fallback to public URL if presigned URL generation fails
+        console.error(`Error generating thumbnail URL for bundle ${bundle._id}:`, error);
         bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
-        console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
       }
-    } else {
-      console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
     }
-    
-    console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
 
     // Add purchase status to bundle object (Udemy-style)
     const bundleObj = bundle.toObject ? bundle.toObject() : bundle;
@@ -685,7 +605,6 @@ const updateBundle = async (req, res) => {
     bundle.lastModifiedBy = adminEmail;
     await bundle.save();
 
-    console.log(`✅ Bundle updated: ${bundle.title} by ${adminEmail}`);
 
     // Emit Socket.IO event for real-time update
     const socketService = getSocketService(req);
@@ -744,9 +663,8 @@ const deleteBundle = async (req, res) => {
     if (bundle.thumbnailS3Key) {
       try {
         await deleteFileFromS3(bundle.thumbnailS3Key);
-        console.log(`✅ Bundle thumbnail deleted: ${bundle.thumbnailS3Key}`);
       } catch (deleteError) {
-        console.error('⚠️  Failed to delete bundle thumbnail:', deleteError);
+        console.error('Failed to delete bundle thumbnail:', deleteError);
       }
     }
 
@@ -757,13 +675,10 @@ const deleteBundle = async (req, res) => {
       { purchasedBundles: { $in: [id] } },
       { $pull: { purchasedBundles: id } }
     );
-    console.log(`✅ Removed bundle reference from ${updateResult.modifiedCount} users' purchased bundles`);
-    console.log(`   - Note: Students still have access to courses (enrolled directly in courses)`);
 
     // Delete the bundle
     await Bundle.findByIdAndDelete(id);
 
-    console.log(`✅ Bundle deleted: ${bundle.title} by ${adminEmail}`);
 
     // Emit Socket.IO event for real-time update
     const socketService = getSocketService(req);
@@ -784,9 +699,6 @@ const deleteBundle = async (req, res) => {
         message: `Bundle "${bundle.title}" has been deleted`
       });
       
-      console.log('📢 [deleteBundle] Emitting BUNDLE_DELETED event');
-    } else {
-      console.warn('⚠️ [deleteBundle] Socket.IO service not available');
     }
 
     res.json({
@@ -823,7 +735,15 @@ const archiveBundle = async (req, res) => {
 
     await bundle.archive(reason || 'Admin request', gracePeriodMonths);
 
-    console.log(`✅ Bundle archived: ${bundle.title} by ${adminEmail}`);
+    // Archived bundles disappear from the public catalog — surface this to users
+    // currently viewing the bundle by broadcasting a deletion.
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('BUNDLE_DELETED', {
+        bundle: { id: bundle._id, title: bundle.title, status: bundle.status },
+        message: `Bundle "${bundle.title}" has been archived`
+      });
+    }
 
     res.json({
       success: true,
@@ -871,7 +791,16 @@ const unarchiveBundle = async (req, res) => {
 
     await bundle.unarchive();
 
-    console.log(`✅ Bundle unarchived: ${bundle.title} by ${adminEmail}`);
+    // Bundle is now publicly visible again — broadcast as a new bundle so listings
+    // and any open detail pages refresh their data.
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyNewBundle({
+        id: bundle._id,
+        title: bundle.title,
+        status: bundle.status
+      });
+    }
 
     res.json({
       success: true,
@@ -897,7 +826,6 @@ const unarchiveBundle = async (req, res) => {
  */
 const getUserPurchasedBundles = async (req, res) => {
   try {
-    console.log('🔍 getUserPurchasedBundles called');
     
     if (!req.user || !req.user.userId) {
       return res.status(401).json({
@@ -934,8 +862,6 @@ const getUserPurchasedBundles = async (req, res) => {
       });
     }
 
-    console.log(`🔍 User has ${user.purchasedBundles.length} purchased bundles`);
-
     // Get purchased bundles with pagination
     const purchasedBundles = await Bundle.find({
       _id: { $in: user.purchasedBundles }
@@ -945,41 +871,19 @@ const getUserPurchasedBundles = async (req, res) => {
     .skip(skip)
     .limit(parseInt(limit));
 
-    console.log(`📚 Found ${purchasedBundles.length} purchased bundles from database`);
-
-    // Ensure all bundles have proper thumbnail URLs (use presigned URLs)
     const bundlesWithFixedThumbnails = await Promise.all(purchasedBundles.map(async (bundle) => {
-      console.log(`🔍 [getUserPurchasedBundles] Processing bundle: ${bundle.title} (ID: ${bundle._id})`);
-      console.log(`   - Has thumbnailS3Key: ${!!bundle.thumbnailS3Key}`);
-      console.log(`   - thumbnailS3Key: ${bundle.thumbnailS3Key || 'N/A'}`);
-      console.log(`   - Current thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
-      
       if (bundle.thumbnailS3Key) {
         try {
-          console.log(`   - Generating presigned URL for thumbnail...`);
-          // Generate presigned URL for thumbnail (works without public access)
           bundle.thumbnailURL = await getThumbnailUrl(bundle.thumbnailS3Key);
-          console.log(`   ✅ Generated presigned URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
         } catch (error) {
-          console.error(`   ❌ Error generating thumbnail URL for bundle ${bundle._id}:`, error);
-          console.error(`   - Error details:`, error.message, error.stack);
-          // Fallback to public URL if presigned URL generation fails
+          console.error(`Error generating thumbnail URL for bundle ${bundle._id}:`, error);
           bundle.thumbnailURL = getPublicUrl(bundle.thumbnailS3Key);
-          console.log(`   ⚠️  Using fallback public URL: ${bundle.thumbnailURL?.substring(0, 100)}...`);
         }
-      } else {
-        console.log(`   ⚠️  No thumbnailS3Key found for bundle ${bundle._id}`);
       }
-      
-      console.log(`   - Final thumbnailURL: ${bundle.thumbnailURL || 'N/A'}`);
       return bundle;
     }));
 
-    const total = await Bundle.countDocuments({
-      _id: { $in: user.purchasedBundles }
-    });
-
-    console.log(`📊 Total purchased bundles: ${total}`);
+    const total = await Bundle.countDocuments({ _id: { $in: user.purchasedBundles } });
 
     res.json({
       success: true,

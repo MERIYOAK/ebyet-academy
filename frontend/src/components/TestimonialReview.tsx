@@ -19,7 +19,7 @@ interface TestimonialReviewProps {
 
 const TestimonialReview: React.FC<TestimonialReviewProps> = ({ review }) => {
   // Helper function to get display text from bilingual objects
-  const getDisplayText = (text: any): string => {
+  const getDisplayText = (text: string | { en: string } | null | undefined): string => {
     if (!text) return '';
     if (typeof text === 'string') return text;
     if (typeof text === 'object' && text.en) return text.en;

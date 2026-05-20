@@ -1,4 +1,4 @@
-const Material = require('../models/Material');
+﻿const Material = require('../models/Material');
 const Course = require('../models/Course');
 const CourseVersion = require('../models/CourseVersion');
 const Video = require('../models/Video');
@@ -35,13 +35,11 @@ exports.uploadMaterial = async (req, res) => {
       }
     } catch (e) {
       // If parsing fails, treat as regular string (backward compatibility)
-      console.log('[uploadMaterial] Title/description not JSON, using as string');
     }
     
     const { courseId, order, version: requestedVersion } = req.body;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
     
-    console.log('[uploadMaterial] courseId:', req.body?.courseId, 'title:', title, 'size:', req.file?.size, 'file:', req.file?.originalname, 'requestedVersion:', requestedVersion);
 
     if (!req.file) {
       return res.status(400).json({ 
@@ -96,11 +94,9 @@ exports.uploadMaterial = async (req, res) => {
     const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
     const courseTitleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || '');
     
-    console.log(`📁 [uploadMaterial] Uploading to S3 with courseId: ${courseId}`);
     const s3Key = `${S3_ROOT_PREFIX}/courses/${courseTitleString.replace(/[^a-zA-Z0-9\s-]/g, '_').replace(/\s+/g, '_')}/materials/${Date.now()}_${req.file.originalname}`;
-    console.log(`📁 [uploadMaterial] Generated S3 key: ${s3Key}`);
     
-    const s3UploadResult = await uploadToS3(req.file, s3Key, 'private');
+    const s3UploadResult = await uploadToS3(req.file, s3Key);
     
     const uploadResult = {
       success: true,
@@ -113,9 +109,8 @@ exports.uploadMaterial = async (req, res) => {
     if (req.file.path) {
       try {
         require('fs').unlinkSync(req.file.path);
-        console.log('🧹 [uploadMaterial] Temporary file cleaned up:', req.file.path);
       } catch (err) {
-        console.error('❌ [uploadMaterial] Error deleting temp file:', err);
+        console.error('âŒ [uploadMaterial] Error deleting temp file:', err);
       }
     }
 
@@ -137,14 +132,12 @@ exports.uploadMaterial = async (req, res) => {
       status: 'active'
     });
     
-    console.log(`✅ [uploadMaterial] Material created: ${material._id}`);
     
     // Add material to course directly (no versioning)
     await Course.findByIdAndUpdate(courseId, {
       $push: { materials: material._id }
     });
     
-    console.log(`✅ [uploadMaterial] Material added to course ${courseId}`);
     
     // Emit real-time update to connected users
     try {
@@ -154,7 +147,6 @@ exports.uploadMaterial = async (req, res) => {
         const course = await Course.findById(material.courseId);
         const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
         
-        console.log('📢 [uploadMaterial] Emitting NEW_MATERIAL event to connected users');
         socketService.broadcastContentUpdate('NEW_MATERIAL', {
           material: material,
           courseId: material.courseId,
@@ -163,7 +155,7 @@ exports.uploadMaterial = async (req, res) => {
         });
       }
     } catch (socketError) {
-      console.warn('⚠️ [uploadMaterial] Failed to emit Socket.IO update:', socketError);
+      console.warn('âš ï¸ [uploadMaterial] Failed to emit Socket.IO update:', socketError);
     }
     
     res.status(201).json({
@@ -183,15 +175,14 @@ exports.uploadMaterial = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [uploadMaterial] error:', error?.message || error);
+    console.error('âŒ [uploadMaterial] error:', error?.message || error);
     
     // Clean up temporary file on error
     if (req.file?.path) {
       try {
         require('fs').unlinkSync(req.file.path);
-        console.log('🧹 [uploadMaterial] Temporary file cleaned up on error:', req.file.path);
       } catch (err) {
-        console.error('❌ [uploadMaterial] Error deleting temp file on error:', err);
+        console.error('âŒ [uploadMaterial] Error deleting temp file on error:', err);
       }
     }
     
@@ -213,15 +204,6 @@ exports.getMaterialsByCourse = async (req, res) => {
     const userId = req.user?.id || req.user?._id || req.user?.userId;
     const isAdmin = req.admin || req.user?.role === 'admin';
 
-    console.log(`🔧 [getMaterialsByCourse] Request details:`, {
-      courseId,
-      version: version || 'current',
-      userId: userId || 'public',
-      isAdmin: isAdmin,
-      hasUser: !!req.user,
-      userObject: req.user ? { id: req.user.id, _id: req.user._id, userId: req.user.userId } : null,
-      authHeader: req.header('Authorization') ? 'present' : 'missing'
-    });
 
     // Get course
     const course = await Course.findById(courseId);
@@ -235,34 +217,9 @@ exports.getMaterialsByCourse = async (req, res) => {
     // Determine which version to fetch
     const versionNumber = version ? parseInt(version) : (course.currentVersion || 1);
     
-    console.log(`📋 Version determination:`, {
-      versionFromQuery: version,
-      courseCurrentVersion: course.currentVersion,
-      versionNumberUsed: versionNumber,
-      courseId
-    });
 
     // Debug: Check all materials for this course (regardless of version/status) - ALWAYS RUN
     const allMaterials = await Material.find({ courseId }).lean();
-    console.log(`🔍 [DEBUG] All materials for course ${courseId}:`, {
-      totalMaterials: allMaterials.length,
-      byVersion: allMaterials.reduce((acc, m) => {
-        const v = m.courseVersion || 'unknown';
-        acc[v] = (acc[v] || 0) + 1;
-        return acc;
-      }, {}),
-      byStatus: allMaterials.reduce((acc, m) => {
-        const s = m.status || 'unknown';
-        acc[s] = (acc[s] || 0) + 1;
-        return acc;
-      }, {}),
-      materials: allMaterials.map(m => ({
-        id: m._id,
-        title: m.title,
-        courseVersion: m.courseVersion,
-        status: m.status
-      }))
-    });
 
     // Check if user has purchased the course (unless admin)
     let hasPurchased = false;
@@ -277,7 +234,6 @@ exports.getMaterialsByCourse = async (req, res) => {
       }
     } else {
       // Admin access - log for debugging
-      console.log(`🔧 [getMaterialsByCourse] Admin access granted for course ${courseId}`);
       hasPurchased = true; // Admins have access
     }
 
@@ -286,19 +242,8 @@ exports.getMaterialsByCourse = async (req, res) => {
 
     // If no materials found for requested version, try version 1 as fallback
     if (materials.length === 0 && versionNumber !== 1) {
-      console.log(`⚠️ No materials found for version ${versionNumber}, trying version 1 as fallback`);
       materials = await Material.getByCourseVersion(courseId, 1);
-      console.log(`📊 Fallback: Found ${materials.length} materials in version 1`);
     }
-
-    console.log(`📊 Found ${materials.length} materials for course ${courseId}, version ${versionNumber}`, {
-      materials: materials.map(m => ({
-        id: m._id,
-        title: m.title,
-        courseVersion: m.courseVersion,
-        status: m.status
-      }))
-    });
 
     // Generate signed URLs for each material (only for purchased users)
     const materialsWithUrls = await Promise.all(materials.map(async (material) => {
@@ -310,7 +255,7 @@ exports.getMaterialsByCourse = async (req, res) => {
           // Generate presigned URL (valid for 1 hour)
           downloadUrl = await getSignedUrlForFile(material.s3Key, 3600, material.mimeType);
         } catch (error) {
-          console.error(`❌ Error generating URL for material ${material._id}:`, error);
+          console.error(`âŒ Error generating URL for material ${material._id}:`, error);
         }
       }
       
@@ -340,7 +285,7 @@ exports.getMaterialsByCourse = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get materials by course error:', error);
+    console.error('âŒ Get materials by course error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch materials',
@@ -354,11 +299,9 @@ exports.getMaterialsByCourse = async (req, res) => {
  */
 exports.deleteMaterial = async (req, res) => {
   try {
-    console.log('[deleteMaterial] materialId:', req.params.materialId);
     const material = await Material.findById(req.params.materialId);
     if (!material) return res.status(404).json({ message: 'Material not found' });
     
-    console.log(`🗑️ [deleteMaterial] Starting deletion of material: ${material.title}`);
     
     // Get course and course version BEFORE deleting
     const course = await Course.findById(material.courseId);
@@ -368,10 +311,8 @@ exports.deleteMaterial = async (req, res) => {
     });
     
     if (!courseVersion) {
-      console.log(`⚠️ [deleteMaterial] CourseVersion not found for version ${material.courseVersion}`);
       // If no course version found, this is an orphaned material
       // Still preserve the S3 file in case it's needed
-      console.log(`🔒 [deleteMaterial] CourseVersion not found, but preserving S3 file. Only removing database record.`);
       await Material.findByIdAndDelete(material._id);
       
       // Emit real-time update to connected users
@@ -382,7 +323,6 @@ exports.deleteMaterial = async (req, res) => {
           const course = await Course.findById(material.courseId);
           const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
           
-          console.log('📢 [deleteMaterial] Emitting MATERIAL_DELETED event to connected users (orphaned material)');
           socketService.broadcastContentUpdate('MATERIAL_DELETED', {
             materialId: material._id,
             material: material,
@@ -392,7 +332,7 @@ exports.deleteMaterial = async (req, res) => {
           });
         }
       } catch (socketError) {
-        console.warn('⚠️ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
+        console.warn('âš ï¸ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
       }
       
       return res.json({ 
@@ -415,9 +355,7 @@ exports.deleteMaterial = async (req, res) => {
         
         if (isInitialUpload) {
           // Initial upload: Just remove from version 1, don't create new version
-          console.log(`📝 [deleteMaterial] Initial upload mode: Removing material from version 1 (no enrollments yet)`);
           // DO NOT delete from database or S3 - preserve for potential restoration
-          console.log(`🔒 [deleteMaterial] Material database record and S3 file preserved`);
           
           // Emit real-time update to connected users
           try {
@@ -427,7 +365,6 @@ exports.deleteMaterial = async (req, res) => {
               const course = await Course.findById(material.courseId);
               const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
               
-              console.log('📢 [deleteMaterial] Emitting MATERIAL_DELETED event to connected users (initial upload)');
               socketService.broadcastContentUpdate('MATERIAL_DELETED', {
                 materialId: material._id,
                 material: material,
@@ -437,7 +374,7 @@ exports.deleteMaterial = async (req, res) => {
               });
             }
           } catch (socketError) {
-            console.warn('⚠️ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
+            console.warn('âš ï¸ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
           }
           
           return res.json({
@@ -452,7 +389,6 @@ exports.deleteMaterial = async (req, res) => {
         }
         
         // Course has enrollments: Create new version without this material
-        console.log(`🔄 [deleteMaterial] Deleting material from current version, creating new version (course has ${course.enrolledStudents.length} enrollments)...`);
         
         const latestVersion = await CourseVersion.findOne({ 
           courseId: material.courseId 
@@ -493,7 +429,6 @@ exports.deleteMaterial = async (req, res) => {
         
         // Copy existing videos to the new version
         if (existingVideos.length > 0) {
-          console.log(`🎬 [deleteMaterial] Copying ${existingVideos.length} videos to new version v${newVersionNumber}...`);
           const videoCopyPromises = existingVideos.map(v => {
             return Video.create({
               title: v.title,
@@ -515,7 +450,6 @@ exports.deleteMaterial = async (req, res) => {
           // Update the new version's videos array with the copied video IDs
           newVersion.videos = copiedVideos.map(v => v._id);
           await newVersion.save();
-          console.log(`✅ [deleteMaterial] Copied ${copiedVideos.length} videos to version v${newVersionNumber}`);
         }
         
         // Copy existing materials to the new version (excluding the one being deleted)
@@ -528,7 +462,6 @@ exports.deleteMaterial = async (req, res) => {
         });
         
         if (existingMaterials.length > 0) {
-          console.log(`📦 [deleteMaterial] Copying ${existingMaterials.length} materials to new version v${newVersionNumber}...`);
           const materialUpdatePromises = existingMaterials.map(mat => {
             // Create a new material record for the new version
             return Material.create({
@@ -550,16 +483,13 @@ exports.deleteMaterial = async (req, res) => {
           // Update the new version's materials array with the copied material IDs
           newVersion.materials = copiedMaterials.map(m => m._id);
           await newVersion.save();
-          console.log(`✅ [deleteMaterial] Copied ${copiedMaterials.length} materials to version v${newVersionNumber}`);
         } else {
           newVersion.materials = [];
           await newVersion.save();
-          console.log(`📝 [deleteMaterial] No remaining materials to copy to new version v${newVersionNumber}`);
         }
         
         // Update statistics for the new version
         await newVersion.updateStatistics();
-        console.log(`📊 [deleteMaterial] Statistics updated for version v${newVersionNumber}`);
         
         // Update course to point to new version
         course.currentVersion = newVersionNumber;
@@ -567,7 +497,6 @@ exports.deleteMaterial = async (req, res) => {
         course.lastModifiedBy = adminEmail;
         await course.save();
         
-        console.log(`✅ [deleteMaterial] Created new version v${newVersionNumber} and set as current`);
         
         // Emit real-time update to connected users
         try {
@@ -577,7 +506,6 @@ exports.deleteMaterial = async (req, res) => {
             const course = await Course.findById(material.courseId);
             const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
             
-            console.log('📢 [deleteMaterial] Emitting MATERIAL_DELETED event to connected users');
             socketService.broadcastContentUpdate('MATERIAL_DELETED', {
               materialId: material._id,
               material: material,
@@ -587,17 +515,13 @@ exports.deleteMaterial = async (req, res) => {
             });
           }
         } catch (socketError) {
-          console.warn('⚠️ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
+          console.warn('âš ï¸ [deleteMaterial] Failed to emit Socket.IO update:', socketError);
         }
       // Material is in current version - we've already created a new version without it above
       // DO NOT delete the database record or S3 file - preserve for students with earlier versions
-      console.log(`🔒 [deleteMaterial] Material database record and S3 file preserved for students with earlier versions`);
-      console.log(`   Material removed from version ${courseCurrentVersion}, but still accessible in version ${material.courseVersion}`);
     } else {
       // Material is in an older version - DO NOT DELETE
       // Students with access to that version need this material
-      console.log(`⚠️ [deleteMaterial] Material is in version ${material.courseVersion}, but current version is ${courseCurrentVersion}`);
-      console.log(`   Keeping material for students who purchased version ${material.courseVersion}`);
     }
     
     res.json({ 
@@ -624,7 +548,6 @@ exports.deleteMaterial = async (req, res) => {
  */
 exports.updateMaterial = async (req, res) => {
   try {
-    console.log('[updateMaterial] materialId:', req.params.materialId);
     const material = await Material.findById(req.params.materialId);
     if (!material) return res.status(404).json({ message: 'Material not found' });
     
@@ -642,7 +565,6 @@ exports.updateMaterial = async (req, res) => {
       }
     } catch (e) {
       // If parsing fails, treat as regular string (backward compatibility)
-      console.log('[updateMaterial] Title/description not JSON, using as string');
     }
     
     // Update material fields
@@ -692,7 +614,6 @@ exports.updateMaterial = async (req, res) => {
         const course = await Course.findById(material.courseId);
         const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
         
-        console.log('📢 [updateMaterial] Emitting MATERIAL_UPDATED event to connected users');
         socketService.broadcastContentUpdate('MATERIAL_UPDATED', {
           material: material,
           courseId: material.courseId,
@@ -701,11 +622,10 @@ exports.updateMaterial = async (req, res) => {
         });
       }
     } catch (socketError) {
-      console.warn('⚠️ [updateMaterial] Failed to emit Socket.IO update:', socketError);
+      console.warn('âš ï¸ [updateMaterial] Failed to emit Socket.IO update:', socketError);
     }
   } catch (err) {
     console.error('[updateMaterial] error:', err?.message || err);
     res.status(500).json({ message: 'Update failed', error: err.message });
   }
 };
-

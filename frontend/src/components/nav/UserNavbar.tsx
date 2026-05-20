@@ -119,13 +119,23 @@ const UserNavbar: React.FC = () => {
             setProfileImageUrl(null);
           }
         }
-      } catch (error) {
+      } catch {
         setProfileImageUrl(null);
       }
     };
 
     fetchProfileImage();
   }, [isAuthenticated]);
+
+  // Live-update the navbar avatar whenever the user changes their profile photo on /profile.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ photoUrl: string | null }>).detail;
+      setProfileImageUrl(detail?.photoUrl ?? null);
+    };
+    window.addEventListener('profilePhotoUpdated', handler);
+    return () => window.removeEventListener('profilePhotoUpdated', handler);
+  }, []);
 
   return (
     <>

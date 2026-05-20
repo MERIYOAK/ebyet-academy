@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Maximize, 
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
   Settings,
-  Shield,
   AlertTriangle,
-  Eye,
-  EyeOff
+  SkipBack,
+  SkipForward,
 } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
 import DRMSecurityService from '../services/drmSecurityService';
@@ -37,12 +35,13 @@ interface SecureVideoPlayerProps {
   onControlsToggle?: (visible: boolean) => void;
   drmEnabled?: boolean;
   watermarkData?: string;
-  forensicWatermark?: any;
+  forensicWatermark?: { hash: string };
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   src,
-  title,
   userId,
   videoId,
   courseId,
@@ -59,12 +58,12 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   className = '',
   initialTime = 0,
   showControls = true,
-  onControlsToggle,
   drmEnabled = true,
   watermarkData,
-  forensicWatermark
+  forensicWatermark,
+  onPrev,
+  onNext,
 }) => {
-  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const watermarkCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,9 +81,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(playbackRate);
   const [showSettings, setShowSettings] = useState(false);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
-  const [buffered, setBuffered] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [controlsVisible, setControlsVisible] = useState(showControls);
@@ -95,27 +92,17 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
   const [securityStatus, setSecurityStatus] = useState<{
     isSecure: boolean;
     violations: string[];
-    drmSession: any;
+    drmSession: unknown;
   }>({
     isSecure: true,
     violations: [],
     drmSession: null
   });
-  const [securityChecks, setSecurityChecks] = useState({
-    screenRecording: false,
-    extensions: false,
-    developerTools: false,
-    virtualMachine: false
-  });
   const [showSecurityWarning, setShowSecurityWarning] = useState(false);
-  const [watermarkVisible, setWatermarkVisible] = useState(true);
+  const [watermarkVisible] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockReason, setBlockReason] = useState<string>('');
   // Recording detection states removed per client request
-
-  // Progress tracking
-  const lastProgressUpdate = useRef(0);
-  const PROGRESS_UPDATE_INTERVAL = 30000; // 30 seconds
 
   // Initialize DRM and security
   useEffect(() => {
@@ -195,7 +182,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
       container.appendChild(canvas);
       // Store reference to canvas for cleanup
-      (watermarkCanvasRef as any).current = canvas;
+      (watermarkCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = canvas;
 
       return canvas;
     };
@@ -217,7 +204,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         canvas.remove();
       }
     };
-  }, [drmEnabled, watermarkData, forensicWatermark, watermarkVisible]);
+  }, [drmEnabled, watermarkData, forensicWatermark, watermarkVisible, courseId]);
 
   // iOS-specific video event listeners for debugging and compatibility
   useEffect(() => {
@@ -556,16 +543,65 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     }
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     const video = videoRef.current;
+    const container = containerRef.current;
     if (!video) return;
 
-    if (!document.fullscreenElement) {
-      video.requestFullscreen?.();
+    // Vendor-prefixed APIs (Safari desktop + iOS) are not in TS lib.dom types.
+    type FullscreenVideo = HTMLVideoElement & {
+      webkitEnterFullscreen?: () => void;
+      webkitExitFullscreen?: () => void;
+      webkitDisplayingFullscreen?: boolean;
+    };
+    type FullscreenElement = HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+      msRequestFullscreen?: () => Promise<void> | void;
+    };
+    type FullscreenDocument = Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+      msFullscreenElement?: Element | null;
+      msExitFullscreen?: () => Promise<void> | void;
+    };
+
+    const doc = document as FullscreenDocument;
+    const fsVideo = video as FullscreenVideo;
+    const fsContainer = container as FullscreenElement | null;
+
+    const inFullscreen =
+      !!doc.fullscreenElement ||
+      !!doc.webkitFullscreenElement ||
+      !!doc.msFullscreenElement ||
+      !!fsVideo.webkitDisplayingFullscreen;
+
+    if (!inFullscreen) {
+      // Preferred path: fullscreen the container so our custom controls remain visible.
+      if (fsContainer?.requestFullscreen) {
+        fsContainer.requestFullscreen().catch(() => fsVideo.webkitEnterFullscreen?.());
+      } else if (fsContainer?.webkitRequestFullscreen) {
+        fsContainer.webkitRequestFullscreen();
+      } else if (fsContainer?.msRequestFullscreen) {
+        fsContainer.msRequestFullscreen();
+      } else if (fsVideo.webkitEnterFullscreen) {
+        // iOS Safari on iPhone — only the video element supports native fullscreen
+        // (uses the system video player; orientation is handled by the OS).
+        fsVideo.webkitEnterFullscreen();
+      } else if (fsVideo.requestFullscreen) {
+        fsVideo.requestFullscreen();
+      }
     } else {
-      document.exitFullscreen?.();
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen();
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      } else if (doc.msExitFullscreen) {
+        doc.msExitFullscreen();
+      } else if (fsVideo.webkitExitFullscreen) {
+        fsVideo.webkitExitFullscreen();
+      }
     }
-  };
+  }, []);
 
   // Enhanced keyboard shortcut detection with video controls
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -693,7 +729,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           video.currentTime = Math.min(video.duration, video.currentTime + 10);
           break;
 
-        case 'arrowup': // Up arrow - Volume up
+        case 'arrowup': { // Up arrow - Volume up
           e.preventDefault();
           e.stopPropagation();
           const newVolumeUp = Math.min(1, video.volume + 0.1);
@@ -701,8 +737,9 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           setVolume(newVolumeUp);
           setIsMuted(false);
           break;
+        }
 
-        case 'arrowdown': // Down arrow - Volume down
+        case 'arrowdown': { // Down arrow - Volume down
           e.preventDefault();
           e.stopPropagation();
           const newVolumeDown = Math.max(0, video.volume - 0.1);
@@ -710,6 +747,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           setVolume(newVolumeDown);
           setIsMuted(newVolumeDown === 0);
           break;
+        }
 
         case 'k': // K - Play/Pause (alternative)
           e.preventDefault();
@@ -862,6 +900,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       video.removeEventListener('canplay', handleCanPlay);
       document.removeEventListener('keydown', handleKeyDown);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handleKeyDown, handleLoadedMetadata]);
 
   const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -941,44 +980,6 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
       )}
 
 
-      {/* Security Status Indicator - Hidden */}
-      {false && drmEnabled && (
-        <div className="absolute top-4 left-4 z-20">
-          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs ${
-            securityStatus.isSecure 
-              ? 'bg-green-900 bg-opacity-75 text-green-300' 
-              : 'bg-red-900 bg-opacity-75 text-red-300'
-          }`}>
-            <Shield className="w-3 h-3" />
-            <span>{securityStatus.isSecure ? 'Secure' : 'Warning'}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Windows Key Blocking Indicator - Hidden */}
-      {false && isPlaying && (
-        <div className="absolute top-4 left-32 z-20">
-          <div className="flex items-center space-x-2 px-3 py-1 rounded-full text-xs bg-blue-900 bg-opacity-75 text-blue-300">
-            <Shield className="w-3 h-3" />
-            <span>Windows Key Blocked</span>
-          </div>
-        </div>
-      )}
-
-      {/* Watermark Toggle - Hidden */}
-      {false && drmEnabled && watermarkData && (
-        <div className="absolute top-4 right-4 z-20">
-          <button
-            onClick={() => setWatermarkVisible(!watermarkVisible)}
-            className="flex items-center space-x-1 px-3 py-1 rounded-full bg-black bg-opacity-75 text-white text-xs hover:bg-opacity-90"
-            title={watermarkVisible ? 'Hide watermark' : 'Show watermark'}
-          >
-            {watermarkVisible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            <span>Watermark</span>
-          </button>
-        </div>
-      )}
-
       {/* Video Element */}
       <video
         ref={videoRef}
@@ -1008,10 +1009,26 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         disableRemotePlayback
       />
 
-      {/* Center Play/Pause Button */}
+      {/* Center Play/Pause Button + Prev/Next */}
       {(showCenterPlayButton || !isPlaying) && !isLoading && !error && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center gap-4 sm:gap-8 md:gap-12 z-10 pointer-events-none">
+          {/* Previous video */}
+          {onPrev && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onPrev(); }}
+              aria-label="Previous video"
+              className="group transition-all duration-300 transform hover:scale-110 pointer-events-auto cursor-pointer"
+            >
+              <div className="bg-black bg-opacity-60 rounded-full p-2 sm:p-2.5 md:p-3 group-hover:bg-opacity-80 transition-all duration-300">
+                <SkipBack className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
+              </div>
+            </button>
+          )}
+
+          {/* Play / Pause */}
           <button
+            type="button"
             onClick={isBlocked ? () => {
               console.warn('🚫 Playback blocked due to security violation');
               setShowSecurityWarning(true);
@@ -1031,6 +1048,20 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
               )}
             </div>
           </button>
+
+          {/* Next video */}
+          {onNext && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onNext(); }}
+              aria-label="Next video"
+              className="group transition-all duration-300 transform hover:scale-110 pointer-events-auto cursor-pointer"
+            >
+              <div className="bg-black bg-opacity-60 rounded-full p-2 sm:p-2.5 md:p-3 group-hover:bg-opacity-80 transition-all duration-300">
+                <SkipForward className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
+              </div>
+            </button>
+          )}
         </div>
       )}
 
@@ -1109,6 +1140,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 step="0.1"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                aria-label="Volume"
                 className="w-12 md:w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
             </div>
@@ -1117,6 +1149,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             <div className="hidden md:block relative flex-shrink-0">
               <button
                 onClick={() => setShowSettings(!showSettings)}
+                aria-label="Playback speed"
                 className="text-white hover:text-gray-300 transition-colors"
               >
                 <Settings className="w-5 h-5" />
@@ -1145,6 +1178,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             {/* Fullscreen Button */}
             <button
               onClick={toggleFullscreen}
+              aria-label="Fullscreen"
               className="text-white hover:text-gray-300 transition-colors flex-shrink-0"
             >
               <Maximize className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5" />
@@ -1167,12 +1201,6 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
           <div>↑/↓: Volume ±10%</div>
           <div>F: Fullscreen</div>
           <div>0: Start | 9: 90%</div>
-          {false && isPlaying && (
-            <div className="mt-2 pt-2 border-t border-gray-600 text-yellow-300">
-              <div className="font-semibold">🔒 Security Active:</div>
-              <div>Windows Key Blocked</div>
-            </div>
-          )}
         </div>
       )}
       </div>

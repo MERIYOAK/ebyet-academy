@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+﻿const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 
 /**
@@ -37,7 +37,6 @@ class EmailService {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       this.useSendGrid = true;
       this.isConfigured = true;
-      console.log('✅ Email service configured with SendGrid (best inbox delivery)');
       return;
     }
 
@@ -61,22 +60,14 @@ class EmailService {
 
       this.transporter.verify((error, success) => {
         if (error) {
-          console.error('❌ Email transporter verification failed:', error);
+          console.error('âŒ Email transporter verification failed:', error);
         } else {
-          console.log('✅ Email service configured with SMTP (fallback)');
         }
       });
 
       this.isConfigured = true;
       this.useSendGrid = false;
     } else {
-      console.log('⚠️  Email service not configured');
-      console.log('💡 RECOMMENDED: Use SendGrid for best inbox delivery');
-      console.log('   Add to .env: SENDGRID_API_KEY=your-api-key');
-      console.log('   Sign up free at: https://sendgrid.com (100 emails/day)');
-      console.log('');
-      console.log('💡 ALTERNATIVE: Use SMTP');
-      console.log('   Add to .env: SMTP_HOST, SMTP_USER, SMTP_PASSWORD');
     }
   }
 
@@ -85,7 +76,6 @@ class EmailService {
    */
   async sendEmail(options) {
     if (!this.isConfigured) {
-      console.log('⚠️  Email service not configured - skipping email');
       return false;
     }
 
@@ -110,7 +100,7 @@ class EmailService {
         return true;
       }
     } catch (error) {
-      console.error('❌ Error sending email:', error);
+      console.error('âŒ Error sending email:', error);
       if (error.response) {
         console.error('SendGrid error details:', error.response.body);
       }
@@ -124,7 +114,6 @@ class EmailService {
   async sendVerificationEmail(email, name, verificationToken) {
     try {
       if (!this.isConfigured) {
-        console.log('⚠️  Email service not configured - skipping verification email');
         return false;
       }
 
@@ -197,7 +186,7 @@ class EmailService {
                 <strong style="color: #06b6d4; font-size: 15px;">Ibyet Investing</strong>
               </div>
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+                Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
               </p>
             </div>
           </div>
@@ -242,13 +231,12 @@ The Ibyet Investing Team`;
       const success = await this.sendEmail(emailOptions);
       
       if (success) {
-        console.log(`✅ Verification email sent to: ${email} (${this.useSendGrid ? 'SendGrid' : 'SMTP'})`);
       }
       
       return success;
 
     } catch (error) {
-      console.error('❌ Error sending verification email:', error);
+      console.error('âŒ Error sending verification email:', error);
       return false;
     }
   }
@@ -259,7 +247,6 @@ The Ibyet Investing Team`;
   async sendPasswordResetEmail(email, name, resetToken) {
     try {
       if (!this.isConfigured) {
-        console.log('⚠️  Email service not configured - skipping password reset email');
         return false;
       }
 
@@ -319,7 +306,7 @@ The Ibyet Investing Team`;
             
             <div style="background: #f8fafc; padding: 25px 20px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+                Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
               </p>
             </div>
           </div>
@@ -361,13 +348,12 @@ The Ibyet Investing Team`;
       const success = await this.sendEmail(emailOptions);
       
       if (success) {
-        console.log(`✅ Password reset email sent to: ${email} (${this.useSendGrid ? 'SendGrid' : 'SMTP'})`);
       }
       
       return success;
 
     } catch (error) {
-      console.error('❌ Error sending password reset email:', error);
+      console.error('âŒ Error sending password reset email:', error);
       return false;
     }
   }
@@ -378,7 +364,6 @@ The Ibyet Investing Team`;
   async sendWelcomeEmail(email, name) {
     try {
       if (!this.isConfigured) {
-        console.log('⚠️  Email service not configured - skipping welcome email');
         return false;
       }
 
@@ -421,7 +406,7 @@ The Ibyet Investing Team`;
             
             <div style="background: #f8fafc; padding: 25px 20px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+                Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
               </p>
             </div>
           </div>
@@ -460,13 +445,12 @@ The Ibyet Investing Team`;
       const success = await this.sendEmail(emailOptions);
       
       if (success) {
-        console.log(`✅ Welcome email sent to: ${email} (${this.useSendGrid ? 'SendGrid' : 'SMTP'})`);
       }
       
       return success;
 
     } catch (error) {
-      console.error('❌ Error sending welcome email:', error);
+      console.error('âŒ Error sending welcome email:', error);
       return false;
     }
   }
@@ -477,7 +461,6 @@ The Ibyet Investing Team`;
   async sendContactFormEmail(formData) {
     try {
       if (!this.isConfigured) {
-        console.log('⚠️  Email service not configured - skipping contact form email');
         return false;
       }
 
@@ -576,7 +559,7 @@ The Ibyet Investing Team`;
             <!-- Footer -->
             <div style="background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+                Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
               </p>
               <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8;">
                 This email was sent from the contact form on your website.
@@ -603,7 +586,7 @@ ${message}
 You can reply directly to this email to respond to ${name}.
 The reply will be sent to ${email}.
 
-© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
 This email was sent from the contact form on your website.`;
 
       const emailOptions = {
@@ -625,13 +608,12 @@ This email was sent from the contact form on your website.`;
       const success = await this.sendEmail(emailOptions);
       
       if (success) {
-        console.log(`✅ Contact form email sent to: ${recipientEmail} from: ${email} (${this.useSendGrid ? 'SendGrid' : 'SMTP'})`);
       }
       
       return success;
 
     } catch (error) {
-      console.error('❌ Error sending contact form email:', error);
+      console.error('âŒ Error sending contact form email:', error);
       return false;
     }
   }
@@ -642,7 +624,6 @@ This email was sent from the contact form on your website.`;
   async sendPasswordChangeNotification(email, name) {
     try {
       if (!this.isConfigured) {
-        console.log('⚠️  Email service not configured - skipping password change notification');
         return false;
       }
 
@@ -681,7 +662,7 @@ This email was sent from the contact form on your website.`;
               
               <div style="background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); padding: 20px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin: 25px 0;">
                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                  <span style="color: #10b981; margin-right: 8px;">🔒</span>
+                  <span style="color: #10b981; margin-right: 8px;">ðŸ”’</span>
                   <strong style="color: #0f172a; font-size: 13px;">Security Notice:</strong>
                 </div>
                 <p style="color: #475569; line-height: 1.5; margin: 0; font-size: 13px;">
@@ -706,7 +687,7 @@ This email was sent from the contact form on your website.`;
                 <strong style="color: #06b6d4; font-size: 15px;">Ibyet Investing</strong>
               </div>
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+                Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
               </p>
             </div>
           </div>
@@ -747,13 +728,12 @@ The Ibyet Investing Team`;
       const success = await this.sendEmail(emailOptions);
       
       if (success) {
-        console.log(`✅ Password change notification sent to: ${email} (${this.useSendGrid ? 'SendGrid' : 'SMTP'})`);
       }
       
       return success;
 
     } catch (error) {
-      console.error('❌ Error sending password change notification:', error);
+      console.error('âŒ Error sending password change notification:', error);
       return false;
     }
   }
@@ -764,7 +744,6 @@ The Ibyet Investing Team`;
   async sendTestEmail(toEmail) {
     try {
       if (!this.isConfigured) {
-        console.log('⚠️  Email service not configured - cannot send test email');
         return { success: false, message: 'Email service not configured' };
       }
 
@@ -787,7 +766,7 @@ The Ibyet Investing Team`;
             </div>
             
             <div style="padding: 30px 20px; background: white; color: #1f2937;">
-              <h2 style="color: #1f2937; margin-bottom: 15px; font-size: 22px; font-weight: 600;">✅ SendGrid is Working!</h2>
+              <h2 style="color: #1f2937; margin-bottom: 15px; font-size: 22px; font-weight: 600;">âœ… SendGrid is Working!</h2>
               
               <p style="color: #6b7280; line-height: 1.6; margin-bottom: 25px; font-size: 15px;">
                 Congratulations! Your SendGrid email service is properly configured and working.
@@ -806,13 +785,13 @@ The Ibyet Investing Team`;
               </div>
               
               <p style="color: #6b7280; line-height: 1.6; margin-top: 25px; font-size: 15px;">
-                If you received this email in your <strong>inbox</strong> (not spam), your SendGrid configuration is perfect! 🎉
+                If you received this email in your <strong>inbox</strong> (not spam), your SendGrid configuration is perfect! ðŸŽ‰
               </p>
             </div>
             
             <div style="background: #f8fafc; padding: 25px 20px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                © ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
+                Â© ${new Date().getFullYear()} Ibyet Investing. All rights reserved.
               </p>
             </div>
           </div>
@@ -822,7 +801,7 @@ The Ibyet Investing Team`;
 
       const textContent = `SendGrid Test Email - Ibyet Investing
 
-✅ SendGrid is Working!
+âœ… SendGrid is Working!
 
 Congratulations! Your SendGrid email service is properly configured and working.
 
@@ -832,7 +811,7 @@ Email Service Details:
 - To: ${toEmail}
 - Time: ${new Date().toLocaleString()}
 
-If you received this email in your inbox (not spam), your SendGrid configuration is perfect! 🎉
+If you received this email in your inbox (not spam), your SendGrid configuration is perfect! ðŸŽ‰
 
 Best regards,
 The Ibyet Investing Team`;
@@ -840,7 +819,7 @@ The Ibyet Investing Team`;
       const emailOptions = {
         from: formattedFrom,
         to: toEmail,
-        subject: '✅ SendGrid Test Email - Ibyet Investing',
+        subject: 'âœ… SendGrid Test Email - Ibyet Investing',
         html: htmlContent,
         text: textContent,
         replyTo: process.env.REPLY_TO_EMAIL || fromEmail
@@ -856,7 +835,6 @@ The Ibyet Investing Team`;
       const success = await this.sendEmail(emailOptions);
       
       if (success) {
-        console.log(`✅ Test email sent successfully to: ${toEmail} (${this.useSendGrid ? 'SendGrid' : 'SMTP'})`);
         return { 
           success: true, 
           message: `Test email sent successfully to ${toEmail}`,
@@ -870,7 +848,7 @@ The Ibyet Investing Team`;
       }
 
     } catch (error) {
-      console.error('❌ Error sending test email:', error);
+      console.error('âŒ Error sending test email:', error);
       if (error.response) {
         console.error('SendGrid error details:', JSON.stringify(error.response.body, null, 2));
       }

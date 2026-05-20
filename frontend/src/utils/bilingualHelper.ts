@@ -21,7 +21,7 @@ export const getEnglishText = (text: string | { en: string; tg: string } | undef
         if (typeof parsed === 'string') {
           return parsed;
         }
-      } catch (e) {
+      } catch {
         // Not valid JSON, treat as plain string
         return text;
       }

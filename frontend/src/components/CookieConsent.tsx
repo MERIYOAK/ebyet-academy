@@ -2,6 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { config } from '../config/environment';
 
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 const CONSENT_KEY = 'cookie_consent';
 
 const loadGA = (measurementId: string) => {
@@ -31,11 +38,9 @@ const removeGA = () => {
   const inline = document.getElementById('ga4-inline');
   if (inline) inline.remove();
   // Clear dataLayer to stop further pushes
-  // @ts-ignore
   window.dataLayer = [];
   // Override gtag to a no-op to prevent further sends
-  // @ts-ignore
-  window.gtag = function(){};
+  window.gtag = () => {};
 };
 
 interface CookieConsentProps {

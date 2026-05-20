@@ -24,7 +24,7 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
   const discordUrl = config.SOCIAL_DISCORD;
   
   // Format phone number for tel: link (remove spaces, parentheses, and dashes)
-  const phoneLink = supportPhone.replace(/[\s()\-]/g, '');
+  const phoneLink = supportPhone.replace(/[\s()-]/g, '');
   
   return (
     <footer className={`bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 ${className}`}>

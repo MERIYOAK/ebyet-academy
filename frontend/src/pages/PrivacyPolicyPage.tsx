@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Eye, Lock, Database, Users, Bell, Globe, Mail } from 'lucide-react';
+import { Shield, Eye, Lock, Database, Users, Globe } from 'lucide-react';
 import { config } from '../config/environment';
 
 const PrivacyPolicyPage = () => {

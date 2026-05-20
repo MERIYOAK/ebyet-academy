@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
 const auth = require('../middleware/authMiddleware');
@@ -9,10 +9,6 @@ router.post('/create-checkout-session', auth, paymentController.createCheckoutSe
 // Webhook endpoint (no auth required, uses Stripe signature verification)
 // IMPORTANT: express.raw() must be used to preserve the raw body for signature verification
 router.post('/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
-  console.log('🔧 Webhook route middleware - raw body preserved');
-  console.log(`   - Body type: ${typeof req.body}`);
-  console.log(`   - Is Buffer: ${Buffer.isBuffer(req.body)}`);
-  console.log(`   - Body length: ${req.body ? req.body.length : 'No body'}`);
   next();
 }, paymentController.webhook);
 

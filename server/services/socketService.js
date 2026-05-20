@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Socket.IO Service for Real-time Content Updates
  * Handles broadcasting content updates to connected users
  */
@@ -15,7 +15,6 @@ class SocketService {
    */
   initialize(io) {
     this.io = io;
-    console.log('🔌 Socket.IO service initialized');
   }
 
   /**
@@ -33,7 +32,7 @@ class SocketService {
    */
   broadcastContentUpdate(eventType, data) {
     if (!this.io) {
-      console.warn('⚠️ Socket.IO not initialized');
+      console.warn('âš ï¸ Socket.IO not initialized');
       return;
     }
 
@@ -43,7 +42,6 @@ class SocketService {
       timestamp: new Date().toISOString()
     };
 
-    console.log(`📢 Broadcasting ${eventType} to ${this.connectedUsers.size} users`);
     this.io.emit('contentUpdate', payload);
   }
 
@@ -55,7 +53,7 @@ class SocketService {
    */
   sendTargetedUpdate(userIds, eventType, data) {
     if (!this.io) {
-      console.warn('⚠️ Socket.IO not initialized');
+      console.warn('âš ï¸ Socket.IO not initialized');
       return;
     }
 
@@ -70,7 +68,6 @@ class SocketService {
       for (const [socketId, userInfo] of this.connectedUsers.entries()) {
         if (userInfo.userId === userId) {
           this.io.to(socketId).emit('contentUpdate', payload);
-          console.log(`📤 Sent ${eventType} to user ${userId}`);
         }
       }
     });
@@ -84,7 +81,7 @@ class SocketService {
    */
   sendRoleBasedUpdate(role, eventType, data) {
     if (!this.io) {
-      console.warn('⚠️ Socket.IO not initialized');
+      console.warn('âš ï¸ Socket.IO not initialized');
       return;
     }
 
@@ -100,7 +97,6 @@ class SocketService {
       }
     }
 
-    console.log(`📤 Sent ${eventType} to ${role} users`);
   }
 
   /**
@@ -115,6 +111,7 @@ class SocketService {
 
   notifyCourseUpdate(courseData) {
     this.broadcastContentUpdate('COURSE_UPDATED', {
+      courseId: courseData.id || courseData._id,
       course: courseData,
       message: `Course "${courseData.title}" has been updated!`
     });
@@ -206,6 +203,18 @@ class SocketService {
     this.broadcastContentUpdate('WHATSAPP_GROUP_UPDATED', {
       course: courseData,
       message: `WhatsApp group for "${courseData.title}" has been updated`
+    });
+  }
+
+  /**
+   * Notify clients (mainly admin views) that a user profile changed.
+   * @param {{ id: any, name?: string, email?: string }} userData
+   */
+  notifyUserUpdated(userData) {
+    this.broadcastContentUpdate('USER_UPDATED', {
+      user: userData,
+      userId: userData?.id,
+      message: 'User profile updated'
     });
   }
 

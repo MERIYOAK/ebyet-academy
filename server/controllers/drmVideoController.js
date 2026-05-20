@@ -1,6 +1,6 @@
-const Video = require('../models/Video');
+﻿const Video = require('../models/Video');
 const Course = require('../models/Course');
-const { checkVideoAccess } = require('../utils/purchaseUtils');
+const { checkVideoAccess, userHasPurchased } = require('../utils/purchaseUtils');
 const drmService = require('../services/drmService');
 const { getSignedUrlForFile } = require('../utils/s3CourseManager');
 
@@ -13,7 +13,6 @@ exports.getVideoByIdWithDRM = async (req, res) => {
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const isAdmin = req.user?.role === 'admin';
     
-    console.log('[getVideoByIdWithDRM] videoId:', videoId, 'userId:', userId);
     
     // Validate videoId parameter
     if (!videoId || typeof videoId !== 'string' || videoId === '[object Object]') {
@@ -83,9 +82,8 @@ exports.getVideoByIdWithDRM = async (req, res) => {
           );
         }
         
-        console.log(`🔒 DRM session created for user ${userId}, video ${videoId}`);
       } catch (error) {
-        console.error('❌ Failed to create DRM session:', error);
+        console.error('âŒ Failed to create DRM session:', error);
         return res.status(500).json({
           success: false,
           message: 'Failed to initialize video security'
@@ -155,7 +153,7 @@ exports.getVideoByIdWithDRM = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [getVideoByIdWithDRM] Error:', error);
+    console.error('âŒ [getVideoByIdWithDRM] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -204,7 +202,7 @@ exports.validateDRMSession = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [validateDRMSession] Error:', error);
+    console.error('âŒ [validateDRMSession] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -253,10 +251,8 @@ exports.getCourseVideosWithDRM = async (req, res) => {
       });
     }
 
-    // Check if user has purchased the course (check first video to determine overall purchase status)
-    const firstVideoAccess = await checkVideoAccess(videos[0]._id, userId, isAdmin);
-    // User has purchased if they have access AND it's not just a free preview
-    const coursePurchased = firstVideoAccess.hasAccess && !videos[0].isFreePreview;
+    // Check if user has purchased the course via enrollment/purchase records
+    const coursePurchased = isAdmin || (userId ? await userHasPurchased(userId, courseId) : false);
     
     // Generate DRM sessions for each video (for non-admin users)
     const videosWithDRM = await Promise.all(videos.map(async (video) => {
@@ -265,14 +261,6 @@ exports.getCourseVideosWithDRM = async (req, res) => {
       const hasAccess = videoAccess.hasAccess;
       const isLocked = !hasAccess;
       
-      // Log access status for debugging
-      console.log(`🔒 [DRM Controller] Video ${video._id.toString().substring(0, 8)}... access:`, {
-        userId: userId || 'unauthenticated',
-        hasAccess,
-        isLocked,
-        isFreePreview: video.isFreePreview,
-        lockReason: videoAccess.lockReason
-      });
       
       const videoObj = {
         id: video._id,
@@ -325,7 +313,7 @@ exports.getCourseVideosWithDRM = async (req, res) => {
                 expiresIn: encryptedVideoData.expiresIn
               };
             } catch (encryptionError) {
-              console.error(`❌ Failed to generate encrypted video URL for video ${video._id}:`, encryptionError);
+              console.error(`âŒ Failed to generate encrypted video URL for video ${video._id}:`, encryptionError);
               // Fall back to regular signed URL (only if user still has access)
               if (hasAccess && !isLocked) {
                 try {
@@ -333,7 +321,7 @@ exports.getCourseVideosWithDRM = async (req, res) => {
                   videoObj.url = signedUrl;
                   videoObj.videoUrl = signedUrl;
                 } catch (fallbackError) {
-                  console.error(`❌ Failed to generate fallback signed URL for video ${video._id}:`, fallbackError);
+                  console.error(`âŒ Failed to generate fallback signed URL for video ${video._id}:`, fallbackError);
                   // Ensure URLs remain null on error
                   videoObj.url = null;
                   videoObj.videoUrl = null;
@@ -346,7 +334,7 @@ exports.getCourseVideosWithDRM = async (req, res) => {
             }
           }
         } catch (error) {
-          console.error(`❌ Failed to create DRM session for video ${video._id}:`, error);
+          console.error(`âŒ Failed to create DRM session for video ${video._id}:`, error);
         }
       }
 
@@ -357,7 +345,7 @@ exports.getCourseVideosWithDRM = async (req, res) => {
           videoObj.url = signedUrl;
           videoObj.videoUrl = signedUrl;
         } catch (error) {
-          console.error(`❌ Failed to generate signed URL for video ${video._id}:`, error);
+          console.error(`âŒ Failed to generate signed URL for video ${video._id}:`, error);
           // Keep URLs as null if generation fails
           videoObj.url = null;
           videoObj.videoUrl = null;
@@ -397,7 +385,7 @@ exports.getCourseVideosWithDRM = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [getCourseVideosWithDRM] Error:', error);
+    console.error('âŒ [getCourseVideosWithDRM] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -411,22 +399,12 @@ exports.getCourseVideosWithDRM = async (req, res) => {
  */
 exports.decryptVideoUrl = async (req, res) => {
   try {
-    console.log('🔓 [decryptVideoUrl] Request received:', {
-      body: req.body,
-      user: req.user ? { id: req.user.id, userId: req.user.userId } : 'No user'
-    });
     
     const { encryptedUrl, sessionId } = req.body;
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     
-    console.log('🔓 [decryptVideoUrl] Extracted data:', {
-      encryptedUrl: encryptedUrl ? 'Present' : 'Missing',
-      sessionId: sessionId ? 'Present' : 'Missing',
-      userId: userId ? 'Present' : 'Missing'
-    });
     
     if (!encryptedUrl || !sessionId) {
-      console.log('❌ [decryptVideoUrl] Missing required parameters');
       return res.status(400).json({
         success: false,
         message: 'Encrypted URL and session ID are required'
@@ -436,17 +414,8 @@ exports.decryptVideoUrl = async (req, res) => {
     // Get the DRM session
     const session = drmService.getSession(sessionId);
     const sessionStats = drmService.getSessionStats();
-    console.log('🔓 [decryptVideoUrl] Session lookup:', {
-      sessionFound: !!session,
-      sessionUserId: session?.userId,
-      requestUserId: userId,
-      sessionValid: session && session.userId === userId,
-      totalSessions: sessionStats.totalSessions,
-      activeSessions: sessionStats.activeSessions
-    });
     
     if (!session || session.userId !== userId) {
-      console.log('❌ [decryptVideoUrl] Invalid or expired DRM session');
       return res.status(403).json({
         success: false,
         message: 'Invalid or expired DRM session'
@@ -454,9 +423,7 @@ exports.decryptVideoUrl = async (req, res) => {
     }
     
     // Decrypt the URL
-    console.log('🔓 [decryptVideoUrl] Attempting to decrypt URL...');
     const decryptedUrl = drmService.decryptUrl(encryptedUrl, session.sessionKey);
-    console.log('✅ [decryptVideoUrl] URL decrypted successfully');
     
     res.json({
       success: true,
@@ -466,7 +433,7 @@ exports.decryptVideoUrl = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [decryptVideoUrl] Error:', error);
+    console.error('âŒ [decryptVideoUrl] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to decrypt video URL'
@@ -492,7 +459,6 @@ exports.revokeDRMSession = async (req, res) => {
     const revoked = drmService.revokeSession(sessionId);
     
     if (revoked) {
-      console.log(`🚫 DRM session revoked by user ${userId}: ${sessionId}`);
       res.json({
         success: true,
         message: 'DRM session revoked successfully'
@@ -505,7 +471,7 @@ exports.revokeDRMSession = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('❌ [revokeDRMSession] Error:', error);
+    console.error('âŒ [revokeDRMSession] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -538,7 +504,7 @@ exports.getDRMStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [getDRMStats] Error:', error);
+    console.error('âŒ [getDRMStats] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

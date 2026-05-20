@@ -13,7 +13,7 @@ interface VersionInfo {
 
 class VersionService {
   private currentVersion: VersionInfo | null = null;
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private readonly CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
 
   constructor() {
@@ -215,19 +215,6 @@ class VersionService {
     });
     
     window.dispatchEvent(event);
-  }
-
-  /**
-   * Schedule automatic refresh
-   */
-  private scheduleAutoRefresh(): void {
-    console.log('⏰ Scheduling auto-refresh in 30 seconds...');
-    
-    setTimeout(() => {
-      if (confirm('New version available! Refresh now?')) {
-        window.location.reload();
-      }
-    }, 30000);
   }
 
   /**

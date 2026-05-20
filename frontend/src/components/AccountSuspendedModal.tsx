@@ -35,6 +35,7 @@ const AccountSuspendedModal: React.FC<AccountSuspendedModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
           >
             <X className="h-6 w-6" />

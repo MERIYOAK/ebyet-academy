@@ -5,12 +5,25 @@
 
 import { useEffect, useRef } from 'react';
 import { queryClient, queryKeys } from '../lib/queryClient';
-import { CacheManager } from '../utils/cacheManager';
+
+interface ContentUpdateData {
+  id?: string;
+  course?: { id?: string; _id?: string };
+  courseId?: string;
+  video?: { courseId?: string; _id?: string };
+}
 
 interface ContentUpdatePayload {
   type: string;
-  data: any;
+  data: ContentUpdateData;
   message?: string;
+}
+
+interface SocketServiceInstance {
+  addEventListener: (event: string, handler: (payload: ContentUpdatePayload) => void) => void;
+  removeEventListener: (event: string, handler: (payload: ContentUpdatePayload) => void) => void;
+  connect: (userData?: { userId: string; role: string }) => Promise<void>;
+  disconnect: () => void;
 }
 
 export const useSocketNotifications = () => {
@@ -18,20 +31,15 @@ export const useSocketNotifications = () => {
   const isConnectedRef = useRef(false);
 
   useEffect(() => {
-    // Check if user is admin - if so, don't connect
+    // Load current user info if available
     const userData = localStorage.getItem('user');
     const user = userData ? JSON.parse(userData) : null;
-    
-    if (user && user.role === 'admin') {
-      console.log('👤 Admin user detected - skipping socket notifications');
-      return;
-    }
 
-    // Prevent multiple connection attempts
-    if (isConnectingRef.current || isConnectedRef.current) {
-      console.log('🔌 Socket.IO already connecting or connected - skipping initialization');
-      return;
-    }
+    // NOTE: we intentionally do NOT short-circuit on isConnecting/isConnectedRef here.
+    // In React StrictMode the cleanup is async (await import) so the refs aren't
+    // reset by the time the second mount runs. socketService.connect() already
+    // dedupes connection attempts internally, and listeners MUST be re-registered
+    // on every mount (the cleanup removes them).
 
     // Initialize socket connection only for non-admin users
     const initializeSocket = async () => {
@@ -60,103 +68,115 @@ export const useSocketNotifications = () => {
 
     // Listen for content updates (no toast notifications)
     const handleContentUpdate = (payload: ContentUpdatePayload) => {
-      console.log('📢 Received content update:', payload);
       const { type, data } = payload;
-      
-      // Invalidate relevant cache based on content type
       invalidateCacheForContentType(type, data);
+      // Dispatch window event so pages using raw fetch can also react
+      window.dispatchEvent(new CustomEvent('socketContentUpdate', { detail: { type, data } }));
     };
 
     // Invalidate cache based on content type
-    const invalidateCacheForContentType = (type: string, data: any) => {
+    const getCourseIdFromData = (data: ContentUpdateData): string | undefined => {
+      return (
+        data.courseId ||
+        data.id ||
+        data.course?.id ||
+        (data.course as any)?._id
+      );
+    };
+
+    const invalidateCacheForContentType = (type: string, data: ContentUpdateData) => {
       try {
-        console.log('🗑️ Invalidating cache for content type:', type);
-        
+        // NOTE: do NOT call CacheManager.clearCacheByPattern here. It uses
+        // queryClient.removeQueries under the hood, which destroys the active
+        // query and prevents the refetch from propagating new data to mounted
+        // components. invalidateQueries is what we want — it marks queries
+        // stale and triggers refetches for active observers.
         switch (type) {
           case 'NEW_COURSE':
-          case 'COURSE_UPDATED':
-            // Invalidate all course-related queries
-            console.log('🗑️ Invalidating course cache for:', type);
+          case 'COURSE_UPDATED': {
             queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
             queryClient.invalidateQueries({ queryKey: queryKeys.courses.featured() });
-            // Also invalidate specific course detail if we have the ID
-            const courseId = data.id || data.course?.id;
+            const courseId = getCourseIdFromData(data);
             if (courseId) {
               queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(courseId) });
+            } else {
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.details() });
             }
-            // Also clear any persistent course cache
-            CacheManager.clearCacheByPattern('course');
             break;
-            
+          }
+
           case 'NEW_VIDEO':
-          case 'VIDEO_UPDATED':
-            // Invalidate course videos if we have courseId
-            if (data.courseId) {
-              console.log('🗑️ Invalidating video cache for course:', data.courseId);
-              queryClient.invalidateQueries({ queryKey: queryKeys.videos.course(data.courseId) });
-              // Also invalidate the course itself since video count changed
-              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
+          case 'VIDEO_UPDATED': {
+            const videoCourseId = data.video?.courseId || data.courseId;
+            if (videoCourseId) {
+              queryClient.invalidateQueries({ queryKey: queryKeys.videos.course(videoCourseId) });
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(videoCourseId) });
               queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
-              // Clear video-related persistent cache
-              CacheManager.clearCacheByPattern('video');
             }
             break;
-            
+          }
+
           case 'NEW_BUNDLE':
           case 'BUNDLE_UPDATED':
-            // Invalidate bundle-related queries
-            console.log('🗑️ Invalidating bundle cache for:', type);
+          case 'BUNDLE_DELETED':
             queryClient.invalidateQueries({ queryKey: ['bundles'] });
-            // Clear bundle-related persistent cache
-            CacheManager.clearCacheByPattern('bundle');
             break;
-            
+
           case 'NEW_ANNOUNCEMENT':
           case 'ANNOUNCEMENT_UPDATED':
-            // Invalidate announcement-related queries
-            console.log('🗑️ Invalidating announcement cache for:', type);
+          case 'ANNOUNCEMENT_DELETED':
             queryClient.invalidateQueries({ queryKey: ['announcements'] });
-            // Clear announcement-related persistent cache
-            CacheManager.clearCacheByPattern('announcement');
             break;
-            
+
+          case 'NEW_REVIEW':
           case 'REVIEW_APPROVED':
           case 'REVIEW_REJECTED':
           case 'REVIEW_REPLY_ADDED':
-            // Invalidate review-related cache
+          case 'REVIEW_DELETED':
             if (data.courseId) {
-              console.log('🗑️ Invalidating review cache for course:', data.courseId);
               queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
             }
-            // Clear review-related persistent cache
-            CacheManager.clearCacheByPattern('review');
             break;
-            
+
+          case 'NEW_MATERIAL':
+          case 'MATERIAL_UPDATED':
+          case 'MATERIAL_DELETED':
           case 'COURSE_MATERIALS_UPDATED':
-            // Invalidate course materials
             if (data.courseId) {
-              console.log('🗑️ Invalidating materials cache for course:', data.courseId);
               queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
             }
-            // Clear materials-related persistent cache
-            CacheManager.clearCacheByPattern('material');
             break;
-            
-          case 'WHATSAPP_GROUP_UPDATED':
-            // Invalidate WhatsApp group info
-            if (data.courseId) {
-              console.log('🗑️ Invalidating WhatsApp cache for course:', data.courseId);
-              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(data.courseId) });
+
+          case 'VIDEO_DELETED': {
+            const deletedVideoCourseId = data.video?.courseId || data.courseId;
+            if (deletedVideoCourseId) {
+              queryClient.invalidateQueries({ queryKey: queryKeys.videos.course(deletedVideoCourseId) });
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(deletedVideoCourseId) });
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
             }
-            // Clear WhatsApp-related persistent cache
-            CacheManager.clearCacheByPattern('whatsapp');
             break;
-            
+          }
+
+          case 'COURSE_DELETED':
+            queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.courses.featured() });
+            break;
+
+          case 'WHATSAPP_GROUP_UPDATED': {
+            const whatsappCourseId = getCourseIdFromData(data);
+            if (whatsappCourseId) {
+              queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(whatsappCourseId) });
+            }
+            break;
+          }
+
+          case 'USER_UPDATED':
+            // No React Query cache to invalidate for the admin user list
+            // (AdminUsersPage uses raw fetch). The window event dispatch below
+            // is what drives the live refresh.
+            break;
+
           default:
-            // For unknown types, clear all content cache to be safe
-            console.log('🗑️ Clearing all content cache for unknown type:', type);
-            CacheManager.clearCacheByPattern('content');
-            // Also invalidate general queries to be safe
             queryClient.invalidateQueries();
         }
         
@@ -171,7 +191,7 @@ export const useSocketNotifications = () => {
     };
 
     // Register event listeners for different content types
-    const registerEventListeners = (socketService: any) => {
+    const registerEventListeners = (socketService: SocketServiceInstance) => {
       // Course-related events
       socketService.addEventListener('NEW_COURSE', handleContentUpdate);
       socketService.addEventListener('COURSE_UPDATED', handleContentUpdate);
@@ -213,13 +233,15 @@ export const useSocketNotifications = () => {
 
     setupEventListeners();
 
-    // Cleanup function
+    // Cleanup function — remove event listeners but keep the socket connected.
+    // The socket is a singleton that must survive React StrictMode's double-invoke.
+    // Disconnecting here races with the immediate re-mount and breaks the connection.
     return () => {
       const cleanup = async () => {
         try {
           const { default: socketService } = await import('../services/socketService');
-          
-          // Remove all event listeners
+
+          // Remove all event listeners registered by this hook instance
           socketService.removeEventListener('NEW_COURSE', handleContentUpdate);
           socketService.removeEventListener('COURSE_UPDATED', handleContentUpdate);
           socketService.removeEventListener('NEW_VIDEO', handleContentUpdate);
@@ -234,21 +256,15 @@ export const useSocketNotifications = () => {
           socketService.removeEventListener('COURSE_MATERIALS_UPDATED', handleContentUpdate);
           socketService.removeEventListener('WHATSAPP_GROUP_UPDATED', handleContentUpdate);
           socketService.removeEventListener('contentUpdate', handleContentUpdate);
-          
-          // Disconnect socket
-          socketService.disconnect();
-          
-          // Reset connection state
+
+          // Reset refs so the next mount re-registers listeners
           isConnectedRef.current = false;
           isConnectingRef.current = false;
-          
-          console.log('🔌 Socket.IO disconnected and cleaned up');
         } catch (error) {
-          console.error('🔌 Failed to cleanup socket:', error);
+          console.error('🔌 Failed to cleanup socket listeners:', error);
         }
       };
 
-      // Execute cleanup
       cleanup();
     };
   }, []); // Empty dependency array - run once on mount

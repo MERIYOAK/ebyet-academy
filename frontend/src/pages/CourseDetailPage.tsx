@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Clock, Play, CheckCircle, Download, BookOpen, ShoppingCart, Loader, Lock, FileText, ExternalLink, Sparkles, Eye, MessageCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Clock, Play, CheckCircle, Download, BookOpen, ShoppingCart, Loader, Lock, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import VideoPlaylist from '../components/VideoPlaylist';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import WhatsAppGroupButton from '../components/WhatsAppGroupButton';
@@ -12,9 +12,9 @@ import DRMVideoService from '../services/drmVideoService';
 import { parseDurationToSeconds, formatDuration } from '../utils/durationFormatter';
 import { useCourse } from '../hooks/useCourses';
 import { getLocalizedText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
 import { groupVideosByLesson } from '../utils/lessonGrouper';
-import socketService from '../services/socketService';
-import { useQueryClient } from '@tanstack/react-query';
+import { queryClient, queryKeys } from '../lib/queryClient';
 
 
 interface Video {
@@ -22,11 +22,13 @@ interface Video {
   title: string | { en: string; tg: string };
   description?: string | { en: string; tg: string };
   duration: string;
+  url?: string;
   videoUrl: string;
   locked?: boolean;
   hasAccess?: boolean;
   isFreePreview?: boolean;
   requiresPurchase?: boolean;
+  completed?: boolean;
   drm?: {
     enabled: boolean;
     sessionId?: string;
@@ -52,8 +54,10 @@ interface Course {
   tags?: string[];
   hasWhatsappGroup?: boolean;
   currentVersion?: number;
+  version?: number;
   videos?: Array<{
     _id: string;
+    id?: string;
     title: string;
     description?: string;
     duration?: number;
@@ -73,12 +77,40 @@ interface PurchaseStatus {
   courseId: string;
 }
 
+interface Review {
+  _id: string;
+  userId: { _id: string; name: string; email: string };
+  rating: number;
+  title?: string;
+  comment: string;
+  adminReply?: string;
+  adminReplyAt?: string;
+  createdAt: string;
+  pinned?: boolean;
+}
+
+interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+}
+
+interface Material {
+  id?: string;
+  title?: string | { en: string; tg: string };
+  name?: string | { en: string; tg: string };
+  downloadUrl?: string;
+  fileType?: string;
+  fileSize?: number;
+  description?: string | { en: string; tg: string };
+  [key: string]: unknown;
+}
+
+
 const CourseDetailPage = () => {
   const { t, i18n } = useTranslation();
   const currentLanguage = (i18n.language || 'en') as 'en' | 'tg';
   const { id, videoId } = useParams<{ id: string; videoId?: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
@@ -89,28 +121,29 @@ const CourseDetailPage = () => {
 
   // Course data state
   const [courseData, setCourseData] = useState<CourseData | null>(null);
-  const [totalCourseDurationSeconds, setTotalCourseDurationSeconds] = useState<number>(0);
+  const [totalCourseDurationSeconds] = useState<number>(0);
+  const fetchCourseDataRef = useRef<(() => Promise<void>) | null>(null);
   
   // Video player states
   const [currentVideoId, setCurrentVideoId] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showPlaylist, setShowPlaylist] = useState(false);
-  const [playerReady, setPlayerReady] = useState(false);
+  const [, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  const [, setDuration] = useState(0);
+  const [, setControlsVisible] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [currentVideoPosition, setCurrentVideoPosition] = useState(0);
-  const [currentVideoPercentage, setCurrentVideoPercentage] = useState(0);
+  const [, setCurrentVideoPosition] = useState(0);
+  const [, setCurrentVideoPercentage] = useState(0);
   const [isRefreshingUrl, setIsRefreshingUrl] = useState(false);
   const [isSwitchingVideo, setIsSwitchingVideo] = useState(false);
   const [currentVideo, setCurrentVideo] = useState<Video | undefined>(undefined);
   const [isDecryptingUrl, setIsDecryptingUrl] = useState(false);
   const [pauseStartTime, setPauseStartTime] = useState<number | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
+  const [, setIsPaused] = useState(false);
   const [resumePosition, setResumePosition] = useState<number>(0);
   
   // Resume position functions
@@ -270,15 +303,16 @@ const CourseDetailPage = () => {
   }, [currentVideoId, saveLastWatchedVideo]);
   
   // Materials state
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [materialRefetchTrigger, setMaterialRefetchTrigger] = useState(0);
 
   // Review states
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [reviewStats, setReviewStats] = useState<any>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [submittingReview, setSubmittingReview] = useState(false);
+  const [, setSubmittingReview] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Collapsible lessons state - initialize with all lessons collapsed by default
@@ -302,7 +336,36 @@ const CourseDetailPage = () => {
 
   // URL cache for video URLs
   const videoUrlCache = useRef<Map<string, { url: string; timestamp: number }>>(new Map());
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  // Navigate to the previous/next accessible video in the playlist.
+  // Locked videos are skipped so users only jump to ones they can actually play.
+  const accessibleVideos = useMemo(
+    () => (courseData?.videos || []).filter(v => v.hasAccess && !v.locked),
+    [courseData]
+  );
+
+  const goToAdjacentVideo = useCallback((direction: 'prev' | 'next') => {
+    if (!currentVideoId || accessibleVideos.length === 0) return;
+    const idx = accessibleVideos.findIndex(v => v.id === currentVideoId);
+    if (idx === -1) return;
+    const targetIdx = direction === 'next' ? idx + 1 : idx - 1;
+    if (targetIdx < 0 || targetIdx >= accessibleVideos.length) return;
+    const target = accessibleVideos[targetIdx];
+    setCurrentVideoId(target.id);
+    setCurrentVideo(target);
+  }, [currentVideoId, accessibleVideos]);
+
+  const hasPrevVideo = useMemo(() => {
+    if (!currentVideoId) return false;
+    const idx = accessibleVideos.findIndex(v => v.id === currentVideoId);
+    return idx > 0;
+  }, [currentVideoId, accessibleVideos]);
+
+  const hasNextVideo = useMemo(() => {
+    if (!currentVideoId) return false;
+    const idx = accessibleVideos.findIndex(v => v.id === currentVideoId);
+    return idx !== -1 && idx < accessibleVideos.length - 1;
+  }, [currentVideoId, accessibleVideos]);
 
   // Get current user ID from token
   useEffect(() => {
@@ -324,9 +387,9 @@ const CourseDetailPage = () => {
   // Check if current user has already reviewed this course
   const hasUserReviewed = useMemo(() => {
     if (!currentUserId || !reviews || reviews.length === 0) return false;
-    return reviews.some((review: any) => {
+    return reviews.some((review) => {
       // Handle both populated and non-populated userId
-      const reviewUserId = review.userId?._id || review.userId;
+      const reviewUserId = (review.userId as { _id?: string })?._id || (review.userId as unknown as string | undefined);
       return reviewUserId === currentUserId;
     });
   }, [currentUserId, reviews]);
@@ -450,7 +513,49 @@ const CourseDetailPage = () => {
 };
 
     fetchMaterials();
-  }, [id, userToken, courseVersion, hasPurchased]);
+  }, [id, userToken, courseVersion, hasPurchased, materialRefetchTrigger]);
+
+  // Silent auto-refresh when admin changes materials or reviews
+  useEffect(() => {
+    const MATERIAL_EVENTS = new Set(['NEW_MATERIAL', 'MATERIAL_UPDATED', 'MATERIAL_DELETED', 'COURSE_MATERIALS_UPDATED']);
+    const REVIEW_EVENTS = new Set(['REVIEW_APPROVED', 'REVIEW_REJECTED', 'REVIEW_REPLY_ADDED', 'REVIEW_DELETED']);
+    const COURSE_EVENTS = new Set(['COURSE_UPDATED', 'NEW_COURSE', 'WHATSAPP_GROUP_UPDATED']);
+    const VIDEO_EVENTS = new Set(['NEW_VIDEO', 'VIDEO_UPDATED', 'VIDEO_DELETED']);
+    const DELETE_EVENTS = new Set(['COURSE_DELETED']);
+
+    const getEventCourseId = (data: any): string | undefined => {
+      return data?.courseId || data?.id || data?.course?.id || data?.course?._id || data?.video?.courseId;
+    };
+
+    const handler = (e: Event) => {
+      const { type, data } = (e as CustomEvent<{ type: string; data: { courseId?: string; id?: string; course?: { id?: string; _id?: string }; video?: { courseId?: string } } }>).detail;
+      const eventCourseId = getEventCourseId(data);
+      if (eventCourseId && eventCourseId !== id) return; // ignore events for other courses
+
+      if (COURSE_EVENTS.has(type) || VIDEO_EVENTS.has(type)) {
+        if (id) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(id) });
+          queryClient.refetchQueries({ queryKey: queryKeys.courses.detail(id), exact: true });
+          // fetchCourseData re-runs the DRM video fetch, which is what actually
+          // populates the lessons list (videos aren't in the React Query cache).
+          fetchCourseDataRef.current?.().catch((error) => {
+            console.warn('⚠️ Failed course refresh after socket event:', error);
+          });
+        }
+      }
+
+      if (MATERIAL_EVENTS.has(type)) setMaterialRefetchTrigger(n => n + 1);
+      if (REVIEW_EVENTS.has(type)) fetchReviews();
+
+      if (DELETE_EVENTS.has(type) && eventCourseId === id) {
+        // The course the user is viewing was deleted by admin — bounce back to the catalog.
+        navigate('/courses', { replace: true });
+      }
+    };
+
+    window.addEventListener('socketContentUpdate', handler);
+    return () => window.removeEventListener('socketContentUpdate', handler);
+  }, [id, fetchReviews, navigate]);
 
   // Fetch course data from API
   const { 
@@ -464,135 +569,6 @@ const CourseDetailPage = () => {
     const token = localStorage.getItem('token');
     setUserToken(token);
   }, []);
-
-  // Real-time updates via Socket.IO
-  useEffect(() => {
-    if (!id) return;
-
-    // Connect to Socket.IO for real-time updates
-    const connectSocket = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const userData = token ? { 
-          userId: JSON.parse(atob(token.split('.')[1])).userId || 'anonymous',
-          role: 'user' 
-        } : { userId: 'anonymous', role: 'user' };
-
-        await socketService.connect(userData);
-        
-        // Listen for course-related updates
-        const handleCourseUpdate = (payload: any) => {
-          console.log('📢 CourseDetail received update:', payload);
-          
-          // Check if this update is for the current course
-          if ((payload.type === 'COURSE_UPDATED' || payload.type === 'WHATSAPP_GROUP_UPDATED') && payload.data.course?._id === id) {
-            console.log('🔄 Refreshing course data due to admin update');
-            console.log('🔄 WhatsApp settings updated:', {
-              hasWhatsappGroup: payload.data.course?.hasWhatsappGroup,
-              whatsappGroupLink: payload.data.course?.whatsappGroupLink ? '✅ Link present' : '❌ No link'
-            });
-            // Refresh course data by invalidating the query
-            queryClient.invalidateQueries({ queryKey: ['courses', 'detail', id] });
-            // Also refresh the detailed course data
-            fetchCourseData();
-          }
-          
-          // Handle video updates within this course
-          if ((payload.type === 'VIDEO_UPDATED' || payload.type === 'NEW_VIDEO' || payload.type === 'VIDEO_DELETED') && 
-              payload.data.video?.courseId === id) {
-            console.log('🔄 Refreshing course videos due to video update/deletion');
-            fetchCourseData();
-          }
-          
-          // Handle material updates within this course
-          if ((payload.type === 'NEW_MATERIAL' || payload.type === 'MATERIAL_UPDATED' || payload.type === 'MATERIAL_DELETED') && 
-              payload.data.courseId === id) {
-            console.log('🔄 Refreshing course materials due to material update/deletion');
-            // Refresh materials specifically
-            const fetchMaterials = async () => {
-              if (!id) return;
-              try {
-                setLoadingMaterials(true);
-                const headers: HeadersInit = {};
-                // Try multiple token sources to ensure authentication
-                const token = userToken || localStorage.getItem('userToken') || localStorage.getItem('token');
-                console.log('🔧 [Material Refresh] Token available:', !!token);
-                console.log('🔧 [Material Refresh] UserToken state:', !!userToken);
-                console.log('🔧 [Material Refresh] LocalStorage token:', !!localStorage.getItem('userToken'));
-                console.log('🔧 [Material Refresh] Course version:', courseVersion);
-                
-                if (token) {
-                  headers['Authorization'] = `Bearer ${token}`;
-                }
-                
-                const response = await fetch(buildApiUrl(`/api/materials/course/${id}?version=${courseVersion}`), { headers });
-                console.log('🔧 [Material Refresh] Response status:', response.status);
-                
-                if (response.ok) {
-                  const data = await response.json();
-                  console.log('🔧 [Material Refresh] Response data:', data);
-                  if (data.success && data.data?.materials) {
-                    const materialsList = data.data.materials || [];
-                    console.log('🔧 [Material Refresh] Materials with download URLs:', materialsList.map((m: any) => ({ id: m.id, hasDownloadUrl: !!m.downloadUrl })));
-                    setMaterials(materialsList);
-                    console.log('📦 Materials refreshed:', materialsList.length, 'materials');
-                  } else {
-                    setMaterials([]);
-                  }
-                } else {
-                  console.log('🔧 [Material Refresh] Failed response:', response.status);
-                  setMaterials([]);
-                }
-              } catch (error) {
-                console.error('❌ Exception fetching materials after update:', error);
-                setMaterials([]);
-              } finally {
-                setLoadingMaterials(false);
-              }
-            };
-            
-            fetchMaterials();
-          }
-          
-          // Handle review updates within this course
-          if ((payload.type === 'REVIEW_APPROVED' || payload.type === 'REVIEW_REJECTED' || payload.type === 'REVIEW_DELETED' || payload.type === 'REVIEW_REPLY_ADDED') && 
-              payload.data.courseId === id) {
-            console.log('🔄 Refreshing course reviews due to review update/deletion/reply');
-            fetchReviews();
-          }
-        };
-
-        // Register event listeners
-        socketService.addEventListener('COURSE_UPDATED', handleCourseUpdate);
-        socketService.addEventListener('WHATSAPP_GROUP_UPDATED', handleCourseUpdate);
-        socketService.addEventListener('REVIEW_APPROVED', handleCourseUpdate);
-        socketService.addEventListener('REVIEW_REJECTED', handleCourseUpdate);
-        socketService.addEventListener('REVIEW_DELETED', handleCourseUpdate);
-        socketService.addEventListener('REVIEW_REPLY_ADDED', handleCourseUpdate);
-        socketService.addEventListener('VIDEO_UPDATED', handleCourseUpdate);
-        socketService.addEventListener('NEW_VIDEO', handleCourseUpdate);
-        socketService.addEventListener('VIDEO_DELETED', handleCourseUpdate);
-        socketService.addEventListener('NEW_MATERIAL', handleCourseUpdate);
-        socketService.addEventListener('MATERIAL_UPDATED', handleCourseUpdate);
-        socketService.addEventListener('MATERIAL_DELETED', handleCourseUpdate);
-        socketService.addEventListener('contentUpdate', handleCourseUpdate);
-
-        console.log('🔌 CourseDetail connected to Socket.IO for real-time updates');
-      } catch (error) {
-        console.error('❌ Failed to connect to Socket.IO in CourseDetail:', error);
-      }
-    };
-
-    connectSocket();
-
-    // Cleanup on unmount
-    return () => {
-      socketService.removeEventListener('COURSE_UPDATED', () => {});
-      socketService.removeEventListener('VIDEO_UPDATED', () => {});
-      socketService.removeEventListener('NEW_VIDEO', () => {});
-      socketService.removeEventListener('contentUpdate', () => {});
-    };
-  }, [id, queryClient]);
 
   // Fetch course data - API first, fallback to sample
   useEffect(() => {
@@ -647,6 +623,7 @@ const CourseDetailPage = () => {
     } else if (apiLoading) {
       setLoading(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, apiCourse, apiLoading, apiError, t]);
 
   // Fetch video data for the course from API with DRM support (like VideoPlayerPage)
@@ -678,18 +655,22 @@ const CourseDetailPage = () => {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
-      let courseDataFromApi = null;
+      let courseDataFromApi: Course | null = null;
       if (courseResponse.ok) {
         const courseResult = await courseResponse.json();
         courseDataFromApi = courseResult.data?.course;
         console.log('✅ [CourseDetail] Course data received');
         console.log('🔧 [CourseDetail] Basic API videos count:', courseDataFromApi?.videos?.length || 0);
-        console.log('🔧 [CourseDetail] Basic API video IDs:', courseDataFromApi?.videos?.map((v: any) => v._id || v.id) || []);
+        console.log('🔧 [CourseDetail] Basic API video IDs:', courseDataFromApi?.videos?.map((v) => v._id || v.id) || []);
+
+        if (courseDataFromApi) {
+          setCourse(courseDataFromApi as Course);
+        }
       }
       
       // Fetch videos with DRM protection (like VideoPlayerPage)
       console.log('🔧 [CourseDetail] Fetching videos with DRM protection...');
-      let videosWithAccess: any[] = [];
+      let videosWithAccess: Video[] = [];
       let userHasPurchased = false;
       
       try {
@@ -699,14 +680,14 @@ const CourseDetailPage = () => {
         console.log('🔧 [CourseDetail] DRM videos data received');
         console.log('🔧 [CourseDetail] videosResult.userHasPurchased:', videosResult.userHasPurchased);
         console.log('🔧 [CourseDetail] DRM API returned videos count:', videosResult.course.videos?.length || 0);
-        console.log('🔧 [CourseDetail] DRM video IDs:', videosResult.course.videos?.map((v: any) => v.id) || []);
+        console.log('🔧 [CourseDetail] DRM video IDs:', videosResult.course.videos?.map((v) => v.id) || []);
         
-        videosWithAccess = videosResult.course.videos || [];
+        videosWithAccess = (videosResult.course.videos || []) as unknown as Video[];
         userHasPurchased = videosResult.userHasPurchased || false;
         
         // 🔧 FIX: Deduplicate videos by title to handle different IDs for same content
-        const uniqueVideosMap = new Map();
-        videosWithAccess.forEach((video: any) => {
+        const uniqueVideosMap = new Map<string, Video>();
+        videosWithAccess.forEach((video) => {
           const videoTitle = typeof video.title === 'string' ? video.title : video.title?.en || '';
           
           // Check if we already have a video with this title
@@ -737,17 +718,40 @@ const CourseDetailPage = () => {
         console.log('⚠️ [CourseDetail] Setting userHasPurchased to false due to DRM error');
         // For unauthenticated users, get basic course info and mark all videos as locked
         if (courseDataFromApi?.videos) {
-          videosWithAccess = courseDataFromApi.videos.map((video: any) => ({
+          videosWithAccess = courseDataFromApi.videos.map((video) => ({
+            id: video._id || video.id || '',
             ...video,
+            videoUrl: '',
             locked: true,
             hasAccess: false
-          }));
+          })) as unknown as Video[];
         }
         userHasPurchased = false;
       }
       
-      // Create videos without progress tracking
-      const transformedVideos = videosWithAccess.map((video: any) => {
+      // Fetch progress data to mark completed videos (for any authenticated user)
+      const progressMap = new Map<string, boolean>();
+      if (token) {
+        try {
+          const progressResponse = await fetch(buildApiUrl(`/api/progress/course/${id}`), {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (progressResponse.ok) {
+            const progressResult = await progressResponse.json();
+            if (progressResult?.data?.videos) {
+              progressResult.data.videos.forEach((v: { _id: string; progress?: { isCompleted?: boolean } }) => {
+                progressMap.set(v._id, v.progress?.isCompleted || false);
+              });
+            }
+          }
+          // 403 = not enrolled yet, that's fine — progressMap stays empty
+        } catch {
+          // Network error — continue without progress data
+        }
+      }
+
+      // Create videos with progress tracking
+      const transformedVideos = videosWithAccess.map((video) => {
         // IMPORTANT: Only set videoUrl if user has access - locked videos should have empty URL
         const hasAccess = video.hasAccess || false;
         const isLocked = video.locked !== undefined ? video.locked : !hasAccess;
@@ -780,12 +784,13 @@ const CourseDetailPage = () => {
           id: video.id,
           title: video.title,
           description: video.description,
-          duration: video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}` : '00:00',
+          duration: typeof video.duration === 'number' && video.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : (video.duration || '00:00'),
           videoUrl: videoUrl, // Empty for locked videos
           hasAccess: hasAccess,
           locked: !hasAccess,
           isFreePreview: video.isFreePreview,
           requiresPurchase: !hasAccess && !video.isFreePreview,
+          completed: progressMap.get(video.id) || false,
           // DRM data - only include if user has access
           drm: hasAccess ? {
             enabled: video.drm?.enabled || false,
@@ -794,9 +799,9 @@ const CourseDetailPage = () => {
             encryptedUrl: video.drm?.encryptedUrl
           } : {
             enabled: false,
-            sessionId: null,
-            watermarkData: null,
-            encryptedUrl: null
+            sessionId: undefined,
+            watermarkData: undefined,
+            encryptedUrl: undefined
           }
         };
       });
@@ -888,13 +893,18 @@ const CourseDetailPage = () => {
       setLoading(false);
       setHasInitiallyLoaded(true); // Mark as initially loaded
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, userToken, videoId, currentVideoId, course, fetchReviews]);
 
   useEffect(() => {
+    fetchCourseDataRef.current = fetchCourseData;
+  }, [fetchCourseData]);
+
+  useEffect(() => {
     if (id) {
-      fetchCourseData();
+      fetchCourseDataRef.current?.();
     }
-  }, [id, fetchCourseData]);
+  }, [id]);
 
   // Fetch purchase status
   useEffect(() => {
@@ -980,7 +990,7 @@ const CourseDetailPage = () => {
       }
       
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
 };
@@ -1134,14 +1144,14 @@ const CourseDetailPage = () => {
 };
 
   // Get video error details
-  const getVideoErrorDetails = (error: any): { type: string; message: string; userMessage: string } => {
-    const video = error?.target as HTMLVideoElement;
+  const getVideoErrorDetails = (error: unknown): { type: string; message: string; userMessage: string } => {
+    const video = (error as Event)?.target as HTMLVideoElement;
     const errorCode = video?.error?.code;
-    
+
     if (!video) {
       return {
         type: 'UNKNOWN',
-        message: error?.message || 'Unknown video error',
+        message: (error as Error)?.message || 'Unknown video error',
         userMessage: 'An error occurred while loading the video. Please try again.'
 };
     }
@@ -1209,10 +1219,49 @@ const CourseDetailPage = () => {
     }
 };
 
-  const handleVideoEnd = () => {
+  const handleVideoEnd = async () => {
     setIsPlaying(false);
-    console.log('🎬 [CourseDetail] Video ended - progress tracking removed');
-};
+
+    // Reset local resume position so replaying starts from the beginning
+    if (currentVideoId) {
+      saveLocalResumePosition(0, currentVideoId);
+    }
+
+    if (!id || !currentVideoId) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(buildApiUrl('/api/progress/complete-video'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ courseId: id, videoId: currentVideoId })
+      });
+
+      if (!response.ok) {
+        console.error('❌ [CourseDetail] complete-video failed:', response.status, response.statusText);
+        return;
+      }
+
+      const completedVideoId = currentVideoId;
+      setCourseData(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          videos: prev.videos.map(video =>
+            video.id === completedVideoId
+              ? { ...video, completed: true }
+              : video
+          )
+        };
+      });
+    } catch {
+      console.error('❌ [CourseDetail] complete-video network error');
+    }
+  };
 
   const handleVideoPause = () => {
     setIsPlaying(false);
@@ -1222,7 +1271,7 @@ const CourseDetailPage = () => {
     console.log(' [CourseDetail] Video paused at:', currentTime, 'seconds');
 };
 
-  const handleVideoError = async (error: any) => {
+  const handleVideoError = async (error: unknown) => {
     // Don't show errors during video switching - they're usually transient
     if (isSwitchingVideo) {
       console.log('🔄 [CourseDetail] Ignoring error during video switch:', error);
@@ -1446,6 +1495,7 @@ const CourseDetailPage = () => {
         }
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideo, isRefreshingUrl]);
 
   // Periodic URL refresh to prevent 403 errors (from VideoPlayerPage)
@@ -1502,6 +1552,7 @@ const CourseDetailPage = () => {
       clearInterval(interval);
       clearTimeout(initialTimeout);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideoId, currentVideo?.videoUrl]);
 
   // Proactive URL refresh
@@ -1540,12 +1591,13 @@ const CourseDetailPage = () => {
 
       void run();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideoId, currentVideo?.videoUrl]);
 
   // Proactive URL refresh
   useEffect(() => {
     if (!currentVideo || !currentVideo.videoUrl) return;
-    
+
     // Don't refresh URL for locked videos
     if (currentVideo.locked || !currentVideo.hasAccess) {
       console.log('🔒 [CourseDetail] Video is locked, skipping proactive URL refresh');
@@ -1571,6 +1623,7 @@ const CourseDetailPage = () => {
         }
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideo?.id]);
 
   // Periodic URL refresh
@@ -1603,6 +1656,7 @@ const CourseDetailPage = () => {
     }, 120000); // Every 2 minutes
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVideo?.id, currentVideo?.videoUrl]);
 
   const handlePurchase = async () => {
@@ -1820,7 +1874,7 @@ const CourseDetailPage = () => {
                   <div className="flex-1">
                     <div className="flex items-baseline gap-1.5 tiny:gap-2">
                       <span className="text-xl tiny:text-2xl xxs:text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
-                        ${course.price?.toFixed(2) || '0.00'}
+                        {formatCHF(course.price || 0)}
                       </span>
                     </div>
                     <p className="text-[10px] tiny:text-xs xxs:text-sm text-gray-600 dark:text-gray-400 mt-0.5 tiny:mt-1">
@@ -1949,7 +2003,9 @@ const CourseDetailPage = () => {
                             className="w-full h-full"
                             drmEnabled={currentVideo?.drm?.enabled || false}
                             watermarkData={currentVideo?.drm?.watermarkData}
-                            forensicWatermark={null}
+                            forensicWatermark={undefined}
+                            onPrev={hasPrevVideo ? () => goToAdjacentVideo('prev') : undefined}
+                            onNext={hasNextVideo ? () => goToAdjacentVideo('next') : undefined}
                           />
                         ) : currentVideo.drm?.encryptedUrl && currentVideo.drm?.sessionId ? (
                           <div className="w-full h-full bg-black flex items-center justify-center">
@@ -2651,7 +2707,7 @@ const CourseDetailPage = () => {
               {/* Reviews List */}
               <ReviewList
                 reviews={reviews}
-                stats={reviewStats}
+                stats={reviewStats ?? undefined}
                 loading={loadingReviews}
               />
             </div>

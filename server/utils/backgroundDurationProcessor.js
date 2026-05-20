@@ -1,4 +1,4 @@
-const Video = require('../models/Video');
+﻿const Video = require('../models/Video');
 const { getVideoMetadata } = require('./videoDurationDetector');
 const { getSignedUrlForFile } = require('./s3CourseManager');
 
@@ -20,25 +20,23 @@ class BackgroundDurationProcessor {
     try {
       const video = await Video.findById(videoId);
       if (!video) {
-        console.error(`❌ [BackgroundProcessor] Video not found: ${videoId}`);
+        console.error(`âŒ [BackgroundProcessor] Video not found: ${videoId}`);
         return;
       }
 
       // Skip if already has duration
       if (video.duration && video.duration > 0) {
-        console.log(`⏭️ [BackgroundProcessor] Video ${videoId} already has duration: ${video.duration}s`);
         return;
       }
 
       this.processingQueue.push(videoId);
-      console.log(`📋 [BackgroundProcessor] Queued video ${videoId} for duration detection`);
 
       // Start processing if not already running
       if (!this.isProcessing) {
         this.processQueue();
       }
     } catch (error) {
-      console.error(`❌ [BackgroundProcessor] Error queuing video ${videoId}:`, error);
+      console.error(`âŒ [BackgroundProcessor] Error queuing video ${videoId}:`, error);
     }
   }
 
@@ -51,7 +49,6 @@ class BackgroundDurationProcessor {
     }
 
     this.isProcessing = true;
-    console.log(`🔄 [BackgroundProcessor] Starting to process ${this.processingQueue.length} videos`);
 
     while (this.processingQueue.length > 0) {
       const videoId = this.processingQueue.shift();
@@ -62,7 +59,6 @@ class BackgroundDurationProcessor {
     }
 
     this.isProcessing = false;
-    console.log(`✅ [BackgroundProcessor] Queue processing completed`);
   }
 
   /**
@@ -71,17 +67,15 @@ class BackgroundDurationProcessor {
    */
   async processVideo(videoId) {
     try {
-      console.log(`🎬 [BackgroundProcessor] Processing video: ${videoId}`);
       
       const video = await Video.findById(videoId);
       if (!video) {
-        console.error(`❌ [BackgroundProcessor] Video not found: ${videoId}`);
+        console.error(`âŒ [BackgroundProcessor] Video not found: ${videoId}`);
         return;
       }
 
       // Skip if already has duration
       if (video.duration && video.duration > 0) {
-        console.log(`⏭️ [BackgroundProcessor] Video ${videoId} already has duration: ${video.duration}s`);
         return;
       }
 
@@ -104,10 +98,9 @@ class BackgroundDurationProcessor {
       video.formattedDuration = this.formatDuration(duration);
       await video.save();
 
-      console.log(`✅ [BackgroundProcessor] Video ${videoId} duration detected: ${duration}s (${this.formatDuration(duration)})`);
 
     } catch (error) {
-      console.error(`❌ [BackgroundProcessor] Error processing video ${videoId}:`, error);
+      console.error(`âŒ [BackgroundProcessor] Error processing video ${videoId}:`, error);
       
       // Mark as failed but don't retry immediately
       try {
@@ -118,7 +111,7 @@ class BackgroundDurationProcessor {
           await video.save();
         }
       } catch (updateError) {
-        console.error(`❌ [BackgroundProcessor] Error updating failed video ${videoId}:`, updateError);
+        console.error(`âŒ [BackgroundProcessor] Error updating failed video ${videoId}:`, updateError);
       }
     }
   }

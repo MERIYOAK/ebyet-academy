@@ -41,6 +41,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ courseTitle, onSubmit, onCancel
   const StarButton = ({ value }: { value: number }) => (
     <button
       type="button"
+      aria-label={`Rate ${value} star${value !== 1 ? 's' : ''}`}
       className="p-1 transition-colors duration-200"
       onClick={() => setRating(value)}
       onMouseEnter={() => setHoveredRating(value)}

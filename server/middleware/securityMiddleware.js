@@ -1,4 +1,4 @@
-const rateLimit = require('express-rate-limit');
+﻿const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cdnSecurity = require('../config/cdnSecurity');
 
@@ -82,7 +82,7 @@ class SecurityMiddleware {
 
       next();
     } catch (error) {
-      console.error('❌ DRM session validation error:', error);
+      console.error('âŒ DRM session validation error:', error);
       res.status(500).json({
         success: false,
         message: 'Session validation failed'
@@ -125,7 +125,7 @@ class SecurityMiddleware {
       req.videoAccess = accessInfo;
       next();
     } catch (error) {
-      console.error('❌ Video access validation error:', error);
+      console.error('âŒ Video access validation error:', error);
       res.status(500).json({
         success: false,
         message: 'Access validation failed'
@@ -153,7 +153,6 @@ class SecurityMiddleware {
       };
 
       // Log to console (in production, this would go to a security monitoring service)
-      console.log('🔒 Security Event:', securityEvent);
     }
 
     next();

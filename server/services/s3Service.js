@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
+﻿const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const crypto = require('crypto');
 
@@ -19,8 +19,6 @@ class S3Service {
     const hasAwsCredentials = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
     
     if (!hasAwsCredentials) {
-      console.log('⚠️  S3 client not initialized - missing AWS credentials');
-      console.log('💡 Profile photo uploads will be disabled');
       return;
     }
 
@@ -29,8 +27,6 @@ class S3Service {
     const defaultRegion = process.env.AWS_REGION || process.env.S3_REGION || 'us-east-1';
 
     if (!this.bucketName) {
-      console.log('⚠️  S3 bucket name not configured - profile photo uploads will be disabled');
-      console.log('💡 Set AWS_S3_BUCKET or S3_BUCKET environment variable');
       return;
     }
 
@@ -43,7 +39,6 @@ class S3Service {
       },
     });
 
-    console.log(`✅ S3 client initialized with bucket: ${this.bucketName}, region: ${defaultRegion}`);
     this.isInitialized = true;
   }
 
@@ -81,7 +76,6 @@ class S3Service {
       await this.s3Client.send(command);
       // If successful, bucket is in the current region
       this.bucketRegion = this.s3Client.config.region();
-      console.log(`✅ Bucket region confirmed: ${this.bucketRegion}`);
       return this.bucketRegion;
     } catch (error) {
       if (error.name === 'PermanentRedirect' || error.$metadata?.httpStatusCode === 301) {
@@ -90,7 +84,6 @@ class S3Service {
                       error.$metadata?.cfId || 
                       'us-east-1';
         
-        console.log(`🔄 Detected bucket region: ${region}`);
         
         // Reinitialize S3 client with correct region
         this.s3Client = new S3Client({
@@ -144,7 +137,6 @@ class S3Service {
         Key: key,
         Body: fileBuffer,
         ContentType: this.getContentType(fileExtension),
-        ACL: 'private',
         Metadata: {
           'user-id': userId,
           'upload-date': new Date().toISOString(),
@@ -153,15 +145,13 @@ class S3Service {
       };
 
       await this.s3Client.send(new PutObjectCommand(uploadParams));
-      console.log(`✅ Profile photo uploaded successfully: ${key}`);
       
       return key;
     } catch (error) {
-      console.error('❌ Error uploading profile photo to S3:', error);
+      console.error('âŒ Error uploading profile photo to S3:', error);
       
       // Handle region-specific errors
       if (error.name === 'PermanentRedirect' || error.$metadata?.httpStatusCode === 301) {
-        console.log('🔄 Retrying with correct region...');
         try {
           // Reset bucket region and retry
           this.bucketRegion = null;
@@ -178,7 +168,6 @@ class S3Service {
             Key: key,
             Body: fileBuffer,
             ContentType: this.getContentType(fileExtension),
-            ACL: 'private',
             Metadata: {
               'user-id': userId,
               'upload-date': new Date().toISOString(),
@@ -187,10 +176,9 @@ class S3Service {
           };
 
           await this.s3Client.send(new PutObjectCommand(uploadParams));
-          console.log(`✅ Profile photo uploaded successfully after region fix: ${key}`);
           return key;
         } catch (retryError) {
-          console.error('❌ Retry failed:', retryError);
+          console.error('âŒ Retry failed:', retryError);
           throw new Error('Failed to upload profile photo after region detection');
         }
       }
@@ -209,7 +197,6 @@ class S3Service {
     try {
       await this.ensureS3Ready();
 
-      console.log(`📥 Downloading Google profile photo for user: ${userId}`);
 
       // Download the image from Google
       const response = await fetch(googlePhotoUrl);
@@ -235,7 +222,6 @@ class S3Service {
         Key: key,
         Body: buffer,
         ContentType: contentType,
-        ACL: 'private',
         Metadata: {
           'user-id': userId,
           'source': 'google',
@@ -244,15 +230,13 @@ class S3Service {
       };
 
       await this.s3Client.send(new PutObjectCommand(uploadParams));
-      console.log(`✅ Google profile photo uploaded successfully: ${key}`);
       
       return key;
     } catch (error) {
-      console.error('❌ Error uploading Google profile photo to S3:', error);
+      console.error('âŒ Error uploading Google profile photo to S3:', error);
       
       // Handle region-specific errors
       if (error.name === 'PermanentRedirect' || error.$metadata?.httpStatusCode === 301) {
-        console.log('🔄 Retrying Google profile photo upload with correct region...');
         try {
           // Reset bucket region and retry
           this.bucketRegion = null;
@@ -279,7 +263,6 @@ class S3Service {
             Key: key,
             Body: buffer,
             ContentType: contentType,
-            ACL: 'private',
             Metadata: {
               'user-id': userId,
               'source': 'google',
@@ -288,16 +271,13 @@ class S3Service {
           };
 
           await this.s3Client.send(new PutObjectCommand(uploadParams));
-          console.log(`✅ Google profile photo uploaded successfully after region fix: ${key}`);
           return key;
         } catch (retryError) {
-          console.error('❌ Retry failed:', retryError);
-          console.log('⚠️  Continuing without Google profile photo');
+          console.error('âŒ Retry failed:', retryError);
           return null;
         }
       }
       
-      console.log('⚠️  Continuing without Google profile photo');
       return null;
     }
   }
@@ -322,15 +302,13 @@ class S3Service {
       });
 
       const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-      console.log(`✅ Generated signed URL for profile photo: ${profilePhotoKey}`);
       
       return signedUrl;
     } catch (error) {
-      console.error('❌ Error generating signed URL:', error);
+      console.error('âŒ Error generating signed URL:', error);
       
       // Handle region-specific errors
       if (error.name === 'PermanentRedirect' || error.$metadata?.httpStatusCode === 301) {
-        console.log('🔄 Retrying signed URL generation with correct region...');
         try {
           // Reset bucket region and retry
           this.bucketRegion = null;
@@ -342,10 +320,9 @@ class S3Service {
           });
 
           const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-          console.log(`✅ Generated signed URL after region fix: ${profilePhotoKey}`);
           return signedUrl;
         } catch (retryError) {
-          console.error('❌ Retry failed:', retryError);
+          console.error('âŒ Retry failed:', retryError);
           throw new Error('Failed to generate profile photo URL after region detection');
         }
       }
@@ -364,7 +341,6 @@ class S3Service {
       await this.ensureS3Ready();
 
       if (!profilePhotoKey) {
-        console.log('No profile photo key provided for deletion');
         return;
       }
 
@@ -374,13 +350,11 @@ class S3Service {
       };
 
       await this.s3Client.send(new DeleteObjectCommand(deleteParams));
-      console.log(`✅ Profile photo deleted successfully: ${profilePhotoKey}`);
     } catch (error) {
-      console.error('❌ Error deleting profile photo from S3:', error);
+      console.error('âŒ Error deleting profile photo from S3:', error);
       
       // Handle region-specific errors
       if (error.name === 'PermanentRedirect' || error.$metadata?.httpStatusCode === 301) {
-        console.log('🔄 Retrying deletion with correct region...');
         try {
           // Reset bucket region and retry
           this.bucketRegion = null;
@@ -392,9 +366,8 @@ class S3Service {
           };
 
           await this.s3Client.send(new DeleteObjectCommand(deleteParams));
-          console.log(`✅ Profile photo deleted successfully after region fix: ${profilePhotoKey}`);
         } catch (retryError) {
-          console.error('❌ Retry failed:', retryError);
+          console.error('âŒ Retry failed:', retryError);
           throw new Error('Failed to delete profile photo after region detection');
         }
       } else {

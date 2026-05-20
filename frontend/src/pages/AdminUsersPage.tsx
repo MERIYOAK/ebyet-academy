@@ -78,12 +78,13 @@ const AdminUsersPage: React.FC = () => {
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [updatingCourseId, setUpdatingCourseId] = useState<string | null>(null);
 
-  // Fetch users from API
-  const fetchUsers = async (page = 1) => {
+  // Fetch users from API. Pass silent=true to skip the loading spinner
+  // (used by socket-driven background refreshes).
+  const fetchUsers = async (page = 1, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
-      
+
       if (!adminToken) {
         throw new Error('Admin token not found');
       }
@@ -112,9 +113,9 @@ const AdminUsersPage: React.FC = () => {
       setUsers(data.data.users || []);
       setPagination(data.data.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch users');
+      if (!silent) setError(err instanceof Error ? err.message : 'Failed to fetch users');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -353,6 +354,22 @@ const AdminUsersPage: React.FC = () => {
     fetchUsers(currentPage);
   }, [currentPage]);
 
+  // Live-refresh the user list when any user profile changes (own update,
+  // photo change, or admin action from another tab). Silent so the table
+  // doesn't flash a loading spinner during the background refresh.
+  useEffect(() => {
+    const RELEVANT_EVENTS = new Set(['USER_UPDATED']);
+    const handler = (e: Event) => {
+      const { type } = (e as CustomEvent).detail;
+      if (RELEVANT_EVENTS.has(type)) {
+        fetchUsers(currentPage, true);
+      }
+    };
+    window.addEventListener('socketContentUpdate', handler);
+    return () => window.removeEventListener('socketContentUpdate', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTerm, statusFilter, sortBy, sortOrder]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -463,6 +480,7 @@ const AdminUsersPage: React.FC = () => {
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
+                      aria-label="Clear search"
                       className="absolute inset-y-0 right-0 pr-3 xxs:pr-4 flex items-center text-gray-500 hover:text-gray-400 transition-colors"
                     >
                       <X className="h-3 w-3 xxs:h-4 xxs:w-4" />
@@ -479,6 +497,7 @@ const AdminUsersPage: React.FC = () => {
                 </label>
                 <div className="relative">
                   <select
+                    aria-label="Filter by status"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-800 text-white border-2 border-gray-600 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 appearance-none"
@@ -502,6 +521,7 @@ const AdminUsersPage: React.FC = () => {
                 </label>
                 <div className="relative">
                   <select
+                    aria-label="Sort by"
                     value={`${sortBy}-${sortOrder}`}
                     onChange={(e) => {
                       const [field, order] = e.target.value.split('-');
@@ -829,6 +849,7 @@ const AdminUsersPage: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={!pagination.hasPrevPage}
+                    aria-label="Previous page"
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-5 w-5" />
@@ -855,6 +876,7 @@ const AdminUsersPage: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={!pagination.hasNextPage}
+                    aria-label="Next page"
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="h-5 w-5" />
@@ -912,6 +934,7 @@ const AdminUsersPage: React.FC = () => {
                   setSelectedUser(null);
                   setEnrollments([]);
                 }}
+                aria-label="Close"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <X className="h-6 w-6" />

@@ -72,7 +72,7 @@ const PaymentFailureHandler = () => {
     checkForPaymentFailure();
 
     // Also listen for beforeunload events to detect if user is leaving the page
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    const handleBeforeUnload = () => {
       const storedSessionId = sessionStorage.getItem('stripeSessionId');
       const pendingCourseId = sessionStorage.getItem('pendingCourseId');
       

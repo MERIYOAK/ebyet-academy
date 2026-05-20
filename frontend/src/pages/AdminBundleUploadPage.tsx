@@ -5,6 +5,7 @@ import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import Toast from '../components/Toast';
 import { getEnglishText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
 
 interface Course {
   _id: string;
@@ -373,7 +374,7 @@ const AdminBundleUploadPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Bundle Price ($) *
+                    Bundle Price (CHF) *
                   </label>
                   <input
                     type="number"
@@ -382,13 +383,14 @@ const AdminBundleUploadPage: React.FC = () => {
                     value={bundle.price}
                     onChange={(e) => setBundle(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
                     required
+                    placeholder="0.00"
                     className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Original Value ($)
+                    Original Value (CHF)
                   </label>
                   <input
                     type="number"
@@ -434,7 +436,7 @@ const AdminBundleUploadPage: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h3 className="text-white font-medium">{getEnglishText(course.title)}</h3>
-                        <span className="text-cyan-400 font-semibold">${course.price.toFixed(2)}</span>
+                        <span className="text-cyan-400 font-semibold">{formatCHF(course.price)}</span>
                       </div>
                       <p className="text-gray-400 text-sm mt-1 line-clamp-1">{getEnglishText(course.description)}</p>
                     </div>
@@ -471,6 +473,7 @@ const AdminBundleUploadPage: React.FC = () => {
                       setThumbnail(null);
                       setThumbnailPreview(null);
                     }}
+                    aria-label="Remove thumbnail"
                     className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full"
                   >
                     <X className="h-4 w-4" />

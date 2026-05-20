@@ -14,8 +14,7 @@ const AvatarMenu: React.FC<AvatarMenuProps> = ({ variant, profileImageUrl }) => 
   const menuRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   
-  // Only use admin auth when variant is 'admin'
-  const adminAuth = variant === 'admin' ? useAdminAuth() : null;
+  const adminAuth = useAdminAuth();
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {

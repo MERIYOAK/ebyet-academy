@@ -1,4 +1,4 @@
-const User = require('../models/User');
+﻿const User = require('../models/User');
 const Course = require('../models/Course');
 
 /**
@@ -10,16 +10,9 @@ const Course = require('../models/Course');
  */
 async function userHasPurchased(userId, courseId) {
   try {
-    console.log(`🔧 [userHasPurchased] Checking purchase status:`, {
-      userId,
-      courseId,
-      courseIdType: typeof courseId,
-      courseIdString: courseId.toString()
-    });
     
     const user = await User.findById(userId);
     if (!user) {
-      console.log(`❌ [userHasPurchased] User not found:`, userId);
       return false;
     }
     
@@ -28,51 +21,23 @@ async function userHasPurchased(userId, courseId) {
     if (course) {
       const enrollment = course.getStudentEnrollment(userId);
       if (enrollment && enrollment.status === 'active') {
-        console.log(`✅ [userHasPurchased] User has active enrollment:`, {
-          userId,
-          courseId,
-          accessGrantedBy: enrollment.accessGrantedBy,
-          grantedAt: enrollment.grantedAt
-        });
         return true;
       }
     }
     
     // Fallback: Check purchasedCourses array (for backward compatibility)
-    console.log(`🔧 [userHasPurchased] User found:`, {
-      userId,
-      userEmail: user.email,
-      purchasedCourses: user.purchasedCourses || [],
-      purchasedCoursesLength: user.purchasedCourses?.length || 0,
-      purchasedCoursesTypes: user.purchasedCourses?.map(id => ({ id: id.toString(), type: typeof id })) || []
-    });
     
     // Convert courseId to string for comparison since purchasedCourses contains ObjectIds
     const courseIdString = courseId.toString();
     const hasPurchased = user.purchasedCourses && user.purchasedCourses.some(purchasedId => {
       const purchasedIdString = purchasedId.toString();
       const matches = purchasedIdString === courseIdString;
-      console.log(`🔧 [userHasPurchased] Comparing:`, {
-        purchasedId: purchasedId,
-        purchasedIdString,
-        courseIdString,
-        matches
-      });
       return matches;
     });
-    
-    console.log(`🔧 [userHasPurchased] Final purchase check result:`, {
-      userId,
-      courseId,
-      courseIdString,
-      hasPurchased,
-      purchasedCourses: user.purchasedCourses || [],
-      purchasedCoursesLength: user.purchasedCourses?.length || 0
-    });
-    
+
     return hasPurchased;
   } catch (error) {
-    console.error('❌ [userHasPurchased] Error checking user purchase status:', error);
+    console.error('âŒ [userHasPurchased] Error checking user purchase status:', error);
     return false;
   }
 }
@@ -87,16 +52,8 @@ async function userHasPurchased(userId, courseId) {
  */
 async function filterVideosByAccess(videos, userId, courseId, isAdmin = false) {
   try {
-    console.log(`🔧 [filterVideosByAccess] Starting access control:`, {
-      userId,
-      courseId,
-      isAdmin,
-      totalVideos: videos.length
-    });
-    
     // Admins have access to all videos
     if (isAdmin) {
-      console.log(`🔧 [filterVideosByAccess] Admin user - granting full access`);
       return videos.map(video => ({
         ...video.toObject(),
         hasAccess: true,
@@ -107,18 +64,12 @@ async function filterVideosByAccess(videos, userId, courseId, isAdmin = false) {
 
     // Check if user has purchased the course
     const hasPurchased = await userHasPurchased(userId, courseId);
-    console.log(`🔧 [filterVideosByAccess] Purchase check result:`, {
-      userId,
-      courseId,
-      hasPurchased
-    });
-    
+
     const filteredVideos = videos.map(video => {
       const videoObj = video.toObject();
       
       if (hasPurchased) {
         // User has purchased - full access to all videos
-        console.log(`🔧 [filterVideosByAccess] Video "${video.title}" - User has purchased, granting access`);
         return {
           ...videoObj,
           hasAccess: true,
@@ -128,7 +79,6 @@ async function filterVideosByAccess(videos, userId, courseId, isAdmin = false) {
       } else {
         // User hasn't purchased - only access to free preview videos
         const isFreePreview = video.isFreePreview === true;
-        console.log(`🔧 [filterVideosByAccess] Video "${video.title}" - User hasn't purchased, isFreePreview: ${isFreePreview}`);
         return {
           ...videoObj,
           hasAccess: isFreePreview,
@@ -136,13 +86,6 @@ async function filterVideosByAccess(videos, userId, courseId, isAdmin = false) {
           lockReason: isFreePreview ? null : 'purchase_required'
         };
       }
-    });
-    
-    console.log(`🔧 [filterVideosByAccess] Final access summary:`, {
-      totalVideos: filteredVideos.length,
-      videosWithAccess: filteredVideos.filter(v => v.hasAccess).length,
-      videosLocked: filteredVideos.filter(v => v.isLocked).length,
-      freePreviewVideos: filteredVideos.filter(v => v.isFreePreview).length
     });
     
     return filteredVideos;
@@ -266,27 +209,24 @@ async function getUserPurchasedVersion(userId, courseId) {
     }).sort({ createdAt: -1 });
     
     if (payment && payment.courseVersion) {
-      console.log(`📦 [getUserPurchasedVersion] Found purchased version ${payment.courseVersion} for user ${userId}, course ${courseId}`);
       return payment.courseVersion;
     }
     
     // If no payment record with version exists, check when they purchased
     // For existing purchases without version, default to version 1
     if (payment) {
-      console.log(`⚠️ [getUserPurchasedVersion] Payment found but no version stored, defaulting to version 1 for user ${userId}, course ${courseId}`);
       return 1;
     }
     
     // If no payment record at all, check if user has purchased (might be dev mode)
     const hasPurchased = await userHasPurchased(userId, courseId);
     if (hasPurchased) {
-      console.log(`⚠️ [getUserPurchasedVersion] User has purchased but no payment record, defaulting to version 1 for user ${userId}, course ${courseId}`);
       return 1;
     }
     
     return null; // User hasn't purchased
   } catch (error) {
-    console.error('❌ [getUserPurchasedVersion] Error getting purchased version:', error);
+    console.error('âŒ [getUserPurchasedVersion] Error getting purchased version:', error);
     return null;
   }
 }

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Star, CheckCircle, XCircle, MessageSquare, Trash2 } from 'lucide-react';
 import { buildApiUrl } from '../config/environment';
 
@@ -30,7 +29,6 @@ interface ReviewStats {
 }
 
 const AdminReviewsPage: React.FC = () => {
-  const { t } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,20 +49,21 @@ const AdminReviewsPage: React.FC = () => {
   });
 
   // Helper function to get display text from bilingual objects
-  const getDisplayText = (text: any): string => {
+  const getDisplayText = (text: string | { en?: string } | null | undefined): string => {
     if (!text) return '';
     if (typeof text === 'string') return text;
     if (typeof text === 'object' && text.en) return text.en;
     return String(text);
   };
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (silent = false) => {
     try {
-      // Only show filtering state for subsequent loads, not initial load
-      if (reviews.length > 0) {
-        setFiltering(true);
+      // Only show filtering state for subsequent loads, not initial load.
+      // Silent mode (socket-driven refresh) skips all loading UI.
+      if (!silent) {
+        if (reviews.length > 0) setFiltering(true);
+        setLoading(true);
       }
-      setLoading(true);
       const params = new URLSearchParams({
         page: pagination.current.toString(),
         limit: pagination.limit.toString(),
@@ -95,8 +94,10 @@ const AdminReviewsPage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching reviews:', error);
     } finally {
-      setLoading(false);
-      setFiltering(false);
+      if (!silent) {
+        setLoading(false);
+        setFiltering(false);
+      }
     }
   };
 
@@ -196,6 +197,28 @@ const AdminReviewsPage: React.FC = () => {
     fetchReviews();
   }, [filters, pagination.current]);
 
+  // Live-refresh the reviews list when users submit/edit/delete reviews,
+  // or when admin actions happen in another tab. Silent so no loading spinner.
+  useEffect(() => {
+    const REVIEW_EVENTS = new Set([
+      'NEW_REVIEW',
+      'REVIEW_APPROVED',
+      'REVIEW_REJECTED',
+      'REVIEW_REPLY_ADDED',
+      'REVIEW_DELETED',
+    ]);
+    const handler = (e: Event) => {
+      const { type } = (e as CustomEvent).detail;
+      if (REVIEW_EVENTS.has(type)) {
+        fetchReviews(true);
+        fetchStats();
+      }
+    };
+    window.addEventListener('socketContentUpdate', handler);
+    return () => window.removeEventListener('socketContentUpdate', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, pagination.current]);
+
   const handleReply = async (reviewId: string) => {
     if (!replyText.trim()) return;
 
@@ -216,7 +239,7 @@ const AdminReviewsPage: React.FC = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         // Update review with admin reply locally
         setReviews(prevReviews => 
           prevReviews.map(review => 
@@ -246,14 +269,6 @@ const AdminReviewsPage: React.FC = () => {
       case 'pending': return 'text-yellow-600 bg-yellow-100';
       default: return 'text-gray-600 bg-gray-100';
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const renderStars = (rating: number) => {
@@ -316,6 +331,7 @@ const AdminReviewsPage: React.FC = () => {
                 Status
               </label>
               <select
+                aria-label="Filter by status"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-700 text-white transition-colors duration-200"
@@ -332,6 +348,7 @@ const AdminReviewsPage: React.FC = () => {
                 Rating
               </label>
               <select
+                aria-label="Filter by rating"
                 value={filters.rating}
                 onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-700 text-white transition-colors duration-200"

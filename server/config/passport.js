@@ -1,4 +1,4 @@
-const passport = require('passport');
+﻿const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 
@@ -11,26 +11,16 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     scope: ['profile', 'email']
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      console.log('🔐 Google OAuth profile received:', {
-        id: profile.id,
-        displayName: profile.displayName,
-        email: profile.emails?.[0]?.value
-      });
 
       // Store the profile in the request for the callback controller
       return done(null, profile);
     } catch (error) {
-      console.error('❌ Google OAuth strategy error:', error);
+      console.error('âŒ Google OAuth strategy error:', error);
       return done(error, null);
     }
   }));
 
-  console.log('✅ Google OAuth strategy configured');
 } else {
-  console.log('⚠️  Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
-  console.log('💡 To enable Google OAuth, add these to your .env file:');
-  console.log('   GOOGLE_CLIENT_ID=your-google-client-id');
-  console.log('   GOOGLE_CLIENT_SECRET=your-google-client-secret');
 }
 
 // Serialize user for session (not used in stateless JWT)

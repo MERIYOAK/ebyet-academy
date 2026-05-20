@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Auto-archive scheduler for deactivated courses
  * Automatically archives courses that have been deactivated for 6 months
  */
@@ -13,11 +13,9 @@ async function archiveDeactivatedCourses() {
   try {
     // Check if MongoDB is connected before running queries
     if (mongoose.connection.readyState !== 1) {
-      console.log('⚠️  [autoArchive] MongoDB not connected, skipping archive check');
       return;
     }
     
-    console.log('🔄 [autoArchive] Checking for courses to archive...');
     
     // Find courses that are inactive and were deactivated 6+ months ago
     const sixMonthsAgo = new Date();
@@ -29,27 +27,23 @@ async function archiveDeactivatedCourses() {
     });
     
     if (coursesToArchive.length === 0) {
-      console.log('✅ [autoArchive] No courses to archive');
       return;
     }
     
-    console.log(`📦 [autoArchive] Found ${coursesToArchive.length} course(s) to archive`);
     
     let archivedCount = 0;
     for (const course of coursesToArchive) {
       try {
         await course.archive('Auto-archived after 6 months of deactivation');
         archivedCount++;
-        console.log(`✅ [autoArchive] Archived course: ${course.title} (${course._id})`);
       } catch (error) {
-        console.error(`❌ [autoArchive] Failed to archive course ${course._id}:`, error.message);
+        console.error(`âŒ [autoArchive] Failed to archive course ${course._id}:`, error.message);
       }
     }
     
-    console.log(`✅ [autoArchive] Successfully archived ${archivedCount} of ${coursesToArchive.length} course(s)`);
     
   } catch (error) {
-    console.error('❌ [autoArchive] Error in archive check:', error);
+    console.error('âŒ [autoArchive] Error in archive check:', error);
   }
 }
 
@@ -58,7 +52,6 @@ async function archiveDeactivatedCourses() {
  * Runs daily at 2 AM
  */
 function startAutoArchiveScheduler() {
-  console.log('🚀 [autoArchive] Starting auto-archive scheduler...');
   
   // Run immediately on startup
   archiveDeactivatedCourses();
@@ -79,11 +72,9 @@ function startAutoArchiveScheduler() {
     setInterval(archiveDeactivatedCourses, 24 * 60 * 60 * 1000);
   }, msUntil2AM);
   
-  console.log(`⏰ [autoArchive] Next archive check scheduled for: ${tomorrow.toLocaleString()}`);
 }
 
 module.exports = {
   archiveDeactivatedCourses,
   startAutoArchiveScheduler
 };
-

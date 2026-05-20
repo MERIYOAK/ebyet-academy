@@ -3,9 +3,9 @@ import { buildApiUrl } from '../config/environment';
 import socketService from '../services/socketService';
 
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Save, X, Upload, Image, Video, Plus, Trash2, Eye, Edit, Check, AlertCircle, FileText, Download, Power, PowerOff, ExternalLink } from 'lucide-react';
+import { Save, X, Upload, Image, Video, Plus, Trash2, Eye, Edit, Check, AlertCircle, FileText, Power, PowerOff, ExternalLink } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
-import { getEnglishText, getTigrinyaText } from '../utils/bilingualHelper';
+import { getEnglishText } from '../utils/bilingualHelper';
 
 interface Video {
   _id: string;
@@ -16,6 +16,22 @@ interface Video {
   uploadedBy: string;
   createdAt: string;
   description?: string | { en: string; tg: string };
+}
+
+interface BilingualText {
+  en: string;
+  tg: string;
+}
+
+interface Material {
+  id: string;
+  title: string | BilingualText;
+  description?: string | BilingualText;
+  order: number;
+  formattedSize?: string;
+  fileSize?: number;
+  fileType?: { type: string };
+  downloadUrl?: string;
 }
 
 interface Enrollment {
@@ -97,7 +113,7 @@ const AdminCourseEditPage: React.FC = () => {
   const [thumbnailKey, setThumbnailKey] = useState<number>(0); // Force remount on update
 
   // Materials state
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [uploadingMaterial, setUploadingMaterial] = useState(false);
   const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
   const [materialForm, setMaterialForm] = useState({
@@ -142,7 +158,7 @@ const AdminCourseEditPage: React.FC = () => {
       setCourse(courseData);
       
       // Helper function to parse bilingual data (handles objects, JSON strings, or plain strings)
-      const parseBilingual = (value: any): { en: string; tg: string } => {
+      const parseBilingual = (value: string | { en?: string; tg?: string } | null | undefined): { en: string; tg: string } => {
         if (!value) return { en: '', tg: '' };
         
         // If it's already an object with en/tg properties
@@ -165,7 +181,7 @@ const AdminCourseEditPage: React.FC = () => {
                   tg: parsed.tg || ''
                 };
               }
-            } catch (e) {
+            } catch {
               // Not valid JSON, treat as plain English string
               return { en: value, tg: '' };
             }
@@ -333,7 +349,7 @@ const AdminCourseEditPage: React.FC = () => {
             type: 'NEW_MATERIAL',
             data: {
               courseId: courseId,
-              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as { en?: string })?.en || 'Course',
               message: `New material added to course`
             },
             timestamp: new Date().toISOString()
@@ -358,7 +374,7 @@ const AdminCourseEditPage: React.FC = () => {
   };
 
   // Start editing material
-  const startEditingMaterial = (material: any) => {
+  const startEditingMaterial = (material: Material) => {
     setEditingMaterialId(material.id);
     
     // Extract English and Tigrinya text
@@ -462,7 +478,7 @@ const AdminCourseEditPage: React.FC = () => {
             type: 'MATERIAL_UPDATED',
             data: {
               courseId: courseId,
-              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as { en?: string })?.en || 'Course',
               message: `Material updated in course`
             },
             timestamp: new Date().toISOString()
@@ -531,7 +547,7 @@ const AdminCourseEditPage: React.FC = () => {
             type: 'MATERIAL_DELETED',
             data: {
               courseId: courseId,
-              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as { en?: string })?.en || 'Course',
               message: `Material deleted from course`
             },
             timestamp: new Date().toISOString()
@@ -764,7 +780,7 @@ const AdminCourseEditPage: React.FC = () => {
                 hasWhatsappGroup: formData.hasWhatsappGroup,
                 whatsappGroupLink: formData.whatsappGroupLink
               },
-              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as { en?: string })?.en || 'Course',
               message: `Course WhatsApp settings updated`
             },
             timestamp: new Date().toISOString()
@@ -963,6 +979,7 @@ const AdminCourseEditPage: React.FC = () => {
     if (courseId) {
       fetchCourse();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -1101,6 +1118,7 @@ const AdminCourseEditPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setError(null)}
+                    aria-label="Dismiss error"
                     className="text-orange-400 hover:text-orange-300"
                   >
                     <X className="h-5 w-5" />
@@ -1187,7 +1205,7 @@ const AdminCourseEditPage: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-2">
-                        Price (USD) *
+                        Price (CHF) *
                       </label>
                       <input
                         type="number"
@@ -1466,6 +1484,7 @@ const AdminCourseEditPage: React.FC = () => {
                       accept=".pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.csv,.txt,.zip,.rar,.json,.png,.jpg,.jpeg,.mp3,.py"
                       onChange={(e) => setMaterialForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
                       required
+                      aria-label="Upload material file"
                       className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-600 file:text-white hover:file:bg-gray-500"
                     />
                     <p className="text-xs text-gray-400 mt-1">
@@ -1539,6 +1558,7 @@ const AdminCourseEditPage: React.FC = () => {
                       onChange={(e) => setMaterialForm(prev => ({ ...prev, order: parseInt(e.target.value) || 1 }))}
                       min="1"
                       required
+                      aria-label="Material display order"
                       className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     />
                   </div>
@@ -1565,6 +1585,7 @@ const AdminCourseEditPage: React.FC = () => {
                               <h3 className="text-sm font-medium text-white">Edit Material</h3>
                               <button
                                 onClick={cancelEditingMaterial}
+                                aria-label="Cancel editing"
                                 className="text-gray-400 hover:text-white"
                               >
                                 <X className="h-4 w-4" />
@@ -1579,6 +1600,7 @@ const AdminCourseEditPage: React.FC = () => {
                                 type="text"
                                 value={editMaterialForm.titleEn}
                                 onChange={(e) => setEditMaterialForm(prev => ({ ...prev, titleEn: e.target.value }))}
+                                aria-label="Title in English"
                                 className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                                 required
                               />
@@ -1592,6 +1614,7 @@ const AdminCourseEditPage: React.FC = () => {
                                 type="text"
                                 value={editMaterialForm.titleTg}
                                 onChange={(e) => setEditMaterialForm(prev => ({ ...prev, titleTg: e.target.value }))}
+                                aria-label="Title in Tigrinya"
                                 className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                               />
                             </div>
@@ -1604,6 +1627,7 @@ const AdminCourseEditPage: React.FC = () => {
                                 value={editMaterialForm.descriptionEn}
                                 onChange={(e) => setEditMaterialForm(prev => ({ ...prev, descriptionEn: e.target.value }))}
                                 rows={2}
+                                aria-label="Description in English"
                                 className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                               />
                             </div>
@@ -1616,6 +1640,7 @@ const AdminCourseEditPage: React.FC = () => {
                                 value={editMaterialForm.descriptionTg}
                                 onChange={(e) => setEditMaterialForm(prev => ({ ...prev, descriptionTg: e.target.value }))}
                                 rows={2}
+                                aria-label="Description in Tigrinya"
                                 className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                               />
                             </div>
@@ -1629,6 +1654,7 @@ const AdminCourseEditPage: React.FC = () => {
                                 value={editMaterialForm.order}
                                 onChange={(e) => setEditMaterialForm(prev => ({ ...prev, order: parseInt(e.target.value) || 1 }))}
                                 min="1"
+                                aria-label="Material display order"
                                 className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                               />
                             </div>
@@ -1663,7 +1689,7 @@ const AdminCourseEditPage: React.FC = () => {
                               <div className="flex-1 min-w-0 overflow-hidden">
                                 <h3 className="text-sm font-medium text-white truncate break-words">{getEnglishText(material.title)}</h3>
                                 <p className="text-xs text-gray-400 truncate">
-                                  {material.formattedSize || `${(material.fileSize / 1024).toFixed(2)} KB`} • {material.fileType?.type || 'File'}
+                                  {material.formattedSize || (material.fileSize != null ? `${(material.fileSize / 1024).toFixed(2)} KB` : 'Unknown size')} • {material.fileType?.type || 'File'}
                                 </p>
                                 {material.description && (
                                   <p className="text-xs text-gray-300 mt-1 bg-gray-800 p-2 rounded break-words overflow-hidden line-clamp-2 max-w-full">

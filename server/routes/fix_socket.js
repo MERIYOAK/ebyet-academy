@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 // Read the current file
 let content = fs.readFileSync('videoRoutes.js', 'utf8');
@@ -16,7 +16,6 @@ const replacement = `    });
         const course = await Course.findById(courseId);
         const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
         
-        console.log('📢 [save-metadata] Emitting NEW_VIDEO event to connected users');
         socketService.broadcastContentUpdate('NEW_VIDEO', {
           video: video,
           courseId: courseId,
@@ -25,7 +24,7 @@ const replacement = `    });
         });
       }
     } catch (socketError) {
-      console.warn('⚠️ [save-metadata] Failed to emit Socket.IO update:', socketError);
+      console.warn('âš ï¸ [save-metadata] Failed to emit Socket.IO update:', socketError);
     }
   } catch (error) {`;
 
@@ -34,4 +33,3 @@ content = content.replace(targetPattern, replacement);
 
 // Write back to the file
 fs.writeFileSync('videoRoutes.js', content);
-console.log('✅ Socket.IO emission added to save-metadata function');

@@ -1,4 +1,4 @@
-const Video = require('../models/Video');
+﻿const Video = require('../models/Video');
 const Course = require('../models/Course');
 const CourseVersion = require('../models/CourseVersion');
 const { getVideosWithAccess, checkVideoAccess } = require('../utils/purchaseUtils');
@@ -67,14 +67,12 @@ exports.uploadVideo = async (req, res) => {
       }
     } catch (e) {
       // If parsing fails, treat as regular string (backward compatibility)
-      console.log('[uploadVideo] Title/description not JSON, using as string');
     }
     
     const { courseId, order, version: requestedVersion = 1, duration } = req.body;
     const isFreePreview = req.body.isFreePreview === 'true' || req.body.isFreePreview === true;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
     
-    console.log('[uploadVideo] courseId:', req.body?.courseId, 'title:', title, 'size:', req.file?.size, 'file:', req.file?.originalname, 'isFreePreview:', isFreePreview);
     
     if (!req.file) {
       return res.status(400).json({ 
@@ -110,7 +108,6 @@ exports.uploadVideo = async (req, res) => {
     // IMPORTANT: Always use the current version, not the requested version
     // This ensures we're always modifying the current version and creating a new one
     const currentVersionNumber = course.currentVersion || course.version || 1;
-    console.log(`🔍 [uploadVideo] Course currentVersion: ${currentVersionNumber}, requestedVersion: ${requestedVersion}`);
     
     // Use a mutable variable for version number - start with current version
     let versionNumber = currentVersionNumber;
@@ -128,7 +125,6 @@ exports.uploadVideo = async (req, res) => {
       });
     }
 
-    console.log(`🔍 [uploadVideo] Found courseVersion ${versionNumber}, course.currentVersion: ${course.currentVersion}`);
 
     // Check if this is initial upload (course has no enrollments)
     // During initial upload, all content goes to version 1
@@ -136,7 +132,6 @@ exports.uploadVideo = async (req, res) => {
     const hasEnrollments = course.enrolledStudents && course.enrolledStudents.length > 0;
     const isInitialUpload = !hasEnrollments;
     
-    console.log(`🔍 [uploadVideo] Course has ${course.enrolledStudents?.length || 0} enrollments. Is initial upload: ${isInitialUpload}`);
     
     // Only create a new version if:
     // 1. Course has enrollments (not initial upload) AND
@@ -152,28 +147,20 @@ exports.uploadVideo = async (req, res) => {
         status: { $ne: 'deleted' }
       }).lean(); // Use lean() to get plain objects
       
-      console.log(`🔍 [uploadVideo] Found ${existingVideos.length} existing videos in version ${versionNumber}:`, 
-        existingVideos.map(v => ({ id: v._id, title: v.title, version: v.courseVersion }))
-      );
       
       // CRITICAL FIX: If no videos found in current version, check ALL versions
       // This handles cases where videos exist in older versions but weren't copied to current version
       if (existingVideos.length === 0) {
-        console.log(`⚠️ [uploadVideo] No videos in version ${versionNumber}, checking all versions for this course...`);
         const allVideosForCourse = await Video.find({ 
           courseId: courseId.toString(), 
           status: { $ne: 'deleted' }
         }).lean();
         
-        console.log(`🔍 [uploadVideo] Found ${allVideosForCourse.length} videos across all versions:`, 
-          allVideosForCourse.map(v => ({ id: v._id, title: v.title, version: v.courseVersion }))
-        );
         
         // Use videos from the latest version that has videos
         if (allVideosForCourse.length > 0) {
           const latestVersionWithVideos = Math.max(...allVideosForCourse.map(v => v.courseVersion));
           existingVideos = allVideosForCourse.filter(v => v.courseVersion === latestVersionWithVideos);
-          console.log(`📹 [uploadVideo] Using ${existingVideos.length} videos from version ${latestVersionWithVideos} to copy to new version`);
         }
       }
       
@@ -185,11 +172,9 @@ exports.uploadVideo = async (req, res) => {
         status: 'active'
       }).lean();
       
-      console.log(`🔍 [uploadVideo] Found ${existingMaterials.length} existing materials in version ${versionNumber}`);
       
       // Always create a new version when modifying the current version
       // This ensures version history is preserved
-      console.log(`🔄 [uploadVideo] Adding video to current version, creating new version...`);
         
         // Get the latest version to determine next version number
         const latestVersion = await CourseVersion.findOne({ 
@@ -198,7 +183,6 @@ exports.uploadVideo = async (req, res) => {
         
         // If latestVersion exists, increment it. Otherwise, use current version + 1
         const newVersionNumber = latestVersion ? latestVersion.versionNumber + 1 : (versionNumber + 1);
-        console.log(`📌 [uploadVideo] Creating version v${newVersionNumber} from v${versionNumber}`);
       
         // Create new version with existing content
         const newVersion = new CourseVersion({
@@ -222,9 +206,7 @@ exports.uploadVideo = async (req, res) => {
         
         // Copy existing videos to the new version FIRST
         if (existingVideos.length > 0) {
-          console.log(`🎬 [uploadVideo] Copying ${existingVideos.length} videos from v${versionNumber} to v${newVersionNumber}...`);
           const videoCopyPromises = existingVideos.map((video, index) => {
-            console.log(`   📹 Copying video ${index + 1}/${existingVideos.length}: ${video.title} (ID: ${video._id})`);
             return Video.create({
               title: video.title,
               description: video.description,
@@ -245,17 +227,12 @@ exports.uploadVideo = async (req, res) => {
           // Update the new version's videos array with the copied video IDs
           newVersion.videos = copiedVideos.map(v => v._id);
           await newVersion.save();
-          console.log(`✅ [uploadVideo] Successfully copied ${copiedVideos.length} videos to version v${newVersionNumber}. Video IDs:`, 
-            copiedVideos.map(v => v._id.toString())
-          );
         } else {
           await newVersion.save();
-          console.log(`📝 [uploadVideo] No videos to copy, saved empty version v${newVersionNumber}`);
         }
         
         // Copy existing materials to the new version (existingMaterials already fetched above)
         if (existingMaterials.length > 0) {
-          console.log(`📦 [uploadVideo] Copying ${existingMaterials.length} materials to new version v${newVersionNumber}...`);
           const materialUpdatePromises = existingMaterials.map(material => {
             return Material.create({
               title: material.title,
@@ -276,13 +253,9 @@ exports.uploadVideo = async (req, res) => {
           // Update the new version's materials array with the copied material IDs
           newVersion.materials = copiedMaterials.map(m => m._id);
           await newVersion.save();
-          console.log(`✅ [uploadVideo] Copied ${copiedMaterials.length} materials to version v${newVersionNumber}. Material IDs:`, 
-            copiedMaterials.map(m => m._id.toString())
-          );
         } else {
           newVersion.materials = [];
           await newVersion.save();
-          console.log(`📝 [uploadVideo] No materials to copy to version v${newVersionNumber}`);
         }
         
         // Update course to point to new version
@@ -295,13 +268,11 @@ exports.uploadVideo = async (req, res) => {
         courseVersion = newVersion;
         versionNumber = newVersionNumber;
         
-        console.log(`✅ [uploadVideo] Created new version v${newVersionNumber} and set as current`);
     }
     
     // Validate file size
     validateFile(req.file, ['video/mp4', 'video/webm', 'video/ogg'], 1024 * 1024 * 1024); // 1GB max
     
-    console.log('🎬 [uploadVideo] Processing duration from form input...');
     
     // Duration is required
     if (!duration) {
@@ -317,49 +288,32 @@ exports.uploadVideo = async (req, res) => {
     
     try {
       detectedDuration = parseDurationToSeconds(duration);
-      console.log(`✅ [uploadVideo] Duration parsed from input: ${duration} = ${detectedDuration} seconds`);
     } catch (error) {
-      console.error(`❌ [uploadVideo] Duration parsing failed:`, error);
+      console.error(`âŒ [uploadVideo] Duration parsing failed:`, error);
       return res.status(400).json({
         success: false,
         message: `Invalid duration format: ${duration}. Please use MM:SS or HH:MM:SS format.`
       });
     }
     
-    // Upload with organized structure (with timeout protection)
-    console.log('📤 [uploadVideo] Starting S3 upload...');
-    console.log('📁 [uploadVideo] File details:', {
-      originalname: req.file.originalname,
-      size: req.file.size,
-      mimetype: req.file.mimetype,
-      path: req.file.path,
-      buffer: req.file.buffer ? 'exists' : 'null'
-    });
-    
     // Use AWS SDK v2 directly since v3 is hanging
-    console.log('🔧 [uploadVideo] Using AWS SDK v2 for reliable upload...');
     const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
     const courseTitleString = typeof course.title === 'string' ? course.title : (course.title?.en || course.title?.tg || '');
     
     // IMPORTANT: Use the updated versionNumber (which may have been changed to newVersionNumber above)
-    console.log(`📁 [uploadVideo] Uploading to S3 with versionNumber: ${versionNumber}, courseId: ${courseId}`);
     const s3Key = `${S3_ROOT_PREFIX}/courses/${courseTitleString.replace(/[^a-zA-Z0-9\s-]/g, '_').replace(/\s+/g, '_')}/v${versionNumber}/videos/${Date.now()}_${req.file.originalname}`;
-    console.log(`📁 [uploadVideo] Generated S3 key: ${s3Key}`);
     // S3 Key generated
     
-    console.log('🔧 [uploadVideo] About to call uploadToS3...');
     const uploadStartTime = Date.now();
     
     const s3UploadResult = await Promise.race([
-      uploadToS3(req.file, s3Key, 'private').then((result) => {
+      uploadToS3(req.file, s3Key).then((result) => {
         const uploadTime = Date.now() - uploadStartTime;
-        console.log('🔧 [uploadVideo] uploadToS3 completed in', uploadTime, 'ms');
         return result;
       }),
       new Promise((_, reject) => 
         setTimeout(() => {
           const uploadTime = Date.now() - uploadStartTime;
-          console.log('🔧 [uploadVideo] uploadToS3 timeout after', uploadTime, 'ms');
           reject(new Error('AWS SDK v2 upload timeout after 60 minutes'));
         }, 60 * 60 * 1000) // 60 minutes for large files
       )
@@ -377,15 +331,13 @@ exports.uploadVideo = async (req, res) => {
     if (req.file.path) {
       try {
         require('fs').unlinkSync(req.file.path);
-        console.log('🧹 [uploadVideo] Temporary file cleaned up:', req.file.path);
       } catch (err) {
-        console.error('❌ [uploadVideo] Error deleting temp video file:', err);
+        console.error('âŒ [uploadVideo] Error deleting temp video file:', err);
       }
     }
     
     // Use detected duration or fallback to 0
     const processedDuration = detectedDuration || 0; // Store as seconds
-    console.log('[uploadVideo] final processed duration:', processedDuration, 'seconds');
     
     const video = await Video.create({ 
       title, 
@@ -410,19 +362,16 @@ exports.uploadVideo = async (req, res) => {
         bitrate: videoMetadata.bitrate
       })
     });
-    console.log('[uploadVideo] created video:', video._id, 'with duration:', video.duration, 'seconds');
     
     // Add video to course version
     courseVersion.videos.push(video._id);
     await courseVersion.save();
-    console.log(`📝 [uploadVideo] Added new video ${video._id} to courseVersion.videos. Current array length: ${courseVersion.videos.length}`);
     
     // CRITICAL FIX: Rebuild courseVersion.videos array from database to ensure ALL videos are included
     // This ensures that even if there was any issue with array maintenance, we have the correct list
     // IMPORTANT: Reload courseVersion from database first to get latest state, then query all videos
     const CourseVersionModel = require('../models/CourseVersion');
     const reloadedCourseVersion = await CourseVersionModel.findById(courseVersion._id);
-    console.log(`🔄 [uploadVideo] Reloaded courseVersion from DB. Videos array length: ${reloadedCourseVersion.videos.length}`);
     
     // Query ALL videos for this version from database (source of truth)
     const allVideosInVersion = await Video.find({ 
@@ -431,15 +380,10 @@ exports.uploadVideo = async (req, res) => {
       status: { $ne: 'deleted' }
     });
     
-    console.log(`🔍 [uploadVideo] Querying videos for courseId: ${courseId.toString()}, version: ${versionNumber}`);
-    console.log(`🔍 [uploadVideo] Found ${allVideosInVersion.length} videos in database for version v${versionNumber}:`, 
-      allVideosInVersion.map(v => ({ id: v._id.toString(), title: v.title, version: v.courseVersion }))
-    );
-    
     // Verify we have all expected videos
     const expectedVideoCount = reloadedCourseVersion.videos.length;
     if (allVideosInVersion.length !== expectedVideoCount) {
-      console.warn(`⚠️ [uploadVideo] Mismatch! courseVersion.videos has ${expectedVideoCount} IDs, but database query found ${allVideosInVersion.length} videos`);
+      console.warn(`âš ï¸ [uploadVideo] Mismatch! courseVersion.videos has ${expectedVideoCount} IDs, but database query found ${allVideosInVersion.length} videos`);
       console.warn(`   courseVersion.videos IDs:`, reloadedCourseVersion.videos.map(id => id.toString()));
       console.warn(`   Database video IDs:`, allVideosInVersion.map(v => v._id.toString()));
     }
@@ -451,8 +395,6 @@ exports.uploadVideo = async (req, res) => {
     // Update our local reference
     courseVersion = reloadedCourseVersion;
     
-    console.log(`✅ [uploadVideo] Rebuilt courseVersion.videos with ${allVideosInVersion.length} videos from version v${versionNumber}`);
-    console.log(`✅ [uploadVideo] Final video IDs in courseVersion:`, courseVersion.videos.map(id => id.toString()));
     
     // Update course.videos to include all videos from the current version
     if (course.currentVersion === versionNumber) {
@@ -461,7 +403,6 @@ exports.uploadVideo = async (req, res) => {
       course.lastModifiedBy = adminEmail;
       await course.save();
       
-      console.log(`✅ [uploadVideo] Updated course.videos with ${allVideosInVersion.length} videos from version v${versionNumber}`);
     }
 
     // Update version statistics
@@ -472,9 +413,8 @@ exports.uploadVideo = async (req, res) => {
       try {
         const backgroundProcessor = require('../utils/backgroundDurationProcessor');
         backgroundProcessor.queueVideoForProcessing(video._id);
-        console.log(`📋 [uploadVideo] Queued video ${video._id} for background duration detection`);
       } catch (error) {
-        console.error(`❌ [uploadVideo] Failed to queue for background processing:`, error);
+        console.error(`âŒ [uploadVideo] Failed to queue for background processing:`, error);
       }
     }
     
@@ -508,9 +448,8 @@ exports.uploadVideo = async (req, res) => {
     if (req.file && req.file.path) {
       try {
         require('fs').unlinkSync(req.file.path);
-        console.log('🧹 [uploadVideo] Temporary file cleaned up on error:', req.file.path);
       } catch (error) {
-        console.error('❌ [uploadVideo] Error deleting temp video file:', error);
+        console.error('âŒ [uploadVideo] Error deleting temp video file:', error);
       }
     }
     
@@ -528,7 +467,6 @@ exports.uploadVideo = async (req, res) => {
  */
 exports.updateVideo = async (req, res) => {
   try {
-    console.log('[updateVideo] videoId:', req.params.videoId, 'file:', req.file?.originalname);
     const video = await Video.findById(req.params.videoId);
     if (!video) return res.status(404).json({ message: 'Video not found' });
     
@@ -592,7 +530,6 @@ exports.updateVideo = async (req, res) => {
         // If it's already a number, use it directly
         video.duration = req.body.duration;
       }
-      console.log(`✅ [updateVideo] Duration updated to: ${video.duration} seconds`);
     }
     
     // If a new file is uploaded, update file metadata (but not duration - must be provided manually)
@@ -604,7 +541,6 @@ exports.updateVideo = async (req, res) => {
       // Optionally detect other metadata (width, height, fps, etc.) but not duration
       // Duration must be provided manually via req.body.duration
       try {
-        console.log('🎬 [updateVideo] Detecting video metadata (excluding duration)...');
         const videoMetadata = await getVideoMetadata(req.file);
         
         // Update additional metadata (but not duration)
@@ -614,9 +550,8 @@ exports.updateVideo = async (req, res) => {
         video.videoCodec = videoMetadata.videoCodec;
         video.audioCodec = videoMetadata.audioCodec;
         video.bitrate = videoMetadata.bitrate;
-        console.log(`✅ [updateVideo] Video metadata updated (duration not auto-detected)`);
       } catch (metadataError) {
-        console.error(`❌ [updateVideo] Metadata detection failed:`, metadataError);
+        console.error(`âŒ [updateVideo] Metadata detection failed:`, metadataError);
         // Continue without metadata if detection fails
       }
     }
@@ -631,11 +566,10 @@ exports.updateVideo = async (req, res) => {
         const course = await Course.findById(video.courseId);
         const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
         
-        console.log('📢 [updateVideo] Emitting VIDEO_UPDATED event to connected users');
         socketService.notifyVideoUpdate(video, courseTitle);
       }
     } catch (socketError) {
-      console.warn('⚠️ [updateVideo] Failed to emit Socket.IO update:', socketError);
+      console.warn('âš ï¸ [updateVideo] Failed to emit Socket.IO update:', socketError);
     }
     
     res.json({
@@ -657,14 +591,9 @@ exports.updateVideo = async (req, res) => {
  */
 exports.deleteVideo = async (req, res) => {
   try {
-    console.log('[deleteVideo] videoId:', req.params.videoId);
     const video = await Video.findById(req.params.videoId);
     if (!video) return res.status(404).json({ message: 'Video not found' });
     
-    console.log(`🗑️ [deleteVideo] Starting deletion of video: ${video.title}`);
-    console.log(`   - S3 Key: ${video.s3Key}`);
-    console.log(`   - Course ID: ${video.courseId}`);
-    console.log(`   - Version: ${video.courseVersion}`);
     
     // CRITICAL: DO NOT delete the file from S3!
     // The file must remain in S3 so that students who purchased earlier versions
@@ -676,7 +605,6 @@ exports.deleteVideo = async (req, res) => {
     //
     // If the video is in an older version, we should not delete it at all.
     
-    console.log(`🔒 [deleteVideo] S3 file will be preserved for students with earlier versions`);
     
     // Get course and course version
     const course = await Course.findById(video.courseId);
@@ -693,7 +621,6 @@ exports.deleteVideo = async (req, res) => {
     });
     
     if (!courseVersion) {
-      console.log(`⚠️ [deleteVideo] CourseVersion not found for version ${video.courseVersion}, proceeding with simple deletion`);
       // If CourseVersion doesn't exist, just remove from course and mark as deleted
       if (Array.isArray(course.videos)) {
         course.videos = course.videos.filter(vid => vid.toString() !== video._id.toString());
@@ -731,7 +658,6 @@ exports.deleteVideo = async (req, res) => {
         
         if (isInitialUpload) {
           // Initial upload: Just remove from version 1, don't create new version
-          console.log(`📝 [deleteVideo] Initial upload mode: Removing video from version 1 (no enrollments yet)`);
           
           // Remove from course's videos array
           if (Array.isArray(course.videos)) {
@@ -751,9 +677,8 @@ exports.deleteVideo = async (req, res) => {
             await courseVersion.save();
             try {
               await courseVersion.updateStatistics();
-              console.log(`✅ [deleteVideo] Video removed from CourseVersion v${video.courseVersion}`);
             } catch (statsError) {
-              console.error(`⚠️ [deleteVideo] Error updating statistics:`, statsError);
+              console.error(`âš ï¸ [deleteVideo] Error updating statistics:`, statsError);
               // Continue even if statistics update fails
             }
           }
@@ -761,10 +686,8 @@ exports.deleteVideo = async (req, res) => {
           // Mark video as deleted so it doesn't appear in queries, but keep the database record and S3 file for potential restoration
           video.status = 'deleted';
           await video.save();
-          console.log(`✅ [deleteVideo] Video marked as deleted (status: 'deleted')`);
           
           // DO NOT delete from database or S3 - preserve for potential restoration
-          console.log(`🔒 [deleteVideo] Video database record and S3 file preserved for potential restoration`);
           return res.json({
             success: true,
             message: 'Video removed from version 1 during initial upload. File preserved.',
@@ -777,7 +700,6 @@ exports.deleteVideo = async (req, res) => {
         }
         
         // Course has enrollments: Create new version without this video
-        console.log(`🔄 [deleteVideo] Deleting video from current version, creating new version (course has ${course.enrolledStudents.length} enrollments)...`);
         
         // Get the latest version to determine next version number
         const latestVersion = await CourseVersion.findOne({ 
@@ -818,7 +740,6 @@ exports.deleteVideo = async (req, res) => {
           
           // Copy remaining videos to the new version FIRST
           if (remainingVideos.length > 0) {
-            console.log(`🎬 [deleteVideo] Copying ${remainingVideos.length} videos to new version v${newVersionNumber}...`);
             const videoCopyPromises = remainingVideos.map(v => {
               return Video.create({
                 title: v.title,
@@ -840,7 +761,6 @@ exports.deleteVideo = async (req, res) => {
             // Update the new version's videos array with the copied video IDs
             newVersion.videos = copiedVideos.map(v => v._id);
             await newVersion.save();
-            console.log(`✅ [deleteVideo] Copied ${remainingVideos.length} videos to version v${newVersionNumber}`);
           } else {
             await newVersion.save();
           }
@@ -854,7 +774,6 @@ exports.deleteVideo = async (req, res) => {
           });
           
           if (existingMaterials.length > 0) {
-            console.log(`📦 [deleteVideo] Copying ${existingMaterials.length} materials to new version v${newVersionNumber}...`);
             const materialUpdatePromises = existingMaterials.map(material => {
               return Material.create({
                 title: material.title,
@@ -875,17 +794,14 @@ exports.deleteVideo = async (req, res) => {
             // Update the new version's materials array with the copied material IDs
             newVersion.materials = copiedMaterials.map(m => m._id);
             await newVersion.save();
-            console.log(`✅ [deleteVideo] Copied ${copiedMaterials.length} materials to version v${newVersionNumber}`);
           } else {
             newVersion.materials = [];
             await newVersion.save();
-            console.log(`📝 [deleteVideo] No materials to copy to version v${newVersionNumber}`);
           }
           
           // Update statistics for the new version
           // Ensure all videos are saved before calculating statistics
           await newVersion.updateStatistics();
-          console.log(`📊 [deleteVideo] Statistics updated for version v${newVersionNumber}`);
           
           // Update course to point to new version
           course.currentVersion = newVersionNumber;
@@ -903,12 +819,10 @@ exports.deleteVideo = async (req, res) => {
           targetVersion = newVersion;
           targetVersionNumber = newVersionNumber;
           
-          console.log(`✅ [deleteVideo] Created new version v${newVersionNumber} and set as current`);
           // CRITICAL: DO NOT delete the video from database or S3!
           // The video file must remain in S3 so that students who purchased earlier versions
           // can still access it. We've created a new version without it, but the old version
           // still has the reference, so students with access to that version can still access the file.
-          console.log(`🔒 [deleteVideo] Video database record and S3 file preserved for students with earlier versions`);
           return res.json({
             success: true,
             message: 'Video removed from current version. File preserved for students with earlier versions.',
@@ -923,8 +837,6 @@ exports.deleteVideo = async (req, res) => {
         // Video is in an older version - DO NOT DELETE
         // Students with access to that version need this video
         const currentVersion = course.currentVersion || course.version || 1;
-        console.log(`⚠️ [deleteVideo] Video is in version ${video.courseVersion}, but current version is ${currentVersion}`);
-        console.log(`   Keeping video for students who purchased version ${video.courseVersion}`);
         return res.json({
           success: true,
           message: 'Video is in an older version and cannot be deleted. Students with access to that version need this video.',
@@ -939,7 +851,7 @@ exports.deleteVideo = async (req, res) => {
     
     // If we reach here, something went wrong - video should have been handled above
     // Return an error to prevent accidental deletion
-    console.error(`⚠️ [deleteVideo] Video deletion reached unexpected code path. Preserving video.`);
+    console.error(`âš ï¸ [deleteVideo] Video deletion reached unexpected code path. Preserving video.`);
     return res.status(400).json({
       success: false,
       message: 'Video deletion could not be processed. Video preserved for safety.',
@@ -966,7 +878,6 @@ exports.getVideoById = async (req, res) => {
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const isAdmin = req.user?.role === 'admin';
     
-    console.log('[getVideoById] videoId:', videoId, 'type:', typeof videoId);
     
     // Validate videoId parameter
     if (!videoId || typeof videoId !== 'string' || videoId === '[object Object]') {
@@ -1022,7 +933,6 @@ exports.getVideoById = async (req, res) => {
     try {
       if (video.s3Key) {
         // Generating presigned URL for S3 key
-        console.log('🔗 [SERVER] Video MIME type:', video.mimeType || 'not set');
         
         // Use shorter expiration time for enhanced security
         const expirationTime = 1800; // 30 minutes instead of 1 hour
@@ -1035,10 +945,9 @@ exports.getVideoById = async (req, res) => {
           // Failed to generate presigned URL
         }
       } else {
-        console.log('⚠️  [SERVER] No S3 key found for video:', video._id);
       }
     } catch (error) {
-      console.error('💥 [SERVER] Error generating signed video URL:', error);
+      console.error('ðŸ’¥ [SERVER] Error generating signed video URL:', error);
       videoUrl = null;
     }
 
@@ -1064,7 +973,7 @@ exports.getVideoById = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get video by ID error:', error);
+    console.error('âŒ Get video by ID error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch video',
@@ -1083,25 +992,11 @@ exports.getVideosByCourseVersion = async (req, res) => {
     const isAdmin = req.user?.role === 'admin';
     const isPublicUser = !req.user; // No user means public access
     
-    console.log(`🔧 [getVideosByCourseVersion] Request details:`, {
-      courseId,
-      version,
-      userId: userId || 'public',
-      isAdmin,
-      isPublicUser,
-      hasUser: !!req.user,
-      userRole: req.user?.role
-    });
-    
-    console.log(`🔧 [getVideosByCourseVersion] courseId: ${courseId}, version: ${version}, userId: ${userId || 'public'}, isAdmin: ${isAdmin}`);
-    
     // Get all videos for the course version using the static method
     const videos = await Video.getByCourseVersion(courseId, parseInt(version));
 
-    console.log(`📊 Found ${videos.length} videos for course ${courseId}, version ${version}`);
     
     if (!videos || videos.length === 0) {
-      console.log('⚠️ No videos found for this course version');
       return res.json({
         success: true,
         data: {
@@ -1115,11 +1010,9 @@ exports.getVideosByCourseVersion = async (req, res) => {
 
     // Check if there are any free preview videos
     const hasFreePreviews = videos.some(video => video.isFreePreview);
-    console.log(`📊 Free preview videos: ${videos.filter(v => v.isFreePreview).length}/${videos.length}`);
     
     // Log video details for debugging
     videos.forEach((video, index) => {
-      console.log(`   Video ${index + 1}: ${video.title} (Free Preview: ${video.isFreePreview})`);
     });
     
     // For public users, we need to handle access control differently
@@ -1139,10 +1032,9 @@ exports.getVideosByCourseVersion = async (req, res) => {
           if (isFreePreview) {
             try {
               // Generating presigned URL for free preview
-              console.log(`🔧 [getVideosByCourseVersion] Video MIME type: ${video.mimeType || 'not set'}`);
               presignedUrl = await getSignedUrlForFile(video.s3Key, 3600, video.mimeType);
             } catch (error) {
-              console.error(`❌ Error getting presigned URL for video ${video._id}:`, error);
+              console.error(`âŒ Error getting presigned URL for video ${video._id}:`, error);
             }
           }
           
@@ -1176,50 +1068,20 @@ exports.getVideosByCourseVersion = async (req, res) => {
       );
       userHasPurchased = isAdmin || await require('../utils/purchaseUtils').userHasPurchased(userId, courseId);
       
-      console.log(`🔧 [getVideosByCourseVersion] Purchase verification:`, {
-        userId,
-        courseId,
-        isAdmin,
-        userHasPurchased,
-        userRole: req.user?.role,
-        userEmail: req.user?.email
-      });
-      
-      // Debug: Check user's purchased courses directly
-      if (userId) {
-        const user = await require('../models/User').findById(userId);
-        console.log(`🔧 [getVideosByCourseVersion] User purchased courses:`, {
-          userId,
-          purchasedCourses: user?.purchasedCourses || [],
-          purchasedCoursesLength: user?.purchasedCourses?.length || 0,
-          courseIdInPurchased: user?.purchasedCourses?.includes(courseId) || false
-        });
-      }
-      
       // Generate presigned URLs for videos that the user has access to
       videosWithAccess = await Promise.all(videosWithAccess.map(async (video) => {
         const videoObj = { ...video };
-        
-        console.log(`🔧 [getVideosByCourseVersion] Processing video "${video.title}":`, {
-          videoId: video._id,
-          hasAccess: video.hasAccess,
-          isLocked: video.isLocked,
-          lockReason: video.lockReason,
-          hasS3Key: !!video.s3Key,
-          isFreePreview: video.isFreePreview
-        });
         
         // Generate presigned URL if user has access to this video
         if (video.hasAccess && video.s3Key) {
           try {
             // Generating presigned URL for video
-            console.log(`🔧 [getVideosByCourseVersion] Video MIME type: ${video.mimeType || 'not set'}`);
             const presignedUrl = await getSignedUrlForFile(video.s3Key, 3600, video.mimeType);
             videoObj.videoUrl = presignedUrl;
             videoObj.presignedUrl = presignedUrl; // Keep both for backward compatibility
             // Successfully generated URL for video
           } catch (error) {
-            console.error(`❌ Error getting presigned URL for video ${video._id}:`, error);
+            console.error(`âŒ Error getting presigned URL for video ${video._id}:`, error);
             videoObj.videoUrl = null;
             videoObj.presignedUrl = null;
           }
@@ -1243,7 +1105,7 @@ exports.getVideosByCourseVersion = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get videos by course version error:', error);
+    console.error('âŒ Get videos by course version error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch videos',
@@ -1261,7 +1123,6 @@ exports.streamVideo = async (req, res) => {
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const isAdmin = req.user?.role === 'admin';
     
-    console.log('[streamVideo] videoId:', videoId, 'user:', userId);
     
     const video = await Video.findById(videoId);
     if (!video) return res.status(404).json({ message: 'Video not found' });
@@ -1323,11 +1184,10 @@ exports.toggleFreePreview = async (req, res) => {
         const course = await Course.findById(video.courseId);
         const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
         
-        console.log('📢 [toggleFreePreview] Emitting VIDEO_UPDATED event to connected users');
         socketService.notifyVideoUpdate(video, courseTitle);
       }
     } catch (socketError) {
-      console.warn('⚠️ [toggleFreePreview] Failed to emit Socket.IO update:', socketError);
+      console.warn('âš ï¸ [toggleFreePreview] Failed to emit Socket.IO update:', socketError);
     }
     
     res.json({
@@ -1342,7 +1202,7 @@ exports.toggleFreePreview = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Toggle free preview error:', error);
+    console.error('âŒ Toggle free preview error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update free preview status',
@@ -1403,7 +1263,7 @@ exports.restoreVideo = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Restore video error:', error);
+    console.error('âŒ Restore video error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to restore video',
@@ -1461,7 +1321,7 @@ exports.getVideoStatistics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get video statistics error:', error);
+    console.error('âŒ Get video statistics error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get video statistics',

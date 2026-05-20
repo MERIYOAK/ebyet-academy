@@ -1,4 +1,4 @@
-const Course = require('../models/Course');
+﻿const Course = require('../models/Course');
 const User = require('../models/User');
 const Video = require('../models/Video');
 
@@ -73,7 +73,7 @@ const calculateTotalDuration = async (videoIds) => {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
   } catch (error) {
-    console.error('❌ [calculateTotalDuration] Error:', error);
+    console.error('âŒ [calculateTotalDuration] Error:', error);
     return '0:00';
   }
 };
@@ -98,16 +98,13 @@ exports.getDashboard = async (req, res) => {
     
     // Return simplified course data with calculated duration
     // Filter out inactive and archived courses - only show active courses
-    console.log('🔍 Dashboard filtering - Total purchased courses:', user.purchasedCourses.length);
     user.purchasedCourses.forEach((course, index) => {
-      console.log(`   ${index + 1}. "${course.title}" - Status: "${course.status}", Public: ${course.isPublic}`);
     });
     
     const activeCourses = user.purchasedCourses.filter(course => 
       course.status === 'active' && course.isPublic !== false
     );
     
-    console.log('🔍 Dashboard filtering - Active courses after filter:', activeCourses.length);
     
     const courses = await Promise.all(activeCourses.map(async (course) => {
       const totalDuration = await calculateTotalDuration(course.videos);
@@ -158,7 +155,7 @@ exports.getDashboard = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ [Progress Dashboard] Error:', error);
+    console.error('âŒ [Progress Dashboard] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch dashboard data',
@@ -213,7 +210,7 @@ exports.getCourseProgress = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [Progress] getCourseProgress error:', error);
+    console.error('âŒ [Progress] getCourseProgress error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch course progress',
@@ -311,6 +308,7 @@ exports.updateProgress = async (req, res) => {
 
     enrollment.progress = computeOverallProgress(course, enrollment).totalProgress;
 
+    course.markModified('enrolledStudents');
     await course.save();
 
     return res.json({
@@ -322,7 +320,7 @@ exports.updateProgress = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [Progress] updateProgress error:', error);
+    console.error('âŒ [Progress] updateProgress error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update progress',
@@ -366,7 +364,7 @@ exports.getResumePosition = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [Progress] getResumePosition error:', error);
+    console.error('âŒ [Progress] getResumePosition error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to get resume position',
@@ -443,6 +441,8 @@ exports.completeVideo = async (req, res) => {
     enrollment.lastAccessedAt = new Date();
     enrollment.progress = computeOverallProgress(course, enrollment).totalProgress;
 
+    // Mongoose doesn't auto-detect mutations on nested subdocuments found via Array.find()
+    course.markModified('enrolledStudents');
     await course.save();
 
     return res.json({
@@ -453,7 +453,7 @@ exports.completeVideo = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [Progress] completeVideo error:', error);
+    console.error('âŒ [Progress] completeVideo error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to complete video',
@@ -500,7 +500,7 @@ exports.getNextVideo = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [Progress] getNextVideo error:', error);
+    console.error('âŒ [Progress] getNextVideo error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to get next video',

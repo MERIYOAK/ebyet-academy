@@ -10,14 +10,14 @@ interface HLSVideoPlayerProps {
   onPlay?: () => void;
   onPause?: () => void;
   onEnded?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: MediaError | null) => void;
   onReady?: () => void;
   playing?: boolean;
   playbackRate?: number;
   className?: string;
   drmEnabled?: boolean;
   watermarkData?: string;
-  forensicWatermark?: any;
+  forensicWatermark?: { hash: string };
 }
 
 const HLSVideoPlayer: React.FC<HLSVideoPlayerProps> = ({

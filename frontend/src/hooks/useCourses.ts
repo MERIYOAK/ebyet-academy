@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult, useQueryClient } from '@tanstack/react-query';
 import { buildApiUrl } from '../config/environment';
-import { queryKeys, cachePersister } from '../lib/queryClient';
+import { queryKeys } from '../lib/queryClient';
 
 export interface ApiCourse {
   _id: string;
@@ -86,7 +86,7 @@ export const useCourses = (filters: CourseFilters = {}): UseQueryResult<CoursesR
       console.log('🔍 User courses API response:', data);
       console.log('🔍 User courses returned:', data.data?.courses?.length || data.courses?.length || 0);
       if (data.data?.courses) {
-        data.data.courses.forEach((course: any, index: number) => {
+        data.data.courses.forEach((course: { title?: string; status?: string }, index: number) => {
           console.log(`   ${index + 1}. "${course.title}" - Status: "${course.status}"`);
         });
       }
@@ -96,11 +96,6 @@ export const useCourses = (filters: CourseFilters = {}): UseQueryResult<CoursesR
       if (Array.isArray(data)) {
         result = { courses: data };
       } else if (data.data && Array.isArray(data.data.courses)) {
-        result = {
-          courses: data.data.courses,
-          pagination: data.data.pagination
-        };
-      } else if (data.success && data.data && Array.isArray(data.data.courses)) {
         result = {
           courses: data.data.courses,
           pagination: data.data.pagination
@@ -123,7 +118,7 @@ export const useCourses = (filters: CourseFilters = {}): UseQueryResult<CoursesR
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     // Retry with exponential backoff
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }
@@ -162,8 +157,6 @@ export const useFeaturedCourses = (): UseQueryResult<ApiCourse[]> => {
         coursesData = data;
       } else if (data.data && Array.isArray(data.data.courses)) {
         coursesData = data.data.courses;
-      } else if (data.success && data.data && Array.isArray(data.data.courses)) {
-        coursesData = data.data.courses;
       }
       
       // API already returns max 3, but ensure we don't exceed 3
@@ -183,7 +176,7 @@ export const useFeaturedCourses = (): UseQueryResult<ApiCourse[]> => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     // Retry with exponential backoff
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }
@@ -234,7 +227,7 @@ export const useCourse = (courseId: string): UseQueryResult<ApiCourse> => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     // Retry with exponential backoff
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }

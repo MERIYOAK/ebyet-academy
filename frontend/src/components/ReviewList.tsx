@@ -37,7 +37,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ reviews, stats, loading }) => {
   console.log('ReviewList - Total reviews:', stats?.totalReviews);
   
   // Helper function to get display text - for review content, keep original language (no translation)
-  const getDisplayText = (text: any): string => {
+  const getDisplayText = (text: string | { en: string } | null | undefined): string => {
     if (!text) return '';
     // For review comments and replies, always return as-is (original language)
     if (typeof text === 'string') return text;

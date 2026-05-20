@@ -4,7 +4,7 @@ import { ChevronDown, Globe } from 'lucide-react';
 import { changeLanguage, getCurrentLanguage, getLanguageDisplayName } from '../i18n';
 
 const LanguageToggler: React.FC = () => {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const currentLanguage = getCurrentLanguage();
 
@@ -23,7 +23,6 @@ const LanguageToggler: React.FC = () => {
         onClick={toggleDropdown}
         className="flex items-center space-x-1 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         aria-label={t('language.toggle_language')}
-        aria-expanded={isOpen}
         aria-haspopup="true"
       >
         <Globe className="w-4 h-4" />

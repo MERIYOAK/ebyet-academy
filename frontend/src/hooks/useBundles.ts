@@ -1,6 +1,5 @@
 import { useQuery, UseQueryResult, useQueryClient } from '@tanstack/react-query';
 import { buildApiUrl } from '../config/environment';
-import { queryKeys, cachePersister } from '../lib/queryClient';
 
 export interface ApiBundle {
   _id: string;
@@ -107,7 +106,7 @@ export const useBundles = (filters: BundleFilters = {}): UseQueryResult<BundlesR
     gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }
@@ -159,7 +158,7 @@ export const useFeaturedBundles = (): UseQueryResult<ApiBundle[]> => {
     gcTime: 45 * 60 * 1000, // 45 minutes
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }
@@ -181,8 +180,8 @@ export const useBundle = (bundleId: string): UseQueryResult<ApiBundle & { userHa
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(buildApiUrl(`/api/bundles/${bundleId}`), { headers });
-      
+      const response = await fetch(buildApiUrl(`/api/bundles/${bundleId}`), { headers, cache: 'no-store' });
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Bundle not found');
@@ -215,7 +214,7 @@ export const useBundle = (bundleId: string): UseQueryResult<ApiBundle & { userHa
     gcTime: 60 * 60 * 1000, // 1 hour
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }
@@ -283,7 +282,7 @@ export const useMyBundles = (filters: BundleFilters = {}): UseQueryResult<Bundle
     gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    retry: (failureCount, error) => {
+    retry: (failureCount) => {
       if (failureCount < 3) {
         return true;
       }

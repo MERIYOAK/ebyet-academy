@@ -40,7 +40,7 @@ interface Course {
 
 // Small helper to timeout fetches to avoid infinite pending state
 const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit & { timeoutMs?: number } = {}) => {
-  const { timeoutMs = 60000, ...rest } = init as any;
+  const { timeoutMs = 60000, ...rest } = init;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -66,9 +66,6 @@ const AdminUploadPage = () => {
   });
   
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState<string>('');
-  const [uploadPercent, setUploadPercent] = useState<number>(0);
-  const [uploadDetail, setUploadDetail] = useState<string>('');
   const [tagsInput, setTagsInput] = useState<string>(''); // Separate state for tags input
   const [error, setError] = useState<string | null>(null); // New state for error messages
   const [videoTitleErrors, setVideoTitleErrors] = useState<{ [key: string]: { en?: string; tg?: string } }>({});
@@ -460,11 +457,12 @@ const AdminUploadPage = () => {
                 console.debug('[UI] video upload progress:', { loaded, total, currentPercent: Math.round(((uploadedBytesCompleted + loaded) / totalBytesToUpload) * 100) });
               }
             });
-          } catch (uploadError: any) {
-            console.error(`Video upload failed for ${video.file.name}:`, uploadError);
-            
+          } catch (uploadError) {
+            const err = uploadError instanceof Error ? uploadError : new Error(String(uploadError));
+            console.error(`Video upload failed for ${video.file.name}:`, err);
+
             // If upload failed due to expired URL, try to refresh and retry once more
-            if (uploadError.message === 'PRESIGNED_URL_EXPIRED' && retryCount <= maxRetries) {
+            if (err.message === 'PRESIGNED_URL_EXPIRED' && retryCount <= maxRetries) {
               setProgressOverlay(prev => ({
                 ...prev,
                 message: `Upload URL expired, refreshing for video ${i + 1}/${course.videos.length}...`
@@ -650,8 +648,8 @@ const AdminUploadPage = () => {
       
       try {
         window.dispatchEvent(new Event('course:created'));
-      } catch {}
-      
+      } catch { /* non-critical event dispatch — ignore failures */ }
+
       // Reset form
       setCourse({
         title: { en: '', tg: '' },
@@ -716,6 +714,7 @@ const AdminUploadPage = () => {
                   <div className="ml-auto pl-3">
                     <button
                       onClick={() => setError(null)}
+                      aria-label="Dismiss error"
                       className="inline-flex text-orange-400 hover:text-orange-300"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -792,7 +791,7 @@ const AdminUploadPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Price (USD) *
+                    Price (CHF) *
                   </label>
                   <input
                     type="number"
@@ -813,6 +812,7 @@ const AdminUploadPage = () => {
                   <select
                     value={course.category}
                     onChange={(e) => setCourse(prev => ({ ...prev, category: e.target.value }))}
+                    aria-label="Course category"
                     className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200"
                     required
                   >
@@ -834,6 +834,7 @@ const AdminUploadPage = () => {
                   <select
                     value={course.level}
                     onChange={(e) => setCourse(prev => ({ ...prev, level: e.target.value }))}
+                    aria-label="Course level"
                     className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                     required
                   >
@@ -1031,6 +1032,7 @@ const AdminUploadPage = () => {
                     <button
                       type="button"
                       onClick={() => removeVideo(video.id)}
+                      aria-label="Remove video"
                       className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
                     >
                       <X className="h-5 w-5" />
@@ -1232,6 +1234,7 @@ const AdminUploadPage = () => {
                     <button
                       type="button"
                       onClick={() => removeMaterial(material.id)}
+                      aria-label="Remove material"
                       className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
                     >
                       <X className="h-5 w-5" />
@@ -1330,6 +1333,7 @@ const AdminUploadPage = () => {
                       type="number"
                       min="1"
                       value={material.order}
+                      aria-label="Material display order"
                       onChange={(e) => updateMaterial(material.id, { order: parseInt(e.target.value) || 1 })}
                       className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 placeholder-gray-400"
                     />

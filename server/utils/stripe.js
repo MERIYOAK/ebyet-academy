@@ -1,4 +1,4 @@
-let stripe, createCheckoutSession, verifyWebhook;
+﻿let stripe, createCheckoutSession, verifyWebhook;
 const { getEnglishText } = require('./bilingualHelper');
 
 if (process.env.STRIPE_SECRET_KEY) {
@@ -7,19 +7,14 @@ if (process.env.STRIPE_SECRET_KEY) {
   
   // Validate and log Stripe key type
   if (secretKey.startsWith('sk_test_')) {
-    console.log('✅ Stripe configured in TEST MODE');
   } else if (secretKey.startsWith('sk_live_')) {
-    console.log('⚠️  Stripe configured in LIVE MODE - Real charges will occur!');
   } else {
-    console.log('⚠️  Stripe key format unrecognized - please verify your key');
   }
   
   stripe = Stripe(secretKey);
 
   createCheckoutSession = async ({ user, course, bundle, successUrl, cancelUrl }) => {
     try {
-      console.log('🔧 Creating Stripe checkout session...');
-      console.log(`   - User: ${user.email}`);
       
       // Get user ID from token (handle both userId and _id formats)
       const userId = user.userId || user._id;
@@ -31,7 +26,6 @@ if (process.env.STRIPE_SECRET_KEY) {
       let productName, productDescription, productImages, unitAmount, metadata;
 
       if (bundle) {
-        console.log(`   - Bundle: ${getEnglishText(bundle.title)} ($${bundle.price})`);
         productName = getEnglishText(bundle.title);
         productDescription = getEnglishText(bundle.description) || 'Course bundle';
         productImages = bundle.thumbnailURL ? [bundle.thumbnailURL] : [];
@@ -43,7 +37,6 @@ if (process.env.STRIPE_SECRET_KEY) {
           type: 'bundle'
         };
       } else if (course) {
-        console.log(`   - Course: ${getEnglishText(course.title)} ($${course.price})`);
         productName = getEnglishText(course.title);
         productDescription = getEnglishText(course.description) || 'Educational course';
         productImages = course.thumbnailURL ? [course.thumbnailURL] : [];
@@ -58,8 +51,6 @@ if (process.env.STRIPE_SECRET_KEY) {
         throw new Error('Either course or bundle is required');
       }
 
-      console.log(`   - Success URL: ${successUrl}`);
-      console.log(`   - Cancel URL: ${cancelUrl}`);
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -67,7 +58,7 @@ if (process.env.STRIPE_SECRET_KEY) {
         line_items: [
           {
             price_data: {
-              currency: 'usd',
+              currency: 'chf',
               product_data: {
                 name: productName,
                 description: productDescription,
@@ -88,13 +79,10 @@ if (process.env.STRIPE_SECRET_KEY) {
         customer_creation: 'always',
       });
 
-      console.log('✅ Stripe session created successfully');
-      console.log(`   - Session ID: ${session.id}`);
-      console.log(`   - Checkout URL: ${session.url}`);
 
       return session;
     } catch (error) {
-      console.error('❌ Error creating Stripe session:', error);
+      console.error('âŒ Error creating Stripe session:', error);
       throw error;
     }
   };
@@ -105,7 +93,6 @@ if (process.env.STRIPE_SECRET_KEY) {
       
       // In development mode, bypass signature verification
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 Development mode - bypassing signature verification');
         
         // Parse the body as JSON
         let eventData;
@@ -113,7 +100,6 @@ if (process.env.STRIPE_SECRET_KEY) {
           const body = req.body;
           if (Buffer.isBuffer(body)) {
             const bodyString = body.toString();
-            console.log('🔍 Parsed body string:', bodyString);
             eventData = JSON.parse(bodyString);
           } else if (typeof body === 'string') {
             eventData = JSON.parse(body);
@@ -123,16 +109,11 @@ if (process.env.STRIPE_SECRET_KEY) {
             throw new Error('Unknown body type: ' + typeof body);
           }
           
-          console.log('✅ Parsed webhook data:', eventData.type);
-          console.log('✅ Webhook metadata:', eventData.data?.object?.metadata);
           return eventData;
         } catch (parseError) {
-          console.log('⚠️  Could not parse webhook body:', parseError.message);
-          console.log('⚠️  Creating fallback event with actual request data');
           
           // Use the actual request body if available
           const actualBody = req.body;
-          console.log('🔍 Actual request body:', actualBody);
           
           // Create a fallback event for development
           return {
@@ -160,7 +141,6 @@ if (process.env.STRIPE_SECRET_KEY) {
         throw new Error('STRIPE_WEBHOOK_SECRET not configured');
       }
 
-      console.log('🔧 Verifying Stripe webhook signature...');
       
       try {
         // First attempt: Standard signature verification
@@ -170,14 +150,9 @@ if (process.env.STRIPE_SECRET_KEY) {
           process.env.STRIPE_WEBHOOK_SECRET
         );
         
-        console.log('✅ Webhook signature verified');
-        console.log(`   - Event type: ${event.type}`);
-        console.log(`   - Event ID: ${event.id}`);
         
         return event;
       } catch (signatureError) {
-        console.log('⚠️  Primary signature verification failed, attempting fallback...');
-        console.log(`   - Error: ${signatureError.message}`);
         
         // Fallback: Try to parse the body and validate it's a legitimate Stripe event
         try {
@@ -217,35 +192,28 @@ if (process.env.STRIPE_SECRET_KEY) {
           // Additional validation for checkout.session.completed
           if (eventData.type === 'checkout.session.completed') {
             const session = eventData.data.object;
-            if (!session.metadata || !session.metadata.userId || !session.metadata.courseId) {
+            if (!session.metadata || !session.metadata.userId || (!session.metadata.courseId && !session.metadata.bundleId)) {
               throw new Error('Missing required metadata in checkout session');
             }
           }
           
-          console.log('✅ Fallback webhook validation successful');
-          console.log(`   - Event type: ${eventData.type}`);
-          console.log(`   - Event ID: ${eventData.id}`);
-          console.log('⚠️  Note: Using fallback validation due to signature verification failure');
           
           return eventData;
         } catch (fallbackError) {
-          console.error('❌ Fallback validation also failed:', fallbackError.message);
+          console.error('âŒ Fallback validation also failed:', fallbackError.message);
           throw signatureError; // Re-throw the original signature error
         }
       }
     } catch (error) {
-      console.error('❌ Webhook signature verification failed:', error);
+      console.error('âŒ Webhook signature verification failed:', error);
       throw error;
     }
   };
 } else {
   // Development stub: no Stripe key present
-  console.log('⚠️  Stripe not configured - using development mode');
   stripe = null;
   
   createCheckoutSession = async ({ user, course, bundle, successUrl, cancelUrl }) => {
-    console.log('🔧 Creating development checkout session...');
-    console.log(`   - User: ${user.email}`);
     
     // Get user ID from token (handle both userId and _id formats)
     const userId = user.userId || user._id;
@@ -257,7 +225,6 @@ if (process.env.STRIPE_SECRET_KEY) {
     let metadata;
 
     if (bundle) {
-      console.log(`   - Bundle: ${bundle.title} ($${bundle.price})`);
       metadata = {
         userId: userId.toString(),
         bundleId: bundle._id.toString(),
@@ -265,7 +232,6 @@ if (process.env.STRIPE_SECRET_KEY) {
         type: 'bundle'
       };
     } else if (course) {
-      console.log(`   - Course: ${course.title} ($${course.price})`);
       metadata = {
         userId: userId.toString(),
         courseId: course._id.toString(),
@@ -283,27 +249,20 @@ if (process.env.STRIPE_SECRET_KEY) {
       metadata: metadata
     };
     
-    console.log('✅ Development session created');
-    console.log(`   - Session ID: ${session.id}`);
-    console.log(`   - Redirect URL: ${session.url}`);
     
     return session;
   };
   
   verifyWebhook = (req) => {
-    console.log('🔧 Development webhook verification (bypassing signature check)');
     
     // Try to parse the webhook body
     let eventData;
     try {
       // The body should be available from express.raw() middleware
       const body = req.body;
-      console.log('🔍 Webhook body type:', typeof body);
-      console.log('🔍 Webhook body length:', body ? body.length : 'No body');
       
       if (Buffer.isBuffer(body)) {
         const bodyString = body.toString();
-        console.log('🔍 Parsed body string:', bodyString);
         eventData = JSON.parse(bodyString);
       } else if (typeof body === 'string') {
         eventData = JSON.parse(body);
@@ -313,16 +272,11 @@ if (process.env.STRIPE_SECRET_KEY) {
         throw new Error('Unknown body type: ' + typeof body);
       }
       
-      console.log('✅ Parsed webhook data:', eventData.type);
-      console.log('✅ Webhook metadata:', eventData.data?.object?.metadata);
       return eventData;
     } catch (parseError) {
-      console.log('⚠️  Could not parse webhook body:', parseError.message);
-      console.log('⚠️  Creating fallback event with actual request data');
       
       // Use the actual request body if available
       const actualBody = req.body;
-      console.log('🔍 Actual request body:', actualBody);
       
       return {
         type: 'checkout.session.completed',

@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { buildApiUrl } from '../config/environment';
-import { queryKeys, cachePersister } from '../lib/queryClient';
+import { queryKeys } from '../lib/queryClient';
 
 export interface User {
   _id: string;
@@ -86,7 +86,7 @@ export const useUserProfile = (): UseQueryResult<UserProfile> => {
             const photoResult = await photoResponse.json();
             photoUrl = photoResult.data.photoUrl;
           }
-        } catch (photoError) {
+        } catch {
           console.log('Profile photo not available');
         }
       }
@@ -156,11 +156,11 @@ export const useUserDashboard = (): UseQueryResult<DashboardData> => {
 
       // Calculate dashboard statistics
       const totalCourses = courses.length;
-      const completedCourses = courses.filter(course => course.isCompleted || course.progress >= 90).length;
-      const inProgressCourses = courses.filter(course => course.progress > 0 && !(course.isCompleted || course.progress >= 90)).length;
-      const notStartedCourses = courses.filter(course => course.progress === 0).length;
-      const averageProgress = totalCourses > 0 
-        ? Math.round(courses.reduce((sum, course) => sum + course.progress, 0) / totalCourses)
+      const completedCourses = courses.filter((course: DashboardCourse) => course.isCompleted || course.progress >= 90).length;
+      const inProgressCourses = courses.filter((course: DashboardCourse) => course.progress > 0 && !(course.isCompleted || course.progress >= 90)).length;
+      const notStartedCourses = courses.filter((course: DashboardCourse) => course.progress === 0).length;
+      const averageProgress = totalCourses > 0
+        ? Math.round(courses.reduce((sum: number, course: DashboardCourse) => sum + course.progress, 0) / totalCourses)
         : 0;
 
       return {

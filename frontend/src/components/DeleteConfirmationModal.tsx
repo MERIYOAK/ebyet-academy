@@ -82,6 +82,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
             <button
               onClick={onClose}
               disabled={isLoading}
+              aria-label="Close"
               className="text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
             >
               <X className="h-5 w-5" />

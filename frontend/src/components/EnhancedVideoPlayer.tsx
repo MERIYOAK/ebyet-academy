@@ -23,7 +23,9 @@ interface EnhancedVideoPlayerProps {
   onControlsToggle?: (visible: boolean) => void;
   drmEnabled?: boolean;
   watermarkData?: string;
-  forensicWatermark?: any;
+  forensicWatermark?: { hash: string };
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
@@ -48,7 +50,9 @@ const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
   onControlsToggle,
   drmEnabled = true,
   watermarkData,
-  forensicWatermark
+  forensicWatermark,
+  onPrev,
+  onNext,
 }) => {
   // Use SecureVideoPlayer for enhanced security
   return (
@@ -75,6 +79,8 @@ const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
       drmEnabled={drmEnabled}
       watermarkData={watermarkData}
       forensicWatermark={forensicWatermark}
+      onPrev={onPrev}
+      onNext={onNext}
     />
   );
 };

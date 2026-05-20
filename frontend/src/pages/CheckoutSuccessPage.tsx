@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildApiUrl } from '../config/environment';
 import { getLocalizedText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
 
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Play, Download, BookOpen, ArrowRight, Loader, AlertCircle } from 'lucide-react';
@@ -12,6 +13,11 @@ interface CourseInfo {
   price: number;
   description: string | { en: string; tg: string };
   thumbnailURL?: string;
+}
+
+interface BundleInfo {
+  title?: string | { en: string; tg: string };
+  price?: number;
 }
 
 interface ReceiptInfo {
@@ -29,7 +35,7 @@ const CheckoutSuccessPage = () => {
   const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const [courseInfo, setCourseInfo] = useState<CourseInfo | null>(null);
-  const [bundleInfo, setBundleInfo] = useState<any | null>(null);
+  const [bundleInfo, setBundleInfo] = useState<BundleInfo | null>(null);
   const [receiptInfo, setReceiptInfo] = useState<ReceiptInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +43,10 @@ const CheckoutSuccessPage = () => {
   const [actualAmountPaid, setActualAmountPaid] = useState<number | null>(null);
   const [isWrongCourse, setIsWrongCourse] = useState(false);
   const [correctCourseTitle, setCorrectCourseTitle] = useState<string | null>(null);
-  const [firstVideoId, setFirstVideoId] = useState<string | null>(null);
-  const [paymentProcessing, setPaymentProcessing] = useState(true);
+  const [, setFirstVideoId] = useState<string | null>(null);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [verificationTimedOut, setVerificationTimedOut] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   const courseId = searchParams.get('courseId');
   const bundleId = searchParams.get('bundleId');
@@ -205,55 +213,31 @@ const CheckoutSuccessPage = () => {
               const errorText = await receiptResponse.text();
               console.log(`⚠️  Receipt not available yet (status: ${receiptResponse.status})`);
               console.log(`⚠️  Error response: ${errorText}`);
-              
-              // Set fallback receipt data using item info
-              if (item) {
-                setReceiptInfo({
-                  orderId: `#YTA-${Date.now().toString().slice(-6)}`,
-                  courseTitle: getLocalizedText(item.title, currentLanguage),
-                  amount: item.price,
-                  currency: 'USD',
-                  paymentDate: new Date().toISOString(),
-                  paymentMethod: 'Credit Card',
-                  userEmail: 'user@example.com',
-                  status: 'Completed'
-                });
-              }
             }
           } catch (receiptError) {
             console.error('❌ Error fetching receipt:', receiptError);
-            console.log('⚠️  Could not fetch receipt info (this is normal for development mode)');
-            // Set fallback receipt data using item info
-            if (item) {
-              setReceiptInfo({
-                orderId: `#YTA-${Date.now().toString().slice(-6)}`,
-                courseTitle: getLocalizedText(item.title, currentLanguage),
-                amount: item.price,
-                currency: 'USD',
-                paymentDate: new Date().toISOString(),
-                paymentMethod: 'Credit Card',
-                userEmail: 'user@example.com',
-                status: 'Completed'
-              });
-            }
+            console.log('⚠️  Could not fetch receipt info');
           }
                   } else {
             console.log('⚠️  No authentication token or ID found');
             console.log(`   - Token: ${token ? 'Present' : 'Missing'}`);
             console.log(`   - ID: ${effectiveId || 'Missing'}`);
-          
-          // Set fallback receipt data using item info
-          if (item) {
-            setReceiptInfo({
-              orderId: `#YTA-${Date.now().toString().slice(-6)}`,
-              courseTitle: getLocalizedText(item.title, currentLanguage),
-              amount: item.price,
-              currency: 'USD',
-              paymentDate: new Date().toISOString(),
-              paymentMethod: 'Credit Card',
-              userEmail: 'user@example.com',
-              status: 'Completed'
+        }
+
+        // Check immediately if payment is already confirmed (webhook may be fast)
+        if (token && effectiveId) {
+          try {
+            const purchaseCheckResponse = await fetch(buildApiUrl(`/api/payment/check-purchase/${effectiveId}`), {
+              headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (purchaseCheckResponse.ok) {
+              const purchaseCheckData = await purchaseCheckResponse.json();
+              if (purchaseCheckData.data?.hasPurchased) {
+                setPaymentVerified(true);
+              }
+            }
+          } catch {
+            // Retry loop will handle this
           }
         }
 
@@ -292,7 +276,7 @@ const CheckoutSuccessPage = () => {
           const purchaseData = await purchaseResponse.json();
           if (purchaseData.data.hasPurchased) {
             console.log(`✅ Payment has been processed - ${bundleId ? 'bundle' : 'course'} is now purchased`);
-            setPaymentProcessing(false);
+            setPaymentVerified(true);
             clearInterval(retryInterval);
             
             // Try to fetch receipt again
@@ -309,7 +293,7 @@ const CheckoutSuccessPage = () => {
                 setReceiptInfo(receiptData.receipt);
                 console.log('✅ Receipt info fetched after retry:', receiptData.receipt);
               }
-            } catch (receiptError) {
+            } catch {
               console.log('⚠️  Still could not fetch receipt info');
             }
             
@@ -327,13 +311,14 @@ const CheckoutSuccessPage = () => {
     // Stop retrying after 30 seconds
     setTimeout(() => {
       clearInterval(retryInterval);
+      setVerificationTimedOut(true);
       console.log('⏰ Stopped retrying payment status check');
     }, 30000);
 
     return () => {
       clearInterval(retryInterval);
     };
-  }, [effectiveCourseId, bundleId, currentLanguage]);
+  }, [effectiveCourseId, bundleId, currentLanguage, retryKey]);
 
   useEffect(() => {
     // Track successful purchase
@@ -430,16 +415,69 @@ const CheckoutSuccessPage = () => {
           <div className="text-red-600 dark:text-red-400 mb-6">
             <AlertCircle className="h-20 w-20 mx-auto" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('checkout_success.payment_successful')}</h2>
-          <p className="text-gray-700 dark:text-gray-300 mb-8">
-            {t('checkout_success.payment_processed_successfully')}
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('checkout_success.something_went_wrong', 'Something went wrong')}</h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-8">{error}</p>
           <Link
             to="/dashboard"
             className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20"
           >
             {t('checkout_success.go_to_dashboard')}
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment not yet confirmed — show verifying spinner
+  if (!paymentVerified && !verificationTimedOut) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <Loader className="h-16 w-16 text-cyan-600 dark:text-cyan-400 animate-spin mx-auto mb-6" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            {t('checkout_success.verifying_payment', 'Verifying your payment...')}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            {t('checkout_success.please_wait', 'Please wait while we confirm your payment with Stripe.')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Timed out without confirmation
+  if (verificationTimedOut && !paymentVerified) {
+    const buyAgainPath = bundleId ? `/bundles/${bundleId}` : `/course/${effectiveCourseId}`;
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-red-500 dark:text-red-400 mb-6">
+            <AlertCircle className="h-20 w-20 mx-auto" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            {t('checkout_success.payment_not_confirmed', 'Payment not confirmed')}
+          </h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            {t('checkout_success.payment_not_confirmed_description', 'We could not confirm your payment. You have not been charged.')}
+          </p>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 text-sm">
+            {t('checkout_success.try_again_or_contact', 'Please try purchasing again. If you believe this is a mistake, contact support.')}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to={buyAgainPath}
+              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg"
+            >
+              {t('checkout_success.try_again', 'Try purchasing again')}
+            </Link>
+            <button
+              type="button"
+              onClick={() => { setVerificationTimedOut(false); setPaymentVerified(false); setRetryKey(k => k + 1); }}
+              className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-8 py-3 rounded-xl font-semibold transition-all duration-200"
+            >
+              {t('checkout_success.check_again', 'Check again')}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -496,7 +534,7 @@ const CheckoutSuccessPage = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">{t('checkout_success.amount_paid')}</span>
                   <span className="font-semibold text-green-600 dark:text-green-400">
-                    ${actualAmountPaid || receiptInfo?.amount || (bundleId ? bundleInfo?.price : courseInfo?.price) || t('checkout_success.processing')}
+                    {formatCHF(actualAmountPaid || receiptInfo?.amount || (bundleId ? bundleInfo?.price : courseInfo?.price) || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -588,7 +626,8 @@ const CheckoutSuccessPage = () => {
                 {t('checkout_success.download_receipt_description')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <button 
+                <button
+                  type="button"
                   onClick={handleDownloadReceipt}
                   disabled={downloadingReceipt}
                   className="flex items-center justify-center space-x-2 border border-blue-300 dark:border-gray-600 hover:border-cyan-500 dark:hover:border-cyan-500 text-gray-700 dark:text-gray-300 hover:text-white bg-white dark:bg-gray-800 hover:bg-cyan-600 dark:hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"

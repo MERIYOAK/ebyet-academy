@@ -4,24 +4,29 @@
  */
 
 import { useEffect } from 'react';
+
+declare global {
+  interface Window {
+    CachePersistence?: {
+      startCacheMonitoring: () => (() => void) | undefined;
+      forceSaveAllCache: () => void;
+    };
+  }
+}
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from './ui/Toast';
 import deploymentNotificationService from '../services/deploymentNotificationService';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { queryClient, initializePersistentCache, saveCacheData } from '../lib/queryClient';
-import '../utils/cacheMigration';
-import '../utils/cacheTester';
-import '../utils/userCacheVerifier';
 import '../utils/cachePersistence';
-import '../utils/cacheInspector';
-import '../utils/cacheClearer';
 import '../i18n';
 import ScrollManager from './ScrollManager';
 import SessionMonitorWrapper from './SessionMonitorWrapper';
 import MetaTagsUpdater from './MetaTagsUpdater';
 import RateLimitOverlay from './RateLimitOverlay';
 import { useRateLimit } from '../hooks/useRateLimit';
+import { useSocketNotifications } from '../hooks/useSocketNotifications';
 import PaymentFailureHandler from './PaymentFailureHandler';
 // Import test utilities for development
 import '../utils/testDeploymentNotification';
@@ -71,6 +76,7 @@ import CompleteGoogleRegistrationPage from '../pages/CompleteGoogleRegistrationP
 
 function AppWithProviders() {
   const { rateLimit, dismissRateLimit } = useRateLimit();
+  useSocketNotifications();
 
   // Initialize deployment notification service
   useEffect(() => {
@@ -85,12 +91,12 @@ function AppWithProviders() {
     };
     
     // Start enhanced cache persistence monitoring
-    const stopCacheMonitoring = (window as any).CachePersistence?.startCacheMonitoring();
+    const stopCacheMonitoring = window.CachePersistence?.startCacheMonitoring();
     
     // Save cache data on page unload
     const handleBeforeUnload = () => {
       saveCacheData();
-      (window as any).CachePersistence?.forceSaveAllCache();
+      window.CachePersistence?.forceSaveAllCache();
     };
     
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -99,12 +105,13 @@ function AppWithProviders() {
       if (stopCacheMonitoring) stopCacheMonitoring();
       window.removeEventListener('beforeunload', handleBeforeUnload);
       saveCacheData(); // Final save on cleanup
-      (window as any).CachePersistence?.forceSaveAllCache();
+      window.CachePersistence?.forceSaveAllCache();
     };
   }, []);
 
   return (
     <Router>
+      <AdminAuthProvider>
       <MetaTagsUpdater />
       <SessionMonitorWrapper>
         <ScrollManager>
@@ -137,11 +144,7 @@ function AppWithProviders() {
             <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
             <Route path="/complete-google-registration" element={<CompleteGoogleRegistrationPage />} />
 
-            <Route path="/admin" element={
-              <AdminAuthProvider>
-                <AdminLayout />
-              </AdminAuthProvider>
-            }>
+            <Route path="/admin" element={<AdminLayout />}>
               <Route path="login" element={<AdminLoginPage />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="upload" element={<AdminUploadPage />} />
@@ -162,6 +165,7 @@ function AppWithProviders() {
           </Routes>
         </ScrollManager>
       </SessionMonitorWrapper>
+      </AdminAuthProvider>
       <RateLimitOverlay 
         isVisible={rateLimit.isVisible}
         onDismiss={dismissRateLimit}

@@ -1,4 +1,4 @@
-const authService = require('../services/authService');
+﻿const authService = require('../services/authService');
 
 const auth = async (req, res, next) => {
   try {
@@ -29,13 +29,6 @@ const auth = async (req, res, next) => {
     const User = require('../models/User');
     const user = await User.findById(decoded.userId);
     
-    console.log('🔍 Auth middleware debug:', {
-      decodedUserId: decoded.userId,
-      foundUser: user ? 'yes' : 'no',
-      userStatus: user?.status,
-      tokenVersion: decoded.tokenVersion,
-      userTokenVersion: user?.tokenVersion
-    });
     
     if (!user) {
       return res.status(401).json({
@@ -67,15 +60,10 @@ const auth = async (req, res, next) => {
       ...decoded
     };
     
-    console.log('✅ Auth middleware success - req.user set:', {
-      id: req.user.id,
-      email: req.user.email,
-      role: req.user.role
-    });
     
     next();
   } catch (error) {
-    console.error('❌ Auth middleware error:', error);
+    console.error('âŒ Auth middleware error:', error);
     res.status(401).json({
       success: false,
       message: 'Invalid token'

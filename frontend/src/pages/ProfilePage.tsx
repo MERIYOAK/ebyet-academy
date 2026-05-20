@@ -59,7 +59,7 @@ const ProfilePage = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [, setProfileImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -149,7 +149,7 @@ const ProfilePage = () => {
               console.log('Profile photo not available or expired');
               setProfileImageUrl(null);
             }
-          } catch (photoError) {
+          } catch {
             console.log('Profile photo not available');
             setProfileImageUrl(null);
           }
@@ -167,6 +167,7 @@ const ProfilePage = () => {
     };
 
     fetchUserData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const showToastMessage = (message: string, type: 'success' | 'error') => {
@@ -273,15 +274,18 @@ const ProfilePage = () => {
               const photoResult = await photoResponse.json();
               console.log('✅ [ProfilePage] New profile photo URL fetched:', photoResult.data.photoUrl);
               setProfileImageUrl(photoResult.data.photoUrl);
+              window.dispatchEvent(new CustomEvent('profilePhotoUpdated', { detail: { photoUrl: photoResult.data.photoUrl } }));
             } else {
               console.log('❌ [ProfilePage] Failed to fetch new profile photo URL:', photoResponse.status);
               // Fallback to preview if signed URL fetch fails
               setProfileImageUrl(imagePreview);
+              window.dispatchEvent(new CustomEvent('profilePhotoUpdated', { detail: { photoUrl: imagePreview } }));
             }
           } catch (photoError) {
             console.error('❌ [ProfilePage] Error fetching new profile photo URL:', photoError);
             // Fallback to preview if signed URL fetch fails
             setProfileImageUrl(imagePreview);
+            window.dispatchEvent(new CustomEvent('profilePhotoUpdated', { detail: { photoUrl: imagePreview } }));
           }
         }
       } else {
@@ -611,6 +615,7 @@ const ProfilePage = () => {
                               setProfileImageFile(null);
                               setImagePreview(null);
                               setProfileImageUrl(null);
+                              window.dispatchEvent(new CustomEvent('profilePhotoUpdated', { detail: { photoUrl: null } }));
                               showToastMessage(t('profile.photo_removed_successfully'), 'success');
                             } else {
                               const error = await response.json();
@@ -816,6 +821,7 @@ const ProfilePage = () => {
                         onChange={(e) => handleFieldChange('sex', e.target.value)}
                         onFocus={() => setActiveField('sex')}
                         onBlur={() => setActiveField(null)}
+                        aria-label={t('profile.sex')}
                         className={`w-full px-3 tiny:px-4 xxs:px-5 py-2 tiny:py-2.5 xxs:py-3 sm:py-3.5 text-xs tiny:text-sm xxs:text-base bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 rounded-xl tiny:rounded-2xl transition-all duration-200 ${
                           activeField === 'sex' 
                             ? 'border-cyan-500 ring-2 ring-cyan-500/30' 
@@ -1105,8 +1111,6 @@ const ProfilePage = () => {
                           value={passwordData.newPassword}
                           onChange={(e) => {
                             setPasswordData({ ...passwordData, newPassword: e.target.value });
-                            const validation = validatePassword(e.target.value);
-                            setPasswordValidation(validation);
                           }}
                           className="w-full px-3 tiny:px-4 xxs:px-5 py-2 tiny:py-2.5 xxs:py-3 sm:py-3.5 pr-10 tiny:pr-12 bg-white dark:bg-gray-900/60 text-blue-900 dark:text-white border-2 border-blue-300 dark:border-gray-700/40 rounded-xl tiny:rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 text-xs tiny:text-sm xxs:text-base placeholder-blue-400 dark:placeholder-gray-500"
                           placeholder={t('profile.enter_new_password')}
@@ -1164,11 +1168,11 @@ const ProfilePage = () => {
                               {t('password_requirements.requires_number', 'At least one number (0-9)')}
                             </li>
                             <li className={`flex items-center gap-1.5 ${
-                              /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordData.newPassword)
+                              /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(passwordData.newPassword)
                                 ? 'text-green-600 dark:text-green-400' 
                                 : 'text-blue-600 dark:text-gray-500'
                             }`}>
-                              {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordData.newPassword) ? (
+                              {/[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(passwordData.newPassword) ? (
                                 <Check className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
                               ) : (
                                 <X className="h-3 w-3 tiny:h-3.5 tiny:w-3.5" />
@@ -1214,7 +1218,6 @@ const ProfilePage = () => {
                         onClick={() => {
                           setShowPasswordChange(false);
                           setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                          setPasswordValidation(null);
                         }}
                         className="flex items-center justify-center space-x-1.5 tiny:space-x-2 border-2 border-blue-300 dark:border-gray-600/50 text-blue-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700/50 hover:border-blue-400 dark:hover:border-gray-500 px-3 tiny:px-4 xxs:px-5 sm:px-6 md:px-8 py-2 tiny:py-2.5 xxs:py-3 sm:py-3.5 rounded-xl tiny:rounded-2xl font-semibold transition-all duration-200 text-xs tiny:text-sm xxs:text-base"
                       >
@@ -1236,6 +1239,7 @@ const ProfilePage = () => {
         type="file"
         accept="image/*"
         onChange={handleImageUpload}
+        aria-hidden="true"
         className="hidden"
       />
     </div>

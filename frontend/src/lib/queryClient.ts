@@ -33,7 +33,7 @@ const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 // Cache storage interface
 interface CacheEntry {
-  data: any;
+  data: unknown;
   timestamp: number;
   version: string;
 }
@@ -49,7 +49,7 @@ class CustomCachePersister {
   }
 
   // Save data to localStorage
-  set(key: string, data: any): void {
+  set(key: string, data: unknown): void {
     try {
       const entry: CacheEntry = {
         data,
@@ -63,7 +63,7 @@ class CustomCachePersister {
   }
 
   // Get data from localStorage
-  get(key: string): any | null {
+  get(key: string): unknown {
     try {
       const item = this.storage.getItem(`${this.key}-${key}`);
       if (!item) return null;
@@ -152,7 +152,7 @@ export const saveCacheData = () => {
   try {
     const cache = queryClient.getQueryCache();
     const queries = cache.getAll();
-    const cacheData: Record<string, any> = {};
+    const cacheData: Record<string, unknown> = {};
 
     queries.forEach(query => {
       if (query.state.data && query.state.status === 'success') {
@@ -172,7 +172,7 @@ export const queryKeys = {
   courses: {
     all: ['courses'] as const,
     lists: () => [...queryKeys.courses.all, 'list'] as const,
-    list: (filters: Record<string, any>) => [...queryKeys.courses.lists(), filters] as const,
+    list: (filters: Record<string, unknown>) => [...queryKeys.courses.lists(), filters] as const,
     details: () => [...queryKeys.courses.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.courses.details(), id] as const,
     featured: () => [...queryKeys.courses.all, 'featured'] as const,
@@ -190,7 +190,9 @@ export const queryKeys = {
     all: ['user'] as const,
     profile: () => [...queryKeys.user.all, 'profile'] as const,
     dashboard: () => [...queryKeys.user.all, 'dashboard'] as const,
-    progress: (courseId?: string) => [...queryKeys.user.all, 'progress', courseId].filter(Boolean) as const,
+    progress: (courseId?: string) => courseId
+      ? [...queryKeys.user.all, 'progress', courseId] as const
+      : [...queryKeys.user.all, 'progress'] as const,
   },
   
   // Certificate-related queries

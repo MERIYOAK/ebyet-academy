@@ -1,7 +1,7 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { buildApiUrl } from '../config/environment';
 import { queryKeys } from '../lib/queryClient';
-import { DRMVideoService } from '../services/drmVideoService';
+import DRMVideoService from '../services/drmVideoService';
 
 export interface Video {
   id: string;
@@ -40,7 +40,7 @@ export const useCourseVideos = (
       const result = await drmVideoService.getCourseVideosWithDRM(courseId, version);
       
       return {
-        videos: result.videos,
+        videos: result.course.videos,
         userHasPurchased: result.userHasPurchased,
         courseId,
         version

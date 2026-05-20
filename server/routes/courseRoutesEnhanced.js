@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
@@ -225,7 +225,7 @@ router.get('/admin/status/:status', adminAuthMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get courses by status error:', error);
+    console.error('âŒ Get courses by status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch courses',
@@ -251,7 +251,7 @@ router.get('/admin/archived-past-grace', adminAuthMiddleware, async (req, res) =
       }
     });
   } catch (error) {
-    console.error('❌ Get archived courses error:', error);
+    console.error('âŒ Get archived courses error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch archived courses',
@@ -309,7 +309,6 @@ router.post('/admin/bulk-archive', adminAuthMiddleware, async (req, res) => {
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
 
-    console.log(`✅ Bulk archive completed: ${successful} successful, ${failed} failed by ${adminEmail}`);
     
     res.json({
       success: true,
@@ -325,7 +324,7 @@ router.post('/admin/bulk-archive', adminAuthMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Bulk archive error:', error);
+    console.error('âŒ Bulk archive error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to bulk archive courses',

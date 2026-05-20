@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../config/environment';
 
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Upload, Video, Clock, User, Save, X } from 'lucide-react';
+import { Upload, Video, Save, X } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { getEnglishText } from '../utils/bilingualHelper';
 import { xhrUpload } from '../utils/uploadUtils';
@@ -13,7 +13,7 @@ interface Course {
   _id: string;
   title: string | { en: string; tg: string };
   description: string | { en: string; tg: string };
-  videos?: any[];
+  videos?: unknown[];
   currentVersion?: number;
   version?: number;
 }
@@ -26,7 +26,7 @@ const AdminVideoUploadPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadProgress] = useState<number>(0);
   const [titleErrors, setTitleErrors] = useState<{ en?: string; tg?: string }>({});
 
   // Progress overlay state
@@ -51,7 +51,7 @@ const AdminVideoUploadPage: React.FC = () => {
   });
 
   // Fetch course details
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
@@ -100,7 +100,7 @@ const AdminVideoUploadPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -417,7 +417,7 @@ const AdminVideoUploadPage: React.FC = () => {
     if (courseId) {
       fetchCourse();
     }
-  }, [courseId]);
+  }, [courseId, fetchCourse]);
 
   // Clear success/error messages after timeout
   useEffect(() => {
@@ -501,6 +501,7 @@ const AdminVideoUploadPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setError(null)}
+                aria-label="Dismiss"
                 className="text-orange-400 hover:text-orange-300"
               >
                 <X className="h-5 w-5" />

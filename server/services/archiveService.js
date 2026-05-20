@@ -1,4 +1,4 @@
-const Course = require('../models/Course');
+﻿const Course = require('../models/Course');
 const CourseVersion = require('../models/CourseVersion');
 const { archiveCourseContent, deleteFromS3 } = require('../utils/s3Enhanced');
 
@@ -16,7 +16,6 @@ const archiveInactiveCourses = async () => {
       updatedAt: { $lt: sixMonthsAgo }
     });
 
-    console.log(`Found ${inactiveCourses.length} inactive courses to archive`);
 
     for (const course of inactiveCourses) {
       try {
@@ -31,13 +30,11 @@ const archiveInactiveCourses = async () => {
           // Archive S3 content
           try {
             await archiveCourseContent(course.title, version.versionNumber);
-            console.log(`S3 content archived for course: ${course.title} v${version.versionNumber}`);
           } catch (s3Error) {
             console.error(`Failed to archive S3 content for course: ${course.title} v${version.versionNumber}`, s3Error);
           }
         }
 
-        console.log(`Course automatically archived: ${course.title}`);
       } catch (error) {
         console.error(`Failed to archive course: ${course.title}`, error);
       }
@@ -65,7 +62,6 @@ const cleanupArchivedCourses = async () => {
       archivedAt: { $lt: oneYearAgo }
     });
 
-    console.log(`Found ${oldArchivedCourses.length} old archived courses to cleanup`);
 
     for (const course of oldArchivedCourses) {
       try {
@@ -81,7 +77,6 @@ const cleanupArchivedCourses = async () => {
             
             // Note: In a real implementation, you would list and delete all objects in this path
             // For now, we'll just log the cleanup
-            console.log(`S3 cleanup scheduled for: ${archivePath}`);
             
             // Delete version record
             await CourseVersion.findByIdAndDelete(version._id);
@@ -93,7 +88,6 @@ const cleanupArchivedCourses = async () => {
         // Delete the main course record
         await Course.findByIdAndDelete(course._id);
 
-        console.log(`Course permanently deleted: ${course.title}`);
       } catch (error) {
         console.error(`Failed to cleanup course: ${course.title}`, error);
       }
@@ -149,13 +143,11 @@ const manualArchiveCourse = async (courseId, reason = 'Manual archive') => {
       // Archive S3 content
       try {
         await archiveCourseContent(course.title, version.versionNumber);
-        console.log(`S3 content archived for course: ${course.title} v${version.versionNumber}`);
       } catch (s3Error) {
         console.error(`Failed to archive S3 content for course: ${course.title} v${version.versionNumber}`, s3Error);
       }
     }
 
-    console.log(`Course manually archived: ${course.title}`);
 
     return {
       success: true,
@@ -199,7 +191,6 @@ const restoreArchivedCourse = async (courseId) => {
       await version.save();
     }
 
-    console.log(`Course restored: ${course.title}`);
 
     return {
       success: true,

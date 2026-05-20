@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Save, X, Upload, CheckCircle, AlertCircle, BookOpen } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import ProgressOverlay from '../components/ProgressOverlay';
 import Toast from '../components/Toast';
-import { getEnglishText, getTigrinyaText } from '../utils/bilingualHelper';
+import { getEnglishText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
 
 interface Course {
   _id: string;
@@ -28,6 +29,7 @@ interface Bundle {
   courseIds: Array<{ _id: string }>;
   isPublic?: boolean;
   maxEnrollments?: number;
+  thumbnailURL?: string;
 }
 
 const AdminBundleEditPage: React.FC = () => {
@@ -100,7 +102,7 @@ const AdminBundleEditPage: React.FC = () => {
         setBundle(bundleInfo);
         
         // Helper function to parse and extract text from bilingual data
-        const parseBilingual = (text: any): { en: string; tg: string } => {
+        const parseBilingual = (text: string | { en: string; tg: string } | null | undefined): { en: string; tg: string } => {
           if (!text) return { en: '', tg: '' };
           
           // If it's a JSON string, parse it first
@@ -108,9 +110,9 @@ const AdminBundleEditPage: React.FC = () => {
           if (typeof text === 'string' && (text.startsWith('{') || text.startsWith('"'))) {
             try {
               parsedText = JSON.parse(text);
-            } catch (e) {
+            } catch {
               // Not JSON, treat as plain string
-              return { en: text, tg: '' };
+              return { en: text as string, tg: '' };
             }
           }
           
@@ -147,7 +149,7 @@ const AdminBundleEditPage: React.FC = () => {
           longDescriptionTg: longDescriptionData.tg,
           price: bundleInfo.price || 0,
           originalValue: bundleInfo.originalValue || 0,
-          courseIds: bundleInfo.courseIds.map((c: any) => c._id || c),
+          courseIds: (bundleInfo.courseIds as Array<{ _id: string } | string>).map((c) => typeof c === 'string' ? c : c._id),
           category: bundleInfo.category || '',
           tags: bundleInfo.tags || [],
           featured: bundleInfo.featured || false,
@@ -455,7 +457,7 @@ const AdminBundleEditPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Price ($) *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Price (CHF) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -463,12 +465,13 @@ const AdminBundleEditPage: React.FC = () => {
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
                     required
+                    placeholder="0.00"
                     className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Original Value ($)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Original Value (CHF)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -501,7 +504,7 @@ const AdminBundleEditPage: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="text-white font-medium">{getEnglishText(course.title)}</h3>
-                      <span className="text-cyan-400 font-semibold">${course.price.toFixed(2)}</span>
+                      <span className="text-cyan-400 font-semibold">{formatCHF(course.price)}</span>
                     </div>
                     <p className="text-gray-400 text-sm mt-1 line-clamp-1">{getEnglishText(course.description)}</p>
                   </div>
@@ -530,6 +533,7 @@ const AdminBundleEditPage: React.FC = () => {
                     setThumbnailFile(null);
                     setThumbnailPreview(bundle?.thumbnailURL || null);
                   }}
+                  aria-label="Remove thumbnail"
                   className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full"
                 >
                   <X className="h-4 w-4" />
@@ -564,6 +568,7 @@ const AdminBundleEditPage: React.FC = () => {
                   type="text"
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  placeholder="e.g. Trading, Investing"
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 />
               </div>
@@ -578,6 +583,7 @@ const AdminBundleEditPage: React.FC = () => {
                     const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
                     setFormData(prev => ({ ...prev, tags }));
                   }}
+                  placeholder="e.g. trading, forex, stocks"
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 />
               </div>
@@ -586,7 +592,8 @@ const AdminBundleEditPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                  title="Status"
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'active' | 'inactive' | 'archived' }))}
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                   <option value="active">Active</option>
@@ -626,6 +633,7 @@ const AdminBundleEditPage: React.FC = () => {
                   min="1"
                   value={formData.maxEnrollments}
                   onChange={(e) => setFormData(prev => ({ ...prev, maxEnrollments: e.target.value }))}
+                  placeholder="Leave empty for unlimited"
                   className="w-full px-4 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 />
               </div>

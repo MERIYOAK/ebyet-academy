@@ -6,7 +6,7 @@ import { FaWhatsapp, FaTelegramPlane } from 'react-icons/fa';
 const FloatingContactButton: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const buttonRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Add entrance animation
   useEffect(() => {
@@ -55,10 +55,11 @@ const FloatingContactButton: React.FC = () => {
         </div>
         
         {/* Main FAB */}
-        <div
+        <button
           ref={buttonRef}
+          type="button"
           className={`
-            relative w-12 h-12 rounded-full 
+            relative w-12 h-12 rounded-full
             bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500
             shadow-lg hover:shadow-2xl
             transform transition-all duration-300 ease-out
@@ -69,11 +70,8 @@ const FloatingContactButton: React.FC = () => {
             backdrop-blur-sm
           `}
           onClick={handleToggle}
-          onKeyDown={(e) => handleKeyDown(e, handleToggle)}
-          tabIndex={0}
-          role="button"
           aria-label="Contact us"
-          aria-expanded={isExpanded}
+          aria-haspopup="true"
         >
           {/* 3D effect overlay */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div>
@@ -86,7 +84,7 @@ const FloatingContactButton: React.FC = () => {
                <Phone className="w-6 h-6" />
              )}
           </div>
-        </div>
+        </button>
 
         {/* Contact options */}
         <div className={`
@@ -111,6 +109,7 @@ const FloatingContactButton: React.FC = () => {
                }}
             >
               <button
+                type="button"
                 className={`
                   w-10 h-10 sm:w-12 sm:h-12 rounded-full
                   ${option.color} ${option.hoverColor}

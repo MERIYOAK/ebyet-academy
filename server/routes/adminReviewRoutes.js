@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const Review = require('../models/Review');
 const Course = require('../models/Course');
@@ -101,6 +101,7 @@ router.patch('/:id/approve', adminAuthMiddleware, async (req, res) => {
     const socketService = getSocketService(req);
     if (socketService) {
       socketService.broadcastContentUpdate('REVIEW_APPROVED', {
+        courseId: review.courseId._id,
         review: {
           id: review._id,
           rating: review.rating,
@@ -110,7 +111,10 @@ router.patch('/:id/approve', adminAuthMiddleware, async (req, res) => {
           courseTitle: review.courseId.title,
           userId: review.userId._id,
           userName: review.userId.name,
-          status: review.status
+          userEmail: review.userId.email,
+          status: review.status,
+          createdAt: review.createdAt,
+          pinned: review.pinned || false
         },
         message: `Review for "${review.courseId.title}" has been approved`
       });
@@ -158,6 +162,7 @@ router.patch('/:id/reject', adminAuthMiddleware, async (req, res) => {
     const socketService = getSocketService(req);
     if (socketService) {
       socketService.broadcastContentUpdate('REVIEW_REJECTED', {
+        courseId: review.courseId._id,
         review: {
           id: review._id,
           rating: review.rating,
@@ -297,9 +302,8 @@ router.delete('/:id', adminAuthMiddleware, async (req, res) => {
         message: `Review deleted from course`
       });
       
-      console.log('📢 [deleteReview] Emitting REVIEW_DELETED event');
     } else {
-      console.warn('⚠️ [deleteReview] Socket.IO service not available');
+      console.warn('âš ï¸ [deleteReview] Socket.IO service not available');
     }
 
     res.json({
@@ -426,12 +430,12 @@ router.patch('/:id/reply', adminAuthMiddleware, async (req, res) => {
       });
     }
     
-    console.log('✅ Admin reply added to review:', reviewId);
     
     // Emit Socket.IO event for real-time update
     const socketService = getSocketService(req);
     if (socketService) {
       socketService.broadcastContentUpdate('REVIEW_REPLY_ADDED', {
+        courseId: updatedReview.courseId._id,
         review: {
           id: updatedReview._id,
           rating: updatedReview.rating,

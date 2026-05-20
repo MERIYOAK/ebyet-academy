@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, ShoppingCart, Tag, CheckCircle, Clock, Play, X } from 'lucide-react';
 import LoadingMessage from '../components/LoadingMessage';
 import { buildApiUrl } from '../config/environment';
-import { useBundle, ApiBundle } from '../hooks/useBundles';
+import { useBundle } from '../hooks/useBundles';
 import { getLocalizedText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
+import { queryClient } from '../lib/queryClient';
 
 const BundleDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -45,6 +47,64 @@ const BundleDetailPage: React.FC = () => {
     }
     return [];
   }, [bundle]);
+
+  // Hold latest bundle course IDs in a ref so the socket listener can check
+  // ownership without re-registering every time the bundle data refreshes.
+  const courseIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    courseIdsRef.current = courses.map(c => c._id);
+  }, [courses]);
+
+  // Listen for socket events that should refresh this bundle's view.
+  useEffect(() => {
+    if (!id) return;
+
+    const BUNDLE_EVENTS = new Set(['BUNDLE_UPDATED', 'NEW_BUNDLE']);
+    const BUNDLE_DELETE_EVENTS = new Set(['BUNDLE_DELETED']);
+    const COURSE_VIDEO_EVENTS = new Set([
+      'COURSE_UPDATED',
+      'COURSE_DELETED',
+      'NEW_VIDEO',
+      'VIDEO_UPDATED',
+      'VIDEO_DELETED',
+    ]);
+
+    const getBundleIdFromData = (data: any): string | undefined =>
+      data?.bundleId || data?.id || data?.bundle?.id || data?.bundle?._id;
+
+    const getCourseIdFromData = (data: any): string | undefined =>
+      data?.courseId || data?.id || data?.course?.id || data?.course?._id || data?.video?.courseId;
+
+    const refetchBundle = () => {
+      queryClient.invalidateQueries({ queryKey: ['bundles', 'detail', id] });
+    };
+
+    const handler = (e: Event) => {
+      const { type, data } = (e as CustomEvent<{ type: string; data: any }>).detail;
+
+      if (BUNDLE_EVENTS.has(type)) {
+        const eventBundleId = getBundleIdFromData(data);
+        if (!eventBundleId || eventBundleId === id) refetchBundle();
+        return;
+      }
+
+      if (BUNDLE_DELETE_EVENTS.has(type)) {
+        const eventBundleId = getBundleIdFromData(data);
+        if (eventBundleId === id) navigate('/bundles', { replace: true });
+        return;
+      }
+
+      if (COURSE_VIDEO_EVENTS.has(type)) {
+        const eventCourseId = getCourseIdFromData(data);
+        if (eventCourseId && courseIdsRef.current.includes(eventCourseId)) {
+          refetchBundle();
+        }
+      }
+    };
+
+    window.addEventListener('socketContentUpdate', handler);
+    return () => window.removeEventListener('socketContentUpdate', handler);
+  }, [id, navigate]);
 
   const error = useMemo(() => {
     if (apiError) {
@@ -248,11 +308,11 @@ const BundleDetailPage: React.FC = () => {
               <div className="mb-6">
                 <div className="flex items-baseline gap-3 mb-2">
                   <span className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
-                    ${bundle.price.toFixed(2)}
+                    {formatCHF(bundle.price)}
                   </span>
                   {bundle.originalValue && (
                     <span className="text-xl text-gray-600 dark:text-gray-400 line-through">
-                      ${bundle.originalValue.toFixed(2)}
+                      {formatCHF(bundle.originalValue)}
                     </span>
                   )}
                 </div>
@@ -260,7 +320,7 @@ const BundleDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                     <CheckCircle className="h-5 w-5" />
                     <span className="font-semibold">
-                      {t('bundle_detail.save_amount', `Save $${savingsAmount.toFixed(2)} (${savingsPercentage}%)`)}
+                      {t('bundle_detail.save_amount', { amount: savingsAmount.toFixed(2), percentage: savingsPercentage, defaultValue: `Save ${formatCHF(savingsAmount)} (${savingsPercentage}%)` })}
                     </span>
                   </div>
                 )}
@@ -278,7 +338,7 @@ const BundleDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-gray-800 dark:text-gray-300">
                     <Tag className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                     <span>
-                      {t('bundle_detail.original_value', `Original Value: $${bundle.originalValue.toFixed(2)}`)}
+                      {t('bundle_detail.original_value', { value: bundle.originalValue.toFixed(2), defaultValue: `Original Value: ${formatCHF(bundle.originalValue)}` })}
                     </span>
                   </div>
                 )}
@@ -294,7 +354,7 @@ const BundleDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {t('bundle_detail.max_enrollments', `Limited to ${bundle.maxEnrollments} students`)}
+                      {t('bundle_detail.max_enrollments', { max: bundle.maxEnrollments })}
                     </span>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../config/environment';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryClient';
@@ -52,27 +52,34 @@ interface Course {
   videos?: Video[];
 }
 
+interface EditForm {
+  titleEn: string;
+  titleTg: string;
+  descriptionEn: string;
+  descriptionTg: string;
+  order: number;
+  duration: string;
+}
+
 // SortableVideoItem component
 const SortableVideoItem: React.FC<{
   video: Video;
   index: number;
   editingVideo: string | null;
-  editForm: any;
+  editForm: EditForm;
   editTitleErrors: { en?: string; tg?: string };
   selectedVideos: string[];
   onToggleSelection: (id: string) => void;
   onStartEdit: (video: Video) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
-  onEditFormChange: (form: any) => void;
+  onEditFormChange: (form: EditForm) => void;
   onDeleteVideo: (id: string) => void;
   onTogglePreview: (id: string, currentStatus: boolean) => void;
   togglingPreview: string | null;
-  getEnglishText: (title: any) => string;
+  getEnglishText: (title: string | { en: string; tg: string } | null | undefined) => string;
   getStatusColor: (status: string) => string;
-  formatDuration: (duration: any) => string;
-  formatDurationForInput: (duration: string | number) => string;
-  parseDurationToSeconds: (durationString: string) => number;
+  formatDuration: (duration: string | number) => string;
 }> = ({
   video,
   index,
@@ -91,8 +98,6 @@ const SortableVideoItem: React.FC<{
   getEnglishText,
   getStatusColor,
   formatDuration,
-  formatDurationForInput,
-  parseDurationToSeconds,
 }) => {
   const {
     attributes,
@@ -119,6 +124,7 @@ const SortableVideoItem: React.FC<{
         {/* Selection Checkbox */}
         <input
           type="checkbox"
+          aria-label="Select video"
           checked={selectedVideos.includes(video._id)}
           onChange={() => onToggleSelection(video._id)}
           className="rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500"
@@ -206,12 +212,14 @@ const SortableVideoItem: React.FC<{
                 />
                 <button
                   onClick={onSaveEdit}
+                  aria-label="Save"
                   className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200"
                 >
                   <Save className="h-3 w-3" />
                 </button>
                 <button
                   onClick={onCancelEdit}
+                  aria-label="Cancel"
                   className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors duration-200"
                 >
                   <X className="h-3 w-3" />
@@ -449,7 +457,7 @@ const AdminCourseVideosPage: React.FC = () => {
   };
 
   // Fetch course and videos
-  const fetchCourseAndVideos = async () => {
+  const fetchCourseAndVideos = useCallback(async () => {
     try {
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
@@ -474,7 +482,7 @@ const AdminCourseVideosPage: React.FC = () => {
       
       // Parse video titles and descriptions - handle both objects and JSON strings
       const processedVideos = (courseData.videos || [])
-        .map((video: any) => {
+        .map((video: { title?: unknown; description?: unknown; [key: string]: unknown }) => {
           let parsedTitle = video.title;
           let parsedDescription = video.description;
           
@@ -487,7 +495,7 @@ const AdminCourseVideosPage: React.FC = () => {
                 if (parsed && typeof parsed === 'object') {
                   parsedTitle = parsed;
                 }
-              } catch (e) {
+              } catch {
                 // Not valid JSON, keep as plain string
                 parsedTitle = video.title;
               }
@@ -505,7 +513,7 @@ const AdminCourseVideosPage: React.FC = () => {
                 if (parsed && typeof parsed === 'object') {
                   parsedDescription = parsed;
                 }
-              } catch (e) {
+              } catch {
                 // Not valid JSON, keep as plain string
                 parsedDescription = video.description;
               }
@@ -546,7 +554,7 @@ const AdminCourseVideosPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
 
   // Delete video
   const deleteVideo = async (videoId: string) => {
@@ -625,8 +633,8 @@ const AdminCourseVideosPage: React.FC = () => {
               videoId: videoId,
               video: deletedVideo,
               courseId: courseId,
-              courseTitle: typeof course.title === 'string' ? course.title : (course.title as any)?.en || 'Course',
-              message: `Video "${deletedVideo.title || (deletedVideo.title as any)?.en || 'Video'}" deleted from course`
+              courseTitle: typeof course.title === 'string' ? course.title : (course.title as { en?: string })?.en || 'Course',
+              message: `Video "${deletedVideo.title || (deletedVideo.title as { en?: string })?.en || 'Video'}" deleted from course`
             },
             timestamp: new Date().toISOString()
           };
@@ -736,7 +744,7 @@ const AdminCourseVideosPage: React.FC = () => {
           // Not a bilingual object, treat as English-only string
           titleEn = video.title;
         }
-      } catch (e) {
+      } catch {
         // Not JSON, treat as plain English string
         titleEn = video.title;
       }
@@ -761,7 +769,7 @@ const AdminCourseVideosPage: React.FC = () => {
             // Not a bilingual object, treat as English-only string
             descriptionEn = video.description;
           }
-        } catch (e) {
+        } catch {
           // Not JSON, treat as plain English string
           descriptionEn = video.description;
         }
@@ -1011,7 +1019,7 @@ const AdminCourseVideosPage: React.FC = () => {
     if (courseId) {
       fetchCourseAndVideos();
     }
-  }, [courseId]);
+  }, [courseId, fetchCourseAndVideos]);
 
   // Debug: Monitor videos state changes
   useEffect(() => {
@@ -1254,8 +1262,6 @@ const AdminCourseVideosPage: React.FC = () => {
                         getEnglishText={getEnglishText}
                         getStatusColor={getStatusColor}
                         formatDuration={formatDuration}
-                        formatDurationForInput={formatDurationForInput}
-                        parseDurationToSeconds={parseDurationToSeconds}
                       />
                     ))}
                   </div>

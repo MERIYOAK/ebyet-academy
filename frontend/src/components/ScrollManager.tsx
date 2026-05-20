@@ -86,7 +86,7 @@ const ScrollManager: React.FC<ScrollManagerProps> = ({ children }) => {
 
   // Continuously save scroll position as user scrolls (throttled)
   useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
+    let scrollTimeout: ReturnType<typeof setTimeout>;
     
     const handleScroll = () => {
       // Throttle scroll position saving
@@ -150,7 +150,7 @@ const ScrollManager: React.FC<ScrollManagerProps> = ({ children }) => {
     }
 
     // Listen for popstate events (browser back/forward)
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = () => {
       isNavigatingBack.current = true;
     };
 

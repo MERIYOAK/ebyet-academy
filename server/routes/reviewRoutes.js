@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Review = require('../models/Review');
@@ -13,16 +13,9 @@ router.post('/', authMiddleware, async (req, res) => {
     const { courseId, rating, title, comment } = req.body;
     const userId = req.user?.id;
     
-    console.log('📝 Review submission debug:', {
-      userId,
-      courseId,
-      rating,
-      userObject: req.user,
-      headers: req.headers.authorization ? 'present' : 'missing'
-    });
     
     if (!userId) {
-      console.error('❌ User ID is undefined:', { user: req.user, userId });
+      console.error('âŒ User ID is undefined:', { user: req.user, userId });
       return res.status(401).json({
         success: false,
         message: 'User authentication failed - no user ID found'
@@ -65,19 +58,16 @@ router.post('/', authMiddleware, async (req, res) => {
 
     // Check if user has purchased the course
     if (!user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
-      console.log('❌ User has not purchased this course:', { userId, courseId });
       return res.status(403).json({
         success: false,
         message: 'You must purchase this course before leaving a review'
       });
     }
 
-    console.log('✅ User has purchased the course:', { userId, courseId });
 
     // Check if user already reviewed this course
     const existingReview = await Review.findOne({ userId, courseId });
     if (existingReview) {
-      console.log('❌ User already reviewed this course:', { userId, courseId });
       return res.status(400).json({
         success: false,
         message: 'You have already reviewed this course. Only one review per course is allowed.'
@@ -95,7 +85,25 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
     await review.save();
-    console.log('✅ Review created successfully:', review._id);
+
+    // Notify admin views that a new review is pending moderation
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        socketService.broadcastContentUpdate('NEW_REVIEW', {
+          review: {
+            id: review._id,
+            courseId: review.courseId,
+            rating: review.rating,
+            status: review.status
+          },
+          courseId: review.courseId.toString(),
+          message: 'A new review has been submitted'
+        });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast NEW_REVIEW:', socketError);
+    }
 
     res.status(201).json({
       success: true,
@@ -119,32 +127,25 @@ router.get('/course/:courseId', async (req, res) => {
     const { courseId } = req.params;
     const { sort = 'newest' } = req.query;
 
-    console.log('🔍 Fetching reviews for course:', courseId);
 
     // Validate course exists
     const course = await Course.findById(courseId);
     if (!course) {
-      console.log('❌ Course not found:', courseId);
       return res.status(404).json({
         success: false,
         message: 'Course not found'
       });
     }
 
-    console.log('✅ Course found:', course.title);
 
     // First, let's check all reviews for this course (for debugging)
     const allReviews = await Review.find({ courseId });
-    console.log(`📊 All reviews for course ${courseId}:`, allReviews.length);
     allReviews.forEach(review => {
-      console.log(`  - Review ${review._id}: rating=${review.rating}, status=${review.status}`);
     });
 
     // Check only approved reviews
     const approvedReviews = await Review.find({ courseId, status: 'approved' });
-    console.log(`✅ Approved reviews: ${approvedReviews.length}`);
     approvedReviews.forEach(review => {
-      console.log(`  - Approved Review ${review._id}: rating=${review.rating}`);
     });
 
     // Build sort query
@@ -160,7 +161,6 @@ router.get('/course/:courseId', async (req, res) => {
       .populate('userId', 'name email')
       .sort(sortQuery);
 
-    console.log(`📝 Found ${reviews.length} approved reviews`);
 
     // Calculate average rating using aggregation
     let stats = await Review.aggregate([
@@ -174,11 +174,9 @@ router.get('/course/:courseId', async (req, res) => {
       }
     ]);
 
-    console.log('📊 Aggregation result:', stats);
 
     // Fallback calculation if aggregation fails or returns empty
     if (!stats || stats.length === 0) {
-      console.log('🔄 Using fallback calculation');
       const allReviews = await Review.find({ courseId, status: 'approved' });
       const totalReviews = allReviews.length;
       const averageRating = totalReviews > 0 
@@ -186,11 +184,9 @@ router.get('/course/:courseId', async (req, res) => {
         : 0;
       
       stats = [{ averageRating, totalReviews }];
-      console.log('📊 Fallback stats calculated:', { averageRating, totalReviews });
     }
 
     const { averageRating = 0, totalReviews = 0 } = stats[0] || {};
-    console.log(`📊 Final Stats: ${averageRating} avg rating, ${totalReviews} total reviews`);
     
     // Ensure stats are properly formatted
     const formattedStats = {
@@ -198,7 +194,6 @@ router.get('/course/:courseId', async (req, res) => {
       totalReviews: totalReviews || 0
     };
     
-    console.log('📊 Formatted stats:', formattedStats);
 
     res.json({
       success: true,
@@ -209,7 +204,7 @@ router.get('/course/:courseId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching course reviews:', error);
+    console.error('âŒ Error fetching course reviews:', error);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack,
@@ -285,92 +280,9 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
   }
 });
 
-// PATCH /api/reviews/:id - Update user's own review (sends back to pending)
-router.patch('/:id', authMiddleware, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rating, title, comment } = req.body;
-    const userId = req.user.id;
-
-    const review = await Review.findById(id);
-    if (!review) {
-      return res.status(404).json({
-        success: false,
-        message: 'Review not found'
-      });
-    }
-
-    // Check if user owns this review
-    if (review.userId.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only edit your own reviews'
-      });
-    }
-
-    // Update review and send back to pending
-    if (rating !== undefined) review.rating = rating;
-    if (title !== undefined) review.title = title?.trim();
-    if (comment !== undefined) review.comment = comment.trim();
-    review.status = 'pending'; // Requires re-approval
-    review.updatedAt = new Date();
-
-    await review.save();
-
-    res.json({
-      success: true,
-      message: 'Review updated. It will be visible after approval.',
-      data: review
-    });
-
-  } catch (error) {
-    console.error('Error updating review:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
-});
-
-// DELETE /api/reviews/:id - Delete user's own review
-router.delete('/:id', authMiddleware, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const review = await Review.findById(id);
-    if (!review) {
-      return res.status(404).json({
-        success: false,
-        message: 'Review not found'
-      });
-    }
-
-    // Check if user owns this review
-    if (review.userId.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only delete your own reviews'
-      });
-    }
-
-    await Review.findByIdAndDelete(id);
-
-    res.json({
-      success: true,
-      message: 'Review deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Error deleting review:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
-});
+// NOTE: Users cannot edit or delete their own reviews. Review moderation
+// (approve / reject / reply / delete) is performed exclusively by admins
+// via the routes in adminReviewRoutes.js.
 
 // TEMPORARY: Create test approved reviews (for testing only)
 router.post('/test-create/:courseId', async (req, res) => {
@@ -408,7 +320,6 @@ router.post('/test-create/:courseId', async (req, res) => {
     // Insert test reviews
     const insertedReviews = await Review.insertMany(testReviews);
     
-    console.log('✅ Test reviews created:', insertedReviews.length);
     
     res.json({
       success: true,

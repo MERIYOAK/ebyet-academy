@@ -3,7 +3,7 @@ import { buildApiUrl } from '../config/environment';
 
 import { useParams, Link } from 'react-router-dom';
 
-import { BookOpen, Clock, Edit, Trash2, Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
+import { BookOpen, Clock, Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { formatDuration } from '../utils/durationFormatter';
 import { getEnglishText } from '../utils/bilingualHelper';
 
@@ -76,11 +76,11 @@ const AdminVideoPlayerPage = () => {
         const videos = course.videos || course.currentVersion?.videos || [];
         
         // Fetch video details for each video ID
-        const videoPromises = videos.map(async (video: any) => {
+        const videoPromises = videos.map(async (video: string | { _id?: string; id?: string }) => {
           let videoIdString: string = '';
           try {
             // Ensure videoId is a string
-            videoIdString = typeof video === 'string' ? video : video._id || video.id;
+            videoIdString = typeof video === 'string' ? video : (video._id || video.id || '');
             
             if (!videoIdString || typeof videoIdString !== 'string') {
               console.error('Invalid video ID:', video);
@@ -131,7 +131,7 @@ const AdminVideoPlayerPage = () => {
               if (typeof titleData === 'string' && (titleData.startsWith('{') || titleData.startsWith('"'))) {
                 try {
                   titleData = JSON.parse(titleData);
-                } catch (e) {
+                } catch {
                   // Not JSON, use as is
                 }
               }
@@ -213,7 +213,8 @@ const AdminVideoPlayerPage = () => {
     if (courseId) {
       fetchCourseData();
     }
-  }, [courseId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, videoId]);
 
   useEffect(() => {
     if (videoId) {
@@ -266,14 +267,18 @@ const AdminVideoPlayerPage = () => {
   const toggleFullscreen = () => {
     const videoContainer = document.querySelector('.video-container');
     if (videoContainer) {
+      type FSElement = Element & { webkitRequestFullscreen?: () => void; msRequestFullscreen?: () => void };
+      type FSDocument = Document & { webkitExitFullscreen?: () => void; msExitFullscreen?: () => void };
       if (!document.fullscreenElement) {
-        videoContainer.requestFullscreen?.() || 
-        (videoContainer as any).webkitRequestFullscreen?.() || 
-        (videoContainer as any).msRequestFullscreen?.();
+        const fsEl = videoContainer as FSElement;
+        if (fsEl.requestFullscreen) { void fsEl.requestFullscreen(); }
+        else if (fsEl.webkitRequestFullscreen) { fsEl.webkitRequestFullscreen(); }
+        else if (fsEl.msRequestFullscreen) { fsEl.msRequestFullscreen(); }
       } else {
-        document.exitFullscreen?.() || 
-        (document as any).webkitExitFullscreen?.() || 
-        (document as any).msExitFullscreen?.();
+        const fsDoc = document as FSDocument;
+        if (fsDoc.exitFullscreen) { void fsDoc.exitFullscreen(); }
+        else if (fsDoc.webkitExitFullscreen) { fsDoc.webkitExitFullscreen(); }
+        else if (fsDoc.msExitFullscreen) { fsDoc.msExitFullscreen(); }
       }
     }
   };
@@ -371,8 +376,9 @@ const AdminVideoPlayerPage = () => {
       // Add CSS protections
       video.style.userSelect = 'none';
       video.style.webkitUserSelect = 'none';
-      (video.style as any).mozUserSelect = 'none';
-      (video.style as any).msUserSelect = 'none';
+      const extStyle = video.style as CSSStyleDeclaration & { mozUserSelect?: string; msUserSelect?: string };
+      extStyle.mozUserSelect = 'none';
+      extStyle.msUserSelect = 'none';
       video.style.pointerEvents = 'auto';
       
       // Disable video download attributes
@@ -473,6 +479,7 @@ const AdminVideoPlayerPage = () => {
 
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerReady, isPlaying, duration, currentVideo]);
 
   // Handle mouse events for controls visibility
@@ -859,6 +866,7 @@ const AdminVideoPlayerPage = () => {
                     <select
                       value={playbackRate}
                       onChange={(e) => handlePlaybackRateChange(Number(e.target.value))}
+                      aria-label="Playback speed"
                       className="bg-gray-700 text-white rounded px-2 sm:px-3 py-1 border border-gray-600 focus:outline-none focus:border-cyan-500 text-xs sm:text-sm"
                     >
                       <option value={0.5}>0.5x</option>
@@ -912,7 +920,7 @@ const AdminVideoPlayerPage = () => {
                             if (typeof titleValue === 'string' && (titleValue.startsWith('{') || titleValue.startsWith('"'))) {
                               try {
                                 titleValue = JSON.parse(titleValue);
-                              } catch (e) {
+                              } catch {
                                 // Not JSON, use as is
                               }
                             }
@@ -974,7 +982,7 @@ const AdminVideoPlayerPage = () => {
                             if (typeof titleValue === 'string' && (titleValue.startsWith('{') || titleValue.startsWith('"'))) {
                               try {
                                 titleValue = JSON.parse(titleValue);
-                              } catch (e) {
+                              } catch {
                                 // Not JSON, use as is
                               }
                             }

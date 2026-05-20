@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { buildApiUrl } from '../config/environment';
 import { useParams, Link } from 'react-router-dom';
-import { Edit, BookOpen, DollarSign, Users, Calendar, Tag } from 'lucide-react';
-import { getEnglishText } from '../utils/bilingualHelper';
+import { Edit, BookOpen, Users, Calendar, Tag } from 'lucide-react';
+import { formatCHF } from '../utils/formatCHF';
 
 interface Bundle {
   _id: string;
@@ -66,7 +66,7 @@ const AdminBundleViewPage: React.FC = () => {
         const bundleData = data.data.bundle;
         
         // Helper function to parse and extract English text
-        const extractEnglish = (text: any): string => {
+        const extractEnglish = (text: string | { en?: string } | null | undefined): string => {
           if (!text) return '';
           if (typeof text === 'string') {
             // Check if it's a JSON string
@@ -74,7 +74,7 @@ const AdminBundleViewPage: React.FC = () => {
               try {
                 const parsed = JSON.parse(text);
                 return typeof parsed === 'object' && parsed !== null && 'en' in parsed ? parsed.en : text;
-              } catch (e) {
+              } catch {
                 return text;
               }
             }
@@ -92,7 +92,7 @@ const AdminBundleViewPage: React.FC = () => {
           title: extractEnglish(bundleData.title),
           description: extractEnglish(bundleData.description),
           longDescription: bundleData.longDescription ? extractEnglish(bundleData.longDescription) : undefined,
-          courseIds: bundleData.courseIds ? bundleData.courseIds.map((course: any) => ({
+          courseIds: bundleData.courseIds ? bundleData.courseIds.map((course: { title?: string | { en?: string }; description?: string | { en?: string }; [key: string]: unknown }) => ({
             ...course,
             title: extractEnglish(course.title),
             description: extractEnglish(course.description)
@@ -214,22 +214,17 @@ const AdminBundleViewPage: React.FC = () => {
               </h2>
               {bundle.courseIds && bundle.courseIds.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bundle.courseIds.map((course: any) => {
-                    const courseId = course._id || course;
-                    const courseData = typeof course === 'object' && course._id ? course : null;
-                    
-                    if (!courseData) {
-                      return null;
-                    }
+                  {bundle.courseIds.map((course) => {
+                    const courseId = course._id;
                     
                     return (
                       <div
                         key={courseId}
                         className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 hover:border-cyan-500/50 transition-colors"
                       >
-                        <h3 className="text-white font-medium mb-1">{courseData.title}</h3>
-                        <p className="text-gray-400 text-sm line-clamp-2">{courseData.description}</p>
-                        <p className="text-cyan-400 text-sm mt-2 font-semibold">${(courseData.price || 0).toFixed(2)}</p>
+                        <h3 className="text-white font-medium mb-1">{course.title}</h3>
+                        <p className="text-gray-400 text-sm line-clamp-2">{course.description}</p>
+                        <p className="text-cyan-400 text-sm mt-2 font-semibold">{formatCHF(course.price || 0)}</p>
                       </div>
                     );
                   })}
@@ -250,17 +245,17 @@ const AdminBundleViewPage: React.FC = () => {
                 <div>
                   <div className="flex items-baseline gap-3 mb-2">
                     <span className="text-3xl font-bold text-white">
-                      ${bundle.price.toFixed(2)}
+                      {formatCHF(bundle.price)}
                     </span>
                     {bundle.originalValue && (
                       <span className="text-lg text-gray-400 line-through">
-                        ${bundle.originalValue.toFixed(2)}
+                        {formatCHF(bundle.originalValue)}
                       </span>
                     )}
                   </div>
                   {savingsAmount > 0 && (
                     <p className="text-green-400 text-sm">
-                      Save ${savingsAmount.toFixed(2)} ({savingsPercentage}%)
+                      Save {formatCHF(savingsAmount)} ({savingsPercentage}%)
                     </p>
                   )}
                 </div>

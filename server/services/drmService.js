@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+﻿const crypto = require('crypto');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 const s3Client = require('../utils/s3Enhanced').s3Client;
@@ -37,10 +37,9 @@ class DRMService {
       // Clean up expired sessions
       this.cleanupExpiredSessions();
 
-      console.log(`🔒 DRM Session created: ${sessionId} for user ${userId}`);
       return session;
     } catch (error) {
-      console.error('❌ Failed to generate DRM session:', error);
+      console.error('âŒ Failed to generate DRM session:', error);
       throw error;
     }
   }
@@ -87,7 +86,7 @@ class DRMService {
 
       // Check if S3 client is available
       if (!s3Client) {
-        console.error('❌ S3 client not available for DRM video URL generation');
+        console.error('âŒ S3 client not available for DRM video URL generation');
         throw new Error('S3 client not configured');
       }
 
@@ -129,7 +128,7 @@ class DRMService {
         watermarkData: session.watermarkData
       };
     } catch (error) {
-      console.error('❌ Failed to generate encrypted video URL:', error);
+      console.error('âŒ Failed to generate encrypted video URL:', error);
       throw error;
     }
   }
@@ -205,7 +204,7 @@ class DRMService {
       decrypted += decipher.final('utf8');
       return decrypted;
     } catch (error) {
-      console.error('❌ Failed to decrypt URL:', error);
+      console.error('âŒ Failed to decrypt URL:', error);
       throw new Error('Failed to decrypt URL');
     }
   }
@@ -265,7 +264,6 @@ class DRMService {
     for (const [sessionId, session] of this.activeSessions.entries()) {
       if (session.expiresAt < now) {
         this.activeSessions.delete(sessionId);
-        console.log(`🧹 Cleaned up expired DRM session: ${sessionId}`);
       }
     }
   }
@@ -310,7 +308,6 @@ class DRMService {
   revokeSession(sessionId) {
     if (this.activeSessions.has(sessionId)) {
       this.activeSessions.delete(sessionId);
-      console.log(`🚫 DRM session revoked: ${sessionId}`);
       return true;
     }
     return false;

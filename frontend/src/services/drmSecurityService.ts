@@ -26,8 +26,11 @@ export class DRMSecurityService {
   private config: SecurityConfig;
   private currentSession: DRMSession | null = null;
   private securityChecks: Map<string, boolean> = new Map();
+  // @ts-expect-error -- write-only state; value is set by detection methods, not read back
   private watermarkCanvas: HTMLCanvasElement | null = null;
+  // @ts-expect-error -- write-only state; set by detectScreenRecording(), result returned directly
   private screenRecordingDetected = false;
+  // @ts-expect-error -- write-only state; set by detectBrowserExtensions(), result returned directly
   private extensionDetected = false;
 
   private constructor() {
@@ -349,20 +352,14 @@ export class DRMSecurityService {
     try {
       // This is a simplified check - in reality, you'd need more sophisticated detection
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
 
   private detectRecordingIndicators(): boolean {
     // Check for common recording indicators
-    const indicators = [
-      'OBS Studio',
-      'Bandicam',
-      'Fraps',
-      'Camtasia',
-      'ScreenFlow'
-    ];
+    // Known software: OBS Studio, Bandicam, Fraps, Camtasia, ScreenFlow
 
     // This is a simplified check - in reality, you'd need more sophisticated detection
     return false;
@@ -374,7 +371,7 @@ export class DRMSecurityService {
     return false;
   }
 
-  private checkExtensionInstalled(extensionName: string): boolean {
+  private checkExtensionInstalled(_extensionName: string): boolean {
     // Check if specific extension is installed
     // This is a simplified check - in reality, you'd need more sophisticated detection
     return false;
@@ -507,7 +504,7 @@ export class DRMSecurityService {
       }
 
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -547,7 +544,7 @@ export class DRMSecurityService {
     ];
 
     for (const api of gameBarAPIs) {
-      if ((window as any)[api]) {
+      if ((window as unknown as Record<string, unknown>)[api]) {
         return true;
       }
     }
@@ -650,7 +647,7 @@ export class DRMSecurityService {
   /**
    * Validate if an element is likely a recording indicator
    */
-  private isLikelyRecordingIndicator(element: Element, indicator: string): boolean {
+  private isLikelyRecordingIndicator(element: Element, _indicator: string): boolean {
     // Check for common recording indicator patterns
     const recordingPatterns = [
       /recording/i,
@@ -684,8 +681,9 @@ export class DRMSecurityService {
       // Monitor for performance indicators that might suggest recording
       const performance = window.performance;
       
-      if (performance && (performance as any).memory) {
-        const memory = (performance as any).memory;
+      const perfWithMemory = performance as Performance & { memory?: { usedJSHeapSize: number } };
+      if (performance && perfWithMemory.memory) {
+        const memory = perfWithMemory.memory;
         
         // Check for unusual memory usage patterns that might indicate recording
         if (memory.usedJSHeapSize > 100 * 1024 * 1024) { // 100MB
@@ -729,7 +727,7 @@ export class DRMSecurityService {
       requestAnimationFrame(checkFrameRate);
 
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

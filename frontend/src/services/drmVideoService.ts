@@ -215,7 +215,7 @@ class DRMVideoService {
   /**
    * Get DRM statistics (admin only)
    */
-  public async getDRMStats(): Promise<any> {
+  public async getDRMStats(): Promise<Record<string, unknown>> {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -253,7 +253,7 @@ class DRMVideoService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${this.baseUrl}/api/drm/decrypt-url`, {
+      const response = await fetch(buildApiUrl('/api/drm/decrypt-url'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

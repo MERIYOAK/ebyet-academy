@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const videoController = require('../controllers/videoController');
 const auth = require('../middleware/authMiddleware');
@@ -87,7 +87,6 @@ router.post('/presigned-url', auth, adminAuthMiddleware, async (req, res) => {
     const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 7200 });
     
-    console.log(`🔗 [presigned-url] Generated for course: ${courseId}, file: ${fileName}, key: ${s3Key}`);
     
     res.json({
       success: true,
@@ -99,7 +98,7 @@ router.post('/presigned-url', auth, adminAuthMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ [presigned-url] Error generating presigned URL:', error);
+    console.error('âŒ [presigned-url] Error generating presigned URL:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate upload URL',
@@ -141,8 +140,6 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
     let parsedTitle = title;
     let parsedDescription = description;
     
-    console.log('[save-metadata] Raw title type:', typeof title, 'value:', title);
-    console.log('[save-metadata] Raw description type:', typeof description, 'value:', description);
     
     try {
       if (typeof title === 'string' && title.startsWith('{')) {
@@ -152,7 +149,6 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
         parsedDescription = JSON.parse(description);
       }
     } catch (e) {
-      console.log('[save-metadata] Title/description not JSON, using as string');
       // Keep the original values if JSON parsing fails
       if (typeof title === 'string') {
         parsedTitle = title;
@@ -162,12 +158,9 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
       }
     }
     
-    console.log('[save-metadata] Parsed title:', parsedTitle);
-    console.log('[save-metadata] Parsed description:', parsedDescription);
     
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
     
-    console.log('[save-metadata] courseId:', courseId, 'title:', parsedTitle, 's3Key:', s3Key, 'version:', version);
     
     // Get course and version info
     const Course = require('../models/Course');
@@ -208,9 +201,8 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
     let detectedDuration = 0;
     try {
       detectedDuration = parseDurationToSeconds(duration);
-      console.log(`✅ [save-metadata] Duration parsed: ${duration} = ${detectedDuration} seconds`);
     } catch (error) {
-      console.error(`❌ [save-metadata] Duration parsing failed:`, error);
+      console.error(`âŒ [save-metadata] Duration parsing failed:`, error);
       return res.status(400).json({
         success: false,
         message: `Invalid duration format: ${duration}. Please use MM:SS or HH:MM:SS format.`
@@ -233,7 +225,6 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
       status: 'active'
     });
     
-    console.log('[save-metadata] created video:', video._id, 'with duration:', video.duration, 'seconds');
     
     // Add video directly to course
     course.videos.push(video._id);
@@ -266,7 +257,6 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
             const course = await Course.findById(courseId);
             const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
               
-            console.log('📢 [save-metadata] Emitting NEW_VIDEO event to connected users');
             socketService.broadcastContentUpdate('NEW_VIDEO', {
               video: video,
               courseId: courseId,
@@ -275,7 +265,7 @@ router.post('/save-metadata', auth, adminAuthMiddleware, async (req, res) => {
             });
           }
         } catch (socketError) {
-          console.warn('⚠️ [save-metadata] Failed to emit Socket.IO update:', socketError);
+          console.warn('âš ï¸ [save-metadata] Failed to emit Socket.IO update:', socketError);
         }
   } catch (error) {
     console.error('[save-metadata] error:', error?.message || error);
@@ -303,7 +293,6 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
     const { videoId } = req.params;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
     
-    console.log(`🗑️ [deleteVideo] Starting deletion of video: ${videoId} by ${adminEmail}`);
     
     const Video = require('../models/Video');
     const Course = require('../models/Course');
@@ -318,17 +307,13 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
       });
     }
     
-    console.log(`📹 [deleteVideo] Found video: ${video.title}`);
-    console.log(`   - S3 Key: ${video.s3Key}`);
-    console.log(`   - Course ID: ${video.courseId}`);
     
     // Delete from S3
     if (video.s3Key) {
       try {
         await deleteFileFromS3(video.s3Key);
-        console.log(`✅ [deleteVideo] Deleted from S3: ${video.s3Key}`);
       } catch (s3Error) {
-        console.error(`❌ [deleteVideo] Failed to delete from S3:`, s3Error);
+        console.error(`âŒ [deleteVideo] Failed to delete from S3:`, s3Error);
         // Continue with database deletion even if S3 deletion fails
       }
     }
@@ -339,12 +324,10 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
       course.videos = course.videos.filter(vid => vid.toString() !== videoId);
       course.lastModifiedBy = adminEmail;
       await course.save();
-      console.log(`✅ [deleteVideo] Removed video from course: ${course.title}`);
     }
     
     // Delete from database
     await Video.findByIdAndDelete(videoId);
-    console.log(`✅ [deleteVideo] Deleted from database: ${video.title}`);
     
     res.json({
       success: true,
@@ -355,7 +338,6 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
       }
     });
     
-    console.log(`✅ [deleteVideo] Video deletion completed: ${video.title} by ${adminEmail}`);
     
     // Emit real-time update to connected users
     try {
@@ -363,7 +345,6 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
       if (socketService) {
         const courseTitle = course ? (typeof course.title === 'string' ? course.title : course.title?.en || 'Course') : 'Course';
         
-        console.log('📢 [deleteVideo] Emitting VIDEO_DELETED event to connected users');
         socketService.broadcastContentUpdate('VIDEO_DELETED', {
           videoId: video._id,
           video: video,
@@ -373,11 +354,11 @@ router.delete('/:videoId', auth, adminAuthMiddleware, async (req, res) => {
         });
       }
     } catch (socketError) {
-      console.warn('⚠️ [deleteVideo] Failed to emit Socket.IO update:', socketError);
+      console.warn('âš ï¸ [deleteVideo] Failed to emit Socket.IO update:', socketError);
     }
     
   } catch (error) {
-    console.error('❌ [deleteVideo] Error:', error);
+    console.error('âŒ [deleteVideo] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete video',
@@ -464,7 +445,7 @@ router.get('/admin/status/:status', auth, adminAuthMiddleware, async (req, res) 
       }
     });
   } catch (error) {
-    console.error('❌ Get videos by status error:', error);
+    console.error('âŒ Get videos by status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch videos',
@@ -492,7 +473,7 @@ router.get('/admin/processing', auth, adminAuthMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Get processing videos error:', error);
+    console.error('âŒ Get processing videos error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch processing videos',
@@ -528,15 +509,13 @@ router.post('/admin/bulk-delete', auth, adminAuthMiddleware, async (req, res) =>
       try {
         const video = await Video.findById(videoId);
         if (video) {
-          console.log(`🗑️ [bulk-delete] Deleting video: ${video.title} (${video._id})`);
           
           // Delete from S3
           if (video.s3Key) {
             try {
               await deleteFileFromS3(video.s3Key);
-              console.log(`✅ [bulk-delete] Deleted from S3: ${video.s3Key}`);
             } catch (s3Error) {
-              console.error(`❌ [bulk-delete] Failed to delete from S3:`, s3Error);
+              console.error(`âŒ [bulk-delete] Failed to delete from S3:`, s3Error);
               // Continue with database deletion
             }
           }
@@ -588,7 +567,6 @@ router.post('/admin/bulk-delete', auth, adminAuthMiddleware, async (req, res) =>
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
 
-    console.log(`✅ Bulk delete videos completed: ${successful} successful, ${failed} failed by ${adminEmail}`);
 
     res.json({
       success: true,
@@ -604,7 +582,7 @@ router.post('/admin/bulk-delete', auth, adminAuthMiddleware, async (req, res) =>
     });
 
   } catch (error) {
-    console.error('❌ Bulk delete videos error:', error);
+    console.error('âŒ Bulk delete videos error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to bulk delete videos',
@@ -735,7 +713,6 @@ router.put('/:videoId/duration', auth, adminAuthMiddleware, async (req, res) => 
     video.formattedDuration = formatDuration(durationInSeconds);
     await video.save();
 
-    console.log(`✅ [Admin] Video duration updated: ${video.title} = ${durationInSeconds}s (${formatDuration(durationInSeconds)}) by ${adminEmail}`);
 
     res.json({
       success: true,
@@ -751,7 +728,7 @@ router.put('/:videoId/duration', auth, adminAuthMiddleware, async (req, res) => 
     });
 
   } catch (error) {
-    console.error('❌ Update video duration error:', error);
+    console.error('âŒ Update video duration error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update video duration',

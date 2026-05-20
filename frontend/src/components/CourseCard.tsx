@@ -29,14 +29,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   title,
   description,
   thumbnail,
-  price,
   duration,
-  students,
   lessons,
-  instructor,
   tags = [],
   className = '',
-  onPurchaseSuccess,
   isPurchased = false,
 }) => {
   const { t, i18n } = useTranslation();
@@ -61,7 +57,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
       encodeURIComponent(
         "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='#f3f4f6' width='100%' height='100%'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='24' fill='#9ca3af'>" + t('course_card.thumbnail_placeholder') + "</text></svg>"
       ),
-    []
+    [t]
   );
 
   const [imgSrc, setImgSrc] = useState<string>(thumbnail || placeholderThumb);
@@ -83,7 +79,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
     };
 
     refreshImage();
-  }, [thumbnail, id]);
+  }, [thumbnail, id, placeholderThumb]);
 
   useEffect(() => {
     // Image source updated

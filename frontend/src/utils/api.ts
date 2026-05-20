@@ -1,4 +1,4 @@
-import { buildApiUrl, config } from '../config/environment';
+import { buildApiUrl } from '../config/environment';
 
 // API utility class for making HTTP requests
 export class ApiClient {
@@ -8,9 +8,9 @@ export class ApiClient {
   ): Promise<T> {
     const url = buildApiUrl(endpoint);
     
-    const defaultHeaders = {
+    const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     // Add auth token if available
@@ -34,12 +34,11 @@ export class ApiClient {
 
   // GET request
   static async get<T>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
-    const url = buildApiUrl(endpoint, params);
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(buildApiUrl(endpoint, params), { method: 'GET' });
   }
 
   // POST request
-  static async post<T>(endpoint: string, data?: any): Promise<T> {
+  static async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -47,7 +46,7 @@ export class ApiClient {
   }
 
   // PUT request
-  static async put<T>(endpoint: string, data?: any): Promise<T> {
+  static async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -60,7 +59,7 @@ export class ApiClient {
   }
 
   // PATCH request
-  static async patch<T>(endpoint: string, data?: any): Promise<T> {
+  static async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -100,9 +99,9 @@ export const apiFetch = async (
 ): Promise<Response> => {
   const url = buildApiUrl(endpoint);
   
-  const defaultHeaders = {
+  const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
 
   const token = localStorage.getItem('token');

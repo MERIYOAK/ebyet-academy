@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, FileText, CheckCircle, XCircle, AlertTriangle, Users, Lock, Globe, Clock, Mail } from 'lucide-react';
+import { Shield, FileText, AlertTriangle, Users, Lock, Globe, Mail } from 'lucide-react';
 import { config } from '../config/environment';
 
 const TermsOfServicePage = () => {
@@ -86,7 +86,7 @@ const TermsOfServicePage = () => {
     }
   ];
 
-  const getSectionContent = (sectionId) => {
+  const getSectionContent = (sectionId: string) => {
     switch (sectionId) {
       case 'general':
         return generalTerms;

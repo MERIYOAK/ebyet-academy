@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Verify thumbnail is accessible via public URL
  * This helps debug bucket policy issues
  */
@@ -19,7 +19,6 @@ const s3Client = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_
  */
 const verifyThumbnailAccess = async (s3Key) => {
   if (!s3Client || !s3Key) {
-    console.log('⚠️  Cannot verify thumbnail access - S3 client or key missing');
     return { accessible: false, reason: 'S3 client or key missing' };
   }
 
@@ -38,10 +37,6 @@ const verifyThumbnailAccess = async (s3Key) => {
     
     const publicUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
     
-    console.log('🔍 Thumbnail Access Check:');
-    console.log(`   - S3 Key: ${s3Key}`);
-    console.log(`   - Matches public path pattern: ${matchesPattern}`);
-    console.log(`   - Public URL: ${publicUrl}`);
     
     return {
       accessible: true,
@@ -50,7 +45,7 @@ const verifyThumbnailAccess = async (s3Key) => {
       s3Key
     };
   } catch (error) {
-    console.error('❌ Thumbnail access check failed:', error.message);
+    console.error('âŒ Thumbnail access check failed:', error.message);
     return {
       accessible: false,
       reason: error.message,
@@ -62,7 +57,6 @@ const verifyThumbnailAccess = async (s3Key) => {
 module.exports = {
   verifyThumbnailAccess
 };
-
 
 
 

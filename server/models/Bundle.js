@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const bundleSchema = new mongoose.Schema({
   // Bilingual support - can be string (legacy) or object {en, tg}
@@ -217,7 +217,6 @@ bundleSchema.methods.enrollStudent = function(userId) {
   // Automatically set bundle to not public if max enrollments reached
   if (this.maxEnrollments && this.totalEnrollments >= this.maxEnrollments) {
     this.isPublic = false;
-    console.log(`🔒 Bundle "${this.title}" reached max enrollments (${this.totalEnrollments}/${this.maxEnrollments}), setting isPublic to false`);
   }
   
   return this.save();
@@ -255,7 +254,7 @@ bundleSchema.methods.getStudentEnrollment = function(userId) {
       enrollment => enrollment.userId && enrollment.userId.toString() === userId.toString()
     );
   } catch (error) {
-    console.error('❌ [getStudentEnrollment] Error:', error.message);
+    console.error('âŒ [getStudentEnrollment] Error:', error.message);
     return null;
   }
 };

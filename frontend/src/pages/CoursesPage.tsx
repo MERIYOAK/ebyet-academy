@@ -4,7 +4,7 @@ import CourseCard from '../components/CourseCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { Search, Filter, X } from 'lucide-react';
 import { useCourses, CourseFilters, ApiCourse } from '../hooks/useCourses';
-import { getValidImageUrl } from '../utils/imageUrlHelper';
+
 import { parseDurationToSeconds } from '../utils/durationFormatter';
 
 
@@ -80,9 +80,9 @@ const CoursesPage: React.FC = () => {
   }, [refetch]);
 
   // Handle pagination changes
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-  };
+  }, []);
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
@@ -368,6 +368,7 @@ const CoursesPage: React.FC = () => {
                       {searchTerm && (
                         <button
                           onClick={() => handleSearchChange('')}
+                          aria-label="Clear search"
                           className="ml-1 tiny:ml-2 p-0.5 tiny:p-1 text-gray-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all duration-200"
                         >
                           <X className="h-3.5 w-3.5 tiny:h-4 tiny:w-4" />
@@ -446,6 +447,7 @@ const CoursesPage: React.FC = () => {
                     <select
                       value={selectedCategory}
                       onChange={(e) => handleCategoryChange(e.target.value)}
+                      aria-label={t('courses.filter_category')}
                       className="w-full px-2.5 tiny:px-3 py-2 tiny:py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-lg tiny:rounded-xl text-gray-900 dark:text-white text-xs tiny:text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.filter_all')}</option>
@@ -466,6 +468,7 @@ const CoursesPage: React.FC = () => {
                     <select
                       value={selectedLevel}
                       onChange={(e) => handleLevelChange(e.target.value)}
+                      aria-label={t('courses.filter_skill_level')}
                       className="w-full px-2.5 tiny:px-3 py-2 tiny:py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-lg tiny:rounded-xl text-gray-900 dark:text-white text-xs tiny:text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.filter_all')}</option>
@@ -489,6 +492,7 @@ const CoursesPage: React.FC = () => {
                     <select
                       value={selectedTag}
                       onChange={(e) => handleTagChange(e.target.value)}
+                      aria-label={t('courses.filter_tags')}
                       className="w-full px-2.5 tiny:px-3 py-2 tiny:py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-lg tiny:rounded-xl text-gray-900 dark:text-white text-xs tiny:text-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.filter_all')}</option>
@@ -509,6 +513,7 @@ const CoursesPage: React.FC = () => {
                     <select
                       value={priceRange}
                       onChange={(e) => handlePriceRangeChange(e.target.value)}
+                      aria-label={t('courses.filter_price_range')}
                       className="w-full px-2.5 tiny:px-3 py-2 tiny:py-2.5 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700/50 rounded-lg tiny:rounded-xl text-gray-900 dark:text-white text-xs tiny:text-sm focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">{t('courses.price_all')}</option>
@@ -600,6 +605,7 @@ const CoursesPage: React.FC = () => {
                 <select
                   value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                  aria-label={t('courses.pagination.show')}
                   className="px-2 tiny:px-3 py-1 tiny:py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-md text-[10px] tiny:text-xs sm:text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                   <option value={6}>{t('courses.pagination.per_page', { count: 6 })}</option>
@@ -632,7 +638,7 @@ const CoursesPage: React.FC = () => {
                   const pages = [];
                   const maxVisiblePages = 5;
                   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
                   
                   // Adjust start page if we're near the end
                   if (endPage - startPage + 1 < maxVisiblePages) {

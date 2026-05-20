@@ -109,6 +109,7 @@ const AdminLoginPage = () => {
                 </div>
                 <button
                   onClick={clearError}
+                  aria-label="Dismiss"
                   className="flex-shrink-0 text-orange-400 hover:text-orange-300 transition-colors"
                 >
                   <X className="h-4 w-4" />

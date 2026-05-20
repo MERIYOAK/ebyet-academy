@@ -162,6 +162,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                         <button
                           type="button"
                           onClick={removeImage}
+                          aria-label="Remove image"
                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-200"
                         >
                           <X className="h-4 w-4" />
@@ -248,11 +249,11 @@ const AuthForm: React.FC<AuthFormProps> = ({
                             {t('password_requirements.requires_number', 'At least one number (0-9)')}
                           </li>
                           <li className={`flex items-center gap-1.5 ${
-                            passwordValidation && /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test((formData.password as string) || '')
+                            passwordValidation && /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test((formData.password as string) || '')
                               ? 'text-green-600 dark:text-green-400' 
                               : 'text-gray-500 dark:text-gray-500'
                           }`}>
-                            {passwordValidation && /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test((formData.password as string) || '') ? (
+                            {passwordValidation && /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test((formData.password as string) || '') ? (
                               <Check className="h-3.5 w-3.5" />
                             ) : (
                               <XIcon className="h-3.5 w-3.5" />

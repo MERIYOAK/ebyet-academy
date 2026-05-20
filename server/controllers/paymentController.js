@@ -14,11 +14,6 @@ const { getEnglishText } = require('../utils/bilingualHelper');
  */
 exports.createCheckoutSession = async (req, res) => {
   try {
-    console.log('🔧 Creating checkout session...');
-    console.log(`   - User ID: ${req.user?.userId || req.user?._id || 'undefined'}`);
-    console.log(`   - User Email: ${req.user?.email || 'undefined'}`);
-    console.log(`   - Request Body:`, req.body);
-
     // Normalize frontend URL to ensure it has proper protocol
     const normalizeUrl = (url) => {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -29,8 +24,7 @@ exports.createCheckoutSession = async (req, res) => {
 
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
-      console.log('❌ User not authenticated or invalid user data');
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false, 
         message: 'Authentication required' 
       });
@@ -56,11 +50,7 @@ exports.createCheckoutSession = async (req, res) => {
     const userId = req.user.userId || req.user._id;
     const user = await User.findById(userId);
     if (!user) {
-      console.log(`❌ User not found in database: ${userId}`);
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     // Initialize arrays if they don't exist
@@ -73,16 +63,11 @@ exports.createCheckoutSession = async (req, res) => {
       // Handle course purchase
       course = await Course.findById(courseId);
       if (!course) {
-        console.log(`❌ Course not found: ${courseId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Course not found' 
-        });
+        return res.status(404).json({ success: false, message: 'Course not found' });
       }
 
       if (user.purchasedCourses.includes(courseId)) {
-        console.log(`⚠️  User already purchased this course`);
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false, 
           message: 'You already own this course' 
         });
@@ -92,24 +77,18 @@ exports.createCheckoutSession = async (req, res) => {
       itemType = 'course';
       successUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/success?courseId=${courseId}`;
       cancelUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/cancel?courseId=${courseId}`;
-      console.log(`✅ Course found: ${course.title} ($${course.price})`);
 
     } else if (bundleId) {
       // Handle bundle purchase
       bundle = await Bundle.findById(bundleId);
       if (!bundle) {
-        console.log(`❌ Bundle not found: ${bundleId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Bundle not found' 
-        });
+        return res.status(404).json({ success: false, message: 'Bundle not found' });
       }
 
-      if (user.purchasedBundles.includes(bundleId)) {
-        console.log(`⚠️  User already purchased this bundle`);
-        return res.status(400).json({ 
-          success: false, 
-          message: 'You already own this bundle' 
+      if (user.purchasedBundles.some(id => id.toString() === bundleId.toString())) {
+        return res.status(400).json({
+          success: false,
+          message: 'You already own this bundle'
         });
       }
 
@@ -117,27 +96,23 @@ exports.createCheckoutSession = async (req, res) => {
       itemType = 'bundle';
       successUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/success?bundleId=${bundleId}`;
       cancelUrl = `${normalizeUrl(process.env.CLIENT_URL || 'www.ibyet.com')}/checkout/cancel?bundleId=${bundleId}`;
-      console.log(`✅ Bundle found: ${bundle.title} ($${bundle.price})`);
     }
 
     // If Stripe is not configured, mark as purchased immediately (development mode)
     if (!stripe) {
-      console.log('⚠️  Stripe not configured - marking as purchased in development mode');
       
       if (course) {
         // Add course to user's purchased courses
         await User.findByIdAndUpdate(userId, { $addToSet: { purchasedCourses: courseId } });
         // Enroll the student in the course
         await course.enrollStudent(userId);
-        console.log(`✅ Student enrolled in course: ${course.title}`);
-        
         const devPaymentData = {
           userId: userId,
           courseId: courseId,
           courseVersion: course.currentVersion || course.version || 1, // Store the version at time of purchase
           stripeSessionId: `dev_session_${Date.now()}`,
           amount: course.price,
-          currency: 'usd',
+          currency: 'chf',
           status: 'completed',
           paymentMethod: 'card',
           metadata: {
@@ -165,19 +140,17 @@ exports.createCheckoutSession = async (req, res) => {
             try {
               await courseInBundle.enrollStudent(userId);
             } catch (err) {
-              // Already enrolled, skip
-              console.log(`⚠️  User already enrolled in course: ${courseInBundle.title}`);
+              // already enrolled, skip
             }
           }
         }
-        console.log(`✅ Student enrolled in bundle: ${bundle.title}`);
         
         const devPaymentData = {
           userId: userId,
           bundleId: bundleId,
           stripeSessionId: `dev_session_${Date.now()}`,
           amount: bundle.price,
-          currency: 'usd',
+          currency: 'chf',
           status: 'completed',
           paymentMethod: 'card',
           metadata: {
@@ -209,7 +182,6 @@ exports.createCheckoutSession = async (req, res) => {
       cancelUrl,
     });
 
-    console.log(`✅ Stripe session created: ${session.id}`);
 
     res.json({ 
       success: true,
@@ -232,43 +204,13 @@ exports.createCheckoutSession = async (req, res) => {
  * POST /api/payment/webhook
  */
 exports.webhook = async (req, res) => {
-  console.log('🔧 Webhook received...');
-  console.log(`   - Path: ${req.path}`);
-  console.log(`   - Method: ${req.method}`);
-  console.log(`   - Headers:`, req.headers);
-  console.log(`   - Body length:`, req.body ? req.body.length : 'No body');
-  console.log(`   - Body type:`, typeof req.body);
-  console.log(`   - Is Buffer:`, Buffer.isBuffer(req.body));
-  console.log(`   - Body preview:`, req.body ? req.body.toString().substring(0, 100) + '...' : 'No body');
-  console.log(`   - NODE_ENV:`, process.env.NODE_ENV);
-  console.log(`   - STRIPE_SECRET_KEY:`, process.env.STRIPE_SECRET_KEY ? 'Set' : 'Not set');
-  console.log(`   - STRIPE_WEBHOOK_SECRET:`, process.env.STRIPE_WEBHOOK_SECRET ? 'Set' : 'Not set');
-  console.log(`   - User-Agent:`, req.headers['user-agent']);
-  console.log(`   - CF-Connecting-IP:`, req.headers['cf-connecting-ip']);
-  console.log(`   - X-Forwarded-For:`, req.headers['x-forwarded-for']);
-
   let event;
 
   try {
-    // Verify webhook signature
-    console.log('🔧 Calling verifyWebhook function...');
     event = verifyWebhook(req);
-    console.log(`✅ Webhook verified: ${event.type}`);
-    console.log(`✅ Event data:`, JSON.stringify(event, null, 2));
   } catch (error) {
-    console.error('❌ Webhook signature verification failed:', error);
-    console.error('   - Error details:', error.message);
-    console.error('   - Body available:', !!req.body);
-    console.error('   - Stripe signature header:', req.headers['stripe-signature'] ? 'Present' : 'Missing');
-    return res.status(400).json({ 
-      error: 'Webhook signature verification failed',
-      message: error.message,
-      details: {
-        hasBody: !!req.body,
-        hasSignature: !!req.headers['stripe-signature'],
-        environment: process.env.NODE_ENV
-      }
-    });
+    console.error('❌ Webhook signature verification failed:', error.message);
+    return res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 
   // Handle the event
@@ -279,19 +221,16 @@ exports.webhook = async (req, res) => {
         break;
       
       case 'payment_intent.succeeded':
-        console.log('✅ Payment succeeded:', event.data.object.id);
         break;
-      
+
       case 'payment_intent.created':
-        console.log('✅ Payment intent created:', event.data.object.id);
         break;
-      
+
       case 'payment_intent.payment_failed':
-        console.log('❌ Payment failed:', event.data.object.id);
+        console.error('❌ Payment failed:', event.data.object.id);
         break;
-      
+
       default:
-        console.log(`⚠️  Unhandled event type: ${event.type}`);
     }
 
     res.json({ received: true });
@@ -309,11 +248,6 @@ exports.webhook = async (req, res) => {
  * Handle successful checkout session completion
  */
 async function handleCheckoutSessionCompleted(session) {
-  console.log('🔧 Processing checkout session completion...');
-  console.log(`   - Session ID: ${session.id}`);
-  console.log(`   - Customer Email: ${session.customer_email}`);
-  console.log(`   - Metadata:`, session.metadata);
-
   try {
     const { userId, courseId, bundleId, userEmail, type } = session.metadata;
 
@@ -339,16 +273,6 @@ async function handleCheckoutSessionCompleted(session) {
       throw new Error(`User not found: ${userId}`);
     }
 
-    console.log(`✅ User updated successfully:`, {
-      userId,
-      userEmail: updatedUser.email,
-      updateQuery,
-      updatedPurchasedCourses: updatedUser.purchasedCourses || [],
-      updatedPurchasedBundles: updatedUser.purchasedBundles || [],
-      totalPurchasedCourses: updatedUser.purchasedCourses?.length || 0,
-      totalPurchasedBundles: updatedUser.purchasedBundles?.length || 0
-    });
-
     let paymentData;
 
     if (itemType === 'bundle') {
@@ -360,7 +284,6 @@ async function handleCheckoutSessionCompleted(session) {
 
       // Enroll the student in the bundle
       await bundle.enrollStudent(userId);
-      console.log(`✅ Student enrolled in bundle: ${bundle.title}`);
 
       // Add all bundle courses to user's purchased courses
       await User.findByIdAndUpdate(
@@ -375,8 +298,7 @@ async function handleCheckoutSessionCompleted(session) {
           try {
             await courseInBundle.enrollStudent(userId);
           } catch (err) {
-            // Already enrolled, skip
-            console.log(`⚠️  User already enrolled in course: ${courseInBundle.title}`);
+            // already enrolled, skip
           }
         }
       }
@@ -396,12 +318,6 @@ async function handleCheckoutSessionCompleted(session) {
         }
       };
 
-      console.log(`✅ Bundle access granted successfully`);
-      console.log(`   - User: ${updatedUser.email}`);
-      console.log(`   - Bundle: ${bundle.title}`);
-      console.log(`   - Total purchased bundles: ${updatedUser.purchasedBundles?.length || 0}`);
-      console.log(`   - Payment recorded: $${paymentData.amount}`);
-
     } else {
       // Handle course purchase
       const course = await Course.findById(courseId);
@@ -411,8 +327,6 @@ async function handleCheckoutSessionCompleted(session) {
 
       // Enroll the student in the course (increments totalEnrollments)
       await course.enrollStudent(userId);
-      console.log(`✅ Student enrolled in course: ${course.title}`);
-      console.log(`   - New enrollment count: ${course.totalEnrollments}`);
 
       paymentData = {
         userId: userId,
@@ -430,11 +344,6 @@ async function handleCheckoutSessionCompleted(session) {
         }
       };
 
-      console.log(`✅ Course access granted successfully`);
-      console.log(`   - User: ${updatedUser.email}`);
-      console.log(`   - Course: ${course.title}`);
-      console.log(`   - Total purchased courses: ${updatedUser.purchasedCourses.length}`);
-      console.log(`   - Payment recorded: $${paymentData.amount}`);
     }
 
     // Create or update payment record
@@ -455,9 +364,6 @@ async function handleCheckoutSessionCompleted(session) {
  * GET /api/payments/success
  */
 exports.success = (req, res) => {
-  console.log('🔧 Payment success page accessed');
-  console.log(`   - Query params:`, req.query);
-  
   res.json({ 
     success: true,
     message: 'Payment successful! You now have access to the course.',
@@ -470,9 +376,6 @@ exports.success = (req, res) => {
  * GET /api/payments/cancel
  */
 exports.cancel = (req, res) => {
-  console.log('🔧 Payment cancelled');
-  console.log(`   - Query params:`, req.query);
-  
   res.json({ 
     success: false,
     message: 'Payment was cancelled. You can try again anytime.',
@@ -490,27 +393,13 @@ exports.checkPurchase = async (req, res) => {
     
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
-      console.log('❌ User not authenticated in checkPurchase');
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-    
-    // Get user ID from token (handle both userId and _id formats)
+
     const userId = req.user.userId || req.user._id;
-
-    console.log(`🔧 Checking purchase status...`);
-    console.log(`   - User ID: ${userId}`);
-    console.log(`   - Course ID: ${courseId}`);
-
     const user = await User.findById(userId);
     if (!user) {
-      console.log(`❌ User not found in database: ${userId}`);
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     // Initialize purchasedCourses array if it doesn't exist
@@ -523,8 +412,6 @@ exports.checkPurchase = async (req, res) => {
       purchasedId.toString() === courseId || purchasedId === courseId
     );
     
-    console.log(`✅ Purchase check completed: ${hasPurchased}`);
-
     res.json({ 
       success: true,
       data: {
@@ -553,24 +440,14 @@ exports.getReceipt = async (req, res) => {
     
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
-      console.log('❌ User not authenticated in getReceipt');
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-    
-    // Get user ID from token (handle both userId and _id formats)
-    const userId = req.user.userId || req.user._id;
 
-    console.log(`🔧 Getting receipt for payment...`);
-    console.log(`   - User ID: ${userId}`);
-    console.log(`   - Course ID: ${courseId}`);
+    const userId = req.user.userId || req.user._id;
 
     // Validate courseId format
     if (!courseId || courseId === 'undefined' || courseId === 'null') {
-      console.log('❌ Invalid course ID provided:', courseId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false, 
         message: 'Invalid course ID' 
       });
@@ -578,8 +455,7 @@ exports.getReceipt = async (req, res) => {
 
     // Validate courseId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      console.log('❌ Invalid MongoDB ObjectId format:', courseId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false, 
         message: 'Invalid course ID format' 
       });
@@ -594,35 +470,21 @@ exports.getReceipt = async (req, res) => {
 
     // If no payment record exists, check if user has purchased the course
     if (!payment) {
-      console.log(`⚠️  No payment record found, checking if user owns the course...`);
-      
       const user = await User.findById(userId);
       if (!user) {
-        console.log(`❌ User not found: ${userId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'User not found' 
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      if (!user.purchasedCourses || !user.purchasedCourses.some(id => id.toString() === courseId.toString())) {
+        return res.status(404).json({
+          success: false,
+          message: 'Payment not found. The course may not have been purchased yet or the payment is still processing.'
         });
       }
 
-      if (!user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
-        console.log(`❌ User ${userId} has not purchased course ${courseId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Payment not found. The course may not have been purchased yet or the payment is still processing.' 
-        });
-      }
-
-      // User owns the course but no payment record exists (development mode or webhook failed)
-      console.log(`✅ User owns course but no payment record - creating fallback receipt`);
-      
       const course = await Course.findById(courseId);
       if (!course) {
-        console.log(`❌ Course not found: ${courseId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Course not found' 
-        });
+        return res.status(404).json({ success: false, message: 'Course not found' });
       }
 
       // Create a fallback payment record
@@ -631,7 +493,7 @@ exports.getReceipt = async (req, res) => {
         courseId: courseId,
         stripeSessionId: `fallback_${Date.now()}`,
         amount: course.price,
-        currency: 'usd',
+        currency: 'chf',
         status: 'completed',
         paymentMethod: 'card',
         metadata: {
@@ -643,8 +505,6 @@ exports.getReceipt = async (req, res) => {
 
       payment = new Payment(fallbackPaymentData);
       await payment.save();
-      
-      console.log(`✅ Fallback payment record created: $${payment.amount}`);
     }
 
     // Format receipt data
@@ -659,7 +519,6 @@ exports.getReceipt = async (req, res) => {
       status: payment.status
     };
 
-    console.log(`✅ Receipt generated for payment ${payment._id}`);
 
     res.json({ 
       success: true,
@@ -686,19 +545,10 @@ exports.getBundleReceipt = async (req, res) => {
     
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
-      console.log('❌ User not authenticated in getBundleReceipt');
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-    
-    // Get user ID from token (handle both userId and _id formats)
-    const userId = req.user.userId || req.user._id;
 
-    console.log(`🔧 Getting bundle receipt info...`);
-    console.log(`   - User ID: ${userId}`);
-    console.log(`   - Bundle ID: ${bundleId}`);
+    const userId = req.user.userId || req.user._id;
 
     // Get user info first
     const user = await User.findById(userId);
@@ -718,24 +568,15 @@ exports.getBundleReceipt = async (req, res) => {
 
     // If no payment record exists, check if user has purchased bundle
     if (!payment) {
-      console.log(`⚠️  No bundle payment record found, checking if user owns bundle...`);
-      
-      if (!user.purchasedBundles || !user.purchasedBundles.includes(bundleId)) {
-        console.log(`❌ User ${userId} has not purchased bundle ${bundleId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Bundle payment not found' 
-        });
+      if (!user.purchasedBundles || !user.purchasedBundles.some(id => id.toString() === bundleId.toString())) {
+        return res.status(404).json({ success: false, message: 'Bundle payment not found' });
       }
 
-      // User owns the bundle but no payment record exists (development mode or webhook failed)
-      console.log(`✅ User owns bundle but no payment record - creating fallback receipt`);
-      
       const bundle = await Bundle.findById(bundleId);
       if (!bundle) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Bundle not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Bundle not found'
         });
       }
 
@@ -745,7 +586,7 @@ exports.getBundleReceipt = async (req, res) => {
         bundleId: bundleId,
         stripeSessionId: `fallback_${Date.now()}`,
         amount: bundle.price,
-        currency: 'usd',
+        currency: 'chf',
         status: 'completed',
         paymentMethod: 'card',
         metadata: {
@@ -796,19 +637,10 @@ exports.downloadBundleReceipt = async (req, res) => {
     
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
-      console.log('❌ User not authenticated in downloadBundleReceipt');
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-    
-    // Get user ID from token (handle both userId and _id formats)
-    const userId = req.user.userId || req.user._id;
 
-    console.log(`🔧 Downloading bundle receipt for payment...`);
-    console.log(`   - User ID: ${userId}`);
-    console.log(`   - Bundle ID: ${bundleId}`);
+    const userId = req.user.userId || req.user._id;
 
     // Get user info first
     const user = await User.findById(userId);
@@ -828,24 +660,15 @@ exports.downloadBundleReceipt = async (req, res) => {
 
     // If no payment record exists, check if user has purchased bundle
     if (!payment) {
-      console.log(`⚠️  No bundle payment record found, checking if user owns bundle...`);
-      
-      if (!user.purchasedBundles || !user.purchasedBundles.includes(bundleId)) {
-        console.log(`❌ User ${userId} has not purchased bundle ${bundleId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Bundle payment not found' 
-        });
+      if (!user.purchasedBundles || !user.purchasedBundles.some(id => id.toString() === bundleId.toString())) {
+        return res.status(404).json({ success: false, message: 'Bundle payment not found' });
       }
 
-      // User owns the bundle but no payment record exists (development mode or webhook failed)
-      console.log(`✅ User owns bundle but no payment record - creating fallback receipt`);
-      
       const bundle = await Bundle.findById(bundleId);
       if (!bundle) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Bundle not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Bundle not found'
         });
       }
 
@@ -855,7 +678,7 @@ exports.downloadBundleReceipt = async (req, res) => {
         bundleId: bundleId,
         stripeSessionId: `fallback_${Date.now()}`,
         amount: bundle.price,
-        currency: 'usd',
+        currency: 'chf',
         status: 'completed',
         paymentMethod: 'card',
         metadata: {
@@ -876,7 +699,6 @@ exports.downloadBundleReceipt = async (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="bundle-receipt-${payment.stripeSessionId}.html"`);
     
-    console.log(`✅ Bundle receipt generated for user ${userId}, bundle ${bundleId}`);
     res.send(receiptHtml);
 
   } catch (error) {
@@ -971,15 +793,15 @@ function generateBundleReceiptPdf(payment, user) {
           <strong>Payment Method:</strong> ${payment.paymentMethod || 'Credit Card'}
         </div>
         <div class="item">
-          <strong>Amount Paid:</strong> $${(payment.amount / 100).toFixed(2)} USD
+          <strong>Amount Paid:</strong> CHF ${Number(payment.amount).toFixed(2)}
         </div>
         <div class="item">
           <strong>Status:</strong> <span style="color: #28a745;">Completed</span>
         </div>
       </div>
-      
+
       <div class="total">
-        <strong>Total Amount:</strong> $${(payment.amount / 100).toFixed(2)} USD
+        <strong>Total Amount:</strong> CHF ${Number(payment.amount).toFixed(2)}
       </div>
       
       <div class="footer">
@@ -1002,19 +824,10 @@ exports.downloadReceipt = async (req, res) => {
     
     // Validate user authentication
     if (!req.user || (!req.user.userId && !req.user._id)) {
-      console.log('❌ User not authenticated in downloadReceipt');
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-    
-    // Get user ID from token (handle both userId and _id formats)
-    const userId = req.user.userId || req.user._id;
 
-    console.log(`🔧 Downloading receipt for payment...`);
-    console.log(`   - User ID: ${userId}`);
-    console.log(`   - Course ID: ${courseId}`);
+    const userId = req.user.userId || req.user._id;
 
     // Get user info first
     const user = await User.findById(userId);
@@ -1034,18 +847,9 @@ exports.downloadReceipt = async (req, res) => {
 
     // If no payment record exists, check if user has purchased the course
     if (!payment) {
-      console.log(`⚠️  No payment record found, checking if user owns the course...`);
-      
       if (!user.purchasedCourses || !user.purchasedCourses.includes(courseId)) {
-        console.log(`❌ User ${userId} has not purchased course ${courseId}`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Payment not found' 
-        });
+        return res.status(404).json({ success: false, message: 'Payment not found' });
       }
-
-      // User owns the course but no payment record exists (development mode or webhook failed)
-      console.log(`✅ User owns course but no payment record - creating fallback receipt`);
       
       const course = await Course.findById(courseId);
       if (!course) {
@@ -1061,7 +865,7 @@ exports.downloadReceipt = async (req, res) => {
         courseId: courseId,
         stripeSessionId: `fallback_${Date.now()}`,
         amount: course.price,
-        currency: 'usd',
+        currency: 'chf',
         status: 'completed',
         paymentMethod: 'card',
         metadata: {
@@ -1073,8 +877,6 @@ exports.downloadReceipt = async (req, res) => {
 
       payment = new Payment(fallbackPaymentData);
       await payment.save();
-      
-      console.log(`✅ Fallback payment record created: $${payment.amount}`);
     }
 
     // Generate receipt PDF
@@ -1093,7 +895,6 @@ exports.downloadReceipt = async (req, res) => {
     // Finalize PDF
     doc.end();
 
-    console.log(`✅ Receipt PDF generated for payment ${payment._id}`);
 
   } catch (error) {
     console.error('❌ Error downloading receipt:', error);
@@ -1139,7 +940,7 @@ async function generateReceiptPDF(doc, payment, user) {
     courseTitle = getEnglishText(payment.metadata.bundleTitle);
   }
   const amount = payment.amount || 0;
-  const currency = (payment.currency || 'USD').toUpperCase();
+  const currency = (payment.currency || 'CHF').toUpperCase();
   const userEmail = user?.email || payment.metadata?.userEmail || 'N/A';
   const paymentMethod = payment.paymentMethod || 'Credit Card';
 
@@ -1189,7 +990,7 @@ async function generateReceiptPDF(doc, payment, user) {
      .text('Amount Paid:', 50, doc.y)
      .fillColor('#10b981')
      .fontSize(16)
-     .text(`$${amount.toFixed(2)} ${currency}`, 150, doc.y);
+     .text(`CHF ${amount.toFixed(2)}`, 150, doc.y);
   
   doc.moveDown(1);
 

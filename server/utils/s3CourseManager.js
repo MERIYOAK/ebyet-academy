@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+﻿const { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
@@ -11,7 +11,6 @@ const createS3Client = () => {
   const bucket = process.env.AWS_S3_BUCKET;
 
   if (!accessKeyId || !secretAccessKey || !bucket) {
-    console.log('❌ Missing AWS credentials');
     return null;
   }
 
@@ -22,7 +21,7 @@ const createS3Client = () => {
       maxAttempts: 3
     });
   } catch (error) {
-    console.error('❌ Failed to create S3 client:', error);
+    console.error('âŒ Failed to create S3 client:', error);
     return null;
   }
 };
@@ -107,13 +106,11 @@ const uploadCourseFile = async (file, fileType, courseName) => {
   }
 
   try {
-    console.log('🔧 [S3] Starting upload process...');
     const s3Key = generateCourseFileKey(fileType, file.originalname, courseName);
     // Generated S3 key
     
     // Sanitize course name for metadata (remove invalid characters for HTTP headers)
     const sanitizedCourseName = courseName.replace(/[^a-zA-Z0-9\s-]/g, '_').replace(/\s+/g, '_');
-    console.log('🔧 [S3] Sanitized course name:', sanitizedCourseName);
     
     // Create file stream with proper error handling
     let fileStream;
@@ -123,7 +120,7 @@ const uploadCourseFile = async (file, fileType, courseName) => {
       
       // Add error handling for the stream
       fileStream.on('error', (error) => {
-        console.error('🔧 [S3] File stream error:', error);
+        console.error('ðŸ”§ [S3] File stream error:', error);
       });
     }
 
@@ -141,27 +138,21 @@ const uploadCourseFile = async (file, fileType, courseName) => {
       }
     };
 
-    console.log('🔧 [S3] Upload params prepared, body type:', file.path ? 'file stream' : 'buffer');
-    console.log('🔧 [S3] Sending to S3...');
     
     const command = new PutObjectCommand(uploadParams);
-    console.log('🔧 [S3] Command created, starting upload...');
     
     // Add timeout to the S3 command
     const result = await Promise.race([
       s3Client.send(command).then((res) => {
-        console.log('🔧 [S3] S3 send() completed, result:', res.ETag);
         return res;
       }),
       new Promise((_, reject) => 
         setTimeout(() => {
-          console.log('🔧 [S3] S3 upload timeout after 5 minutes');
           reject(new Error('S3 upload timeout after 5 minutes'));
         }, 5 * 60 * 1000)
       )
     ]);
     
-    console.log('🔧 [S3] S3 upload completed successfully');
     
     // Close the file stream if it was created
     if (fileStream) {
@@ -247,7 +238,6 @@ const getSignedUrlForFile = async (s3Key, expiresIn = 3600, mimeType = null) => 
 
   try {
     // Generating secure signed URL
-    console.log('🔐 [S3] MIME type:', mimeType || 'not specified');
     
     // Check if it's a video file
     const isVideo = s3Key.includes('/videos/') || (mimeType && mimeType.startsWith('video/'));
@@ -262,10 +252,8 @@ const getSignedUrlForFile = async (s3Key, expiresIn = 3600, mimeType = null) => 
     // For videos, set the content type to ensure proper playback
     if (isVideo && mimeType) {
       commandParams.ResponseContentType = mimeType;
-      console.log('🔐 [S3] Setting content type for video:', mimeType);
     } else {
       // Don't force ResponseContentType for other files - let S3 serve with original content type
-      console.log('🔐 [S3] Not forcing content type - letting S3 serve with original MIME type');
     }
     
     const command = new GetObjectCommand(commandParams);
@@ -276,10 +264,9 @@ const getSignedUrlForFile = async (s3Key, expiresIn = 3600, mimeType = null) => 
       signableHeaders: new Set(['host', 'range']), // Include range for video seeking
     });
 
-    console.log('✅ [S3] Secure signed URL generated successfully');
     return signedUrl;
   } catch (error) {
-    console.error('❌ [S3] Error generating signed URL:', error);
+    console.error('âŒ [S3] Error generating signed URL:', error);
     return null;
   }
 };
@@ -339,10 +326,8 @@ const getPublicUrl = (s3Key) => {
  * Presigned URLs work without public access
  */
 const getThumbnailUrl = async (s3Key) => {
-  console.log(`🔍 [getThumbnailUrl] Called with s3Key: ${s3Key}`);
   
   if (!s3Key) {
-    console.log(`   ⚠️  No s3Key provided, returning null`);
     return null;
   }
   
@@ -356,32 +341,24 @@ const getThumbnailUrl = async (s3Key) => {
     /\.(jpeg|jpg|png|webp|gif)$/i.test(s3Key);
   
   const isThumbnail = isThumbnailPath || isImageInMisc;
-  console.log(`   - Is thumbnail path: ${isThumbnailPath}`);
-  console.log(`   - Is image in misc: ${isImageInMisc}`);
-  console.log(`   - Final isThumbnail: ${isThumbnail}`);
   
   if (isThumbnail) {
     // Use presigned URL for thumbnails (works without public access)
     // Presigned URLs are valid for 7 days (604800 seconds)
     try {
-      console.log(`   - Generating presigned URL for thumbnail (expires in 7 days)...`);
       const signedUrl = await getSignedUrlForFile(s3Key, 604800);
-      console.log(`   ✅ Generated presigned URL: ${signedUrl?.substring(0, 100)}...`);
       return signedUrl;
     } catch (error) {
-      console.error('   ❌ Error generating presigned URL for thumbnail:', error);
+      console.error('   âŒ Error generating presigned URL for thumbnail:', error);
       console.error('   - Error details:', error.message, error.stack);
       // Fallback to public URL if presigned fails
       const publicUrl = getPublicUrl(s3Key);
-      console.log(`   ⚠️  Using fallback public URL: ${publicUrl?.substring(0, 100)}...`);
       return publicUrl;
     }
   }
   
   // For non-thumbnails, use public URL
-  console.log(`   - Not a thumbnail path, using public URL`);
   const publicUrl = getPublicUrl(s3Key);
-  console.log(`   - Public URL: ${publicUrl?.substring(0, 100)}...`);
   return publicUrl;
 };
 

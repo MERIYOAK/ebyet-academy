@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, MessageCircle, Mail, Clock, BookOpen, Shield, CreditCard, Users, Globe, Zap, Star, HelpCircle, Phone, MapPin } from 'lucide-react';
+import { ChevronDown, ChevronUp, MessageCircle, Mail, Clock, BookOpen, CreditCard, Users, Zap, Star, HelpCircle } from 'lucide-react';
 import { config } from '../config/environment';
 
 interface FAQItem {

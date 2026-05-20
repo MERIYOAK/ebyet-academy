@@ -1,32 +1,23 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+﻿const { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
 
 // Initialize S3 client with AWS SDK v3 and better error handling
 const createS3Client = () => {
-  console.log('\n🔧 Creating S3 client...');
   
   const region = process.env.AWS_REGION || 'us-east-1';
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
   const bucket = process.env.AWS_S3_BUCKET;
 
-  console.log('📋 Environment variables check:');
-  console.log(`   - AWS_REGION: ${region}`);
-  console.log(`   - AWS_ACCESS_KEY_ID: ${accessKeyId ? '✅ Set' : '❌ Missing'}`);
-  console.log(`   - AWS_SECRET_ACCESS_KEY: ${secretAccessKey ? '✅ Set' : '❌ Missing'}`);
-  console.log(`   - AWS_S3_BUCKET: ${bucket ? `✅ ${bucket}` : '❌ Missing'}`);
 
   // Validate required environment variables
   if (!accessKeyId || !secretAccessKey || !bucket) {
-    console.log('❌ Missing AWS credentials. S3 uploads will be disabled.');
-    console.log('💡 Required: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET');
     return null;
   }
 
   try {
-    console.log('🔑 Creating S3 client with provided credentials...');
     const client = new S3Client({
       region,
       credentials: {
@@ -41,10 +32,9 @@ const createS3Client = () => {
         }
       }
     });
-    console.log('✅ S3 client created successfully');
     return client;
   } catch (error) {
-    console.error('❌ Failed to create S3 client:', error);
+    console.error('âŒ Failed to create S3 client:', error);
     return null;
   }
 };
@@ -137,15 +127,9 @@ const getArchiveFolderPath = (courseName, version = 1) => {
  * Upload file to S3 with proper organization and fallback
  */
 const uploadToS3 = async (file, fileType, context = {}) => {
-  console.log(`\n📤 Starting S3 upload for ${fileType}...`);
-  console.log(`   - File: ${file.originalname}`);
-  console.log(`   - Size: ${file.size} bytes`);
-  console.log(`   - Type: ${file.mimetype}`);
-  console.log(`   - Context:`, context);
   
   // Check if S3 is available
   if (!s3Client) {
-    console.log('❌ S3 client not available, using local fallback');
     return {
       success: false,
       error: 'S3 not configured',
@@ -171,13 +155,9 @@ const uploadToS3 = async (file, fileType, context = {}) => {
       }
     };
 
-    console.log('📤 Uploading to S3...');
     const command = new PutObjectCommand(uploadParams);
     const result = await s3Client.send(command);
     
-    console.log('✅ Upload successful');
-    console.log(`   - ETag: ${result.ETag}`);
-    console.log(`   - Version ID: ${result.VersionId || 'N/A'}`);
 
     return {
       success: true,
@@ -190,7 +170,7 @@ const uploadToS3 = async (file, fileType, context = {}) => {
     };
 
   } catch (error) {
-    console.error('❌ S3 upload failed:', error);
+    console.error('âŒ S3 upload failed:', error);
     return {
       success: false,
       error: error.message,
@@ -205,7 +185,6 @@ const uploadToS3 = async (file, fileType, context = {}) => {
  */
 const deleteFromS3 = async (s3Key) => {
   if (!s3Client) {
-    console.log('❌ S3 client not available, skipping delete');
     return { success: false, error: 'S3 not configured' };
   }
 
@@ -218,11 +197,10 @@ const deleteFromS3 = async (s3Key) => {
     });
     
     const result = await s3Client.send(command);
-    console.log('✅ Delete successful');
     
     return { success: true, result };
   } catch (error) {
-    console.error('❌ S3 delete failed:', error);
+    console.error('âŒ S3 delete failed:', error);
     return { success: false, error: error.message };
   }
 };
@@ -232,12 +210,10 @@ const deleteFromS3 = async (s3Key) => {
  */
 const copyInS3 = async (sourceKey, destinationKey) => {
   if (!s3Client) {
-    console.log('❌ S3 client not available, skipping copy');
     return { success: false, error: 'S3 not configured' };
   }
 
   try {
-    console.log(`📋 Copying in S3: ${sourceKey} → ${destinationKey}`);
     
     const command = new CopyObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
@@ -246,11 +222,10 @@ const copyInS3 = async (sourceKey, destinationKey) => {
     });
     
     const result = await s3Client.send(command);
-    console.log('✅ Copy successful');
     
     return { success: true, result };
   } catch (error) {
-    console.error('❌ S3 copy failed:', error);
+    console.error('âŒ S3 copy failed:', error);
     return { success: false, error: error.message };
   }
 };
@@ -259,7 +234,6 @@ const copyInS3 = async (sourceKey, destinationKey) => {
  * Archive course content to archived-courses folder
  */
 const archiveCourseContent = async (courseName, version = 1) => {
-  console.log(`\n📦 Archiving course content: ${courseName} v${version}`);
   
   const sourceFolder = getCourseFolderPath(courseName, version);
   const archiveFolder = getArchiveFolderPath(courseName, version);
@@ -274,11 +248,9 @@ const archiveCourseContent = async (courseName, version = 1) => {
     const listResult = await s3Client.send(listCommand);
     
     if (!listResult.Contents || listResult.Contents.length === 0) {
-      console.log('⚠️ No content found to archive');
       return { success: true, archivedCount: 0 };
     }
     
-    console.log(`📋 Found ${listResult.Contents.length} objects to archive`);
     
     // Copy each object to archive location
     const copyPromises = listResult.Contents.map(async (object) => {
@@ -291,7 +263,6 @@ const archiveCourseContent = async (courseName, version = 1) => {
     const copyResults = await Promise.all(copyPromises);
     const successfulCopies = copyResults.filter(result => result.success);
     
-    console.log(`✅ Successfully archived ${successfulCopies.length} objects`);
     
     return {
       success: true,
@@ -300,7 +271,7 @@ const archiveCourseContent = async (courseName, version = 1) => {
     };
     
   } catch (error) {
-    console.error('❌ Archive operation failed:', error);
+    console.error('âŒ Archive operation failed:', error);
     return { success: false, error: error.message };
   }
 };
@@ -310,7 +281,6 @@ const archiveCourseContent = async (courseName, version = 1) => {
  */
 const getSignedUrlForFile = async (s3Key, expiresIn = 3600) => {
   if (!s3Client) {
-    console.log('❌ S3 client not available, returning null');
     return null;
   }
 
@@ -323,7 +293,7 @@ const getSignedUrlForFile = async (s3Key, expiresIn = 3600) => {
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
     return signedUrl;
   } catch (error) {
-    console.error('❌ Failed to generate signed URL:', error);
+    console.error('âŒ Failed to generate signed URL:', error);
     return null;
   }
 };
@@ -368,7 +338,6 @@ const getThumbnailPublicUrl = (s3Key) => {
  */
 const makeThumbnailPublic = async (s3Key) => {
   if (!s3Client) {
-    console.log('❌ S3 client not available, skipping public access');
     return false;
   }
 
@@ -380,7 +349,7 @@ const makeThumbnailPublic = async (s3Key) => {
     // Making thumbnail publicly accessible
     return true;
   } catch (error) {
-    console.error('❌ Failed to make thumbnail public:', error);
+    console.error('âŒ Failed to make thumbnail public:', error);
     return false;
   }
 };
@@ -390,7 +359,6 @@ const makeThumbnailPublic = async (s3Key) => {
  */
 const listCourseVersionFiles = async (courseName, version = 1) => {
   if (!s3Client) {
-    console.log('❌ S3 client not available');
     return [];
   }
 
@@ -405,7 +373,7 @@ const listCourseVersionFiles = async (courseName, version = 1) => {
     const result = await s3Client.send(command);
     return result.Contents || [];
   } catch (error) {
-    console.error('❌ Failed to list course files:', error);
+    console.error('âŒ Failed to list course files:', error);
     return [];
   }
 };
@@ -414,10 +382,8 @@ const listCourseVersionFiles = async (courseName, version = 1) => {
  * Clean up old archived content (past grace period)
  */
 const cleanupOldArchivedContent = async (gracePeriodMonths = 6) => {
-  console.log(`\n🧹 Cleaning up archived content older than ${gracePeriodMonths} months`);
   
   if (!s3Client) {
-    console.log('❌ S3 client not available');
     return { success: false, error: 'S3 not configured' };
   }
 
@@ -434,7 +400,6 @@ const cleanupOldArchivedContent = async (gracePeriodMonths = 6) => {
     const result = await s3Client.send(command);
     
     if (!result.Contents || result.Contents.length === 0) {
-      console.log('✅ No archived content found');
       return { success: true, deletedCount: 0 };
     }
     
@@ -444,11 +409,9 @@ const cleanupOldArchivedContent = async (gracePeriodMonths = 6) => {
     });
     
     if (oldObjects.length === 0) {
-      console.log('✅ No old archived content found');
       return { success: true, deletedCount: 0 };
     }
     
-    console.log(`🗑️ Found ${oldObjects.length} old objects to delete`);
     
     // Delete old objects
     const deletePromises = oldObjects.map(async (object) => {
@@ -458,7 +421,6 @@ const cleanupOldArchivedContent = async (gracePeriodMonths = 6) => {
     const deleteResults = await Promise.all(deletePromises);
     const successfulDeletes = deleteResults.filter(result => result.success);
     
-    console.log(`✅ Successfully deleted ${successfulDeletes.length} old objects`);
     
     return {
       success: true,
@@ -467,7 +429,7 @@ const cleanupOldArchivedContent = async (gracePeriodMonths = 6) => {
     };
     
   } catch (error) {
-    console.error('❌ Cleanup failed:', error);
+    console.error('âŒ Cleanup failed:', error);
     return { success: false, error: error.message };
   }
 };

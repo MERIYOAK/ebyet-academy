@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, ShoppingCart, Tag, Eye, CheckCircle, Play } from 'lucide-react';
 import { getLocalizedText } from '../utils/bilingualHelper';
+import { formatCHF } from '../utils/formatCHF';
 
 interface BundleCardProps {
   bundle: {
@@ -65,11 +66,7 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
         {savingsPercentage && !bundle.isPurchased && (
           <div className="absolute top-3 right-3 z-10">
             <span
-              className="text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg transform rotate-3 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500 ease-in-out"
-              style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2)'
-              }}
+              className="text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg shadow-emerald-500/30 transform rotate-3 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500 ease-in-out bg-gradient-to-br from-emerald-500 to-emerald-600"
             >
               {t('bundle_card.save_percentage', `Save ${savingsPercentage}%`, { percentage: savingsPercentage })}
             </span>
@@ -147,17 +144,17 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
                 <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-                  ${bundle.price.toFixed(2)}
+                  {formatCHF(bundle.price)}
                 </span>
                 {bundle.originalValue && (
                   <span className="text-base sm:text-lg text-gray-500 dark:text-gray-400 line-through">
-                    ${bundle.originalValue.toFixed(2)}
+                    {formatCHF(bundle.originalValue)}
                   </span>
                 )}
               </div>
               {savingsPercentage && bundle.originalValue && !bundle.isPurchased && (
                 <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-1 font-medium">
-                  {t('bundle_card.save_amount', `Save $${(bundle.originalValue - bundle.price).toFixed(2)}`, { amount: (bundle.originalValue - bundle.price).toFixed(2) })}
+                  {t('bundle_card.save_amount', `Save ${formatCHF(bundle.originalValue - bundle.price)}`, { amount: (bundle.originalValue - bundle.price).toFixed(2) })}
                 </p>
               )}
             </div>
@@ -195,20 +192,7 @@ const BundleCard: React.FC<BundleCardProps> = ({ bundle, className = '' }) => {
               ) : (
                 <Link to={`/bundles/${bundle.id}`} className="block w-full sm:w-auto">
                   <button
-                    className="w-full sm:w-auto text-white font-semibold py-2 sm:py-2.5 px-5 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 text-sm sm:text-base border whitespace-nowrap"
-                    style={{
-                      backgroundColor: '#00BFFF',
-                      borderColor: '#00BFFF',
-                      boxShadow: '0 10px 15px -3px rgba(0, 191, 255, 0.3), 0 4px 6px -2px rgba(0, 191, 255, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#00CED1';
-                      e.currentTarget.style.boxShadow = '0 15px 25px -5px rgba(0, 191, 255, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#00BFFF';
-                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 191, 255, 0.3), 0 4px 6px -2px rgba(0, 191, 255, 0.2)';
-                    }}
+                    className="w-full sm:w-auto text-white font-semibold py-2 sm:py-2.5 px-5 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-sky-400/30 hover:shadow-xl hover:shadow-sky-400/40 flex items-center justify-center space-x-2 text-sm sm:text-base border whitespace-nowrap bg-[#00BFFF] border-[#00BFFF] hover:bg-[#00CED1] hover:border-[#00CED1]"
                   >
                     <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>{t('bundle_card.buy_bundle', 'Buy Bundle')}</span>

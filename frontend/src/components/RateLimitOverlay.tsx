@@ -69,6 +69,7 @@ const RateLimitOverlay: React.FC<RateLimitOverlayProps> = ({
           </div>
           <button
             onClick={onDismiss}
+            aria-label="Dismiss"
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />

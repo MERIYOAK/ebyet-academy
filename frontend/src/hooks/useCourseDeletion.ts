@@ -39,26 +39,27 @@ const useCourseDeletion = (): UseCourseDeletionReturn => {
       } else {
         throw new Error(response.data.message || 'Failed to delete course');
       }
-    } catch (err: any) {
+    } catch (err) {
+      const apiErr = err as { response?: { status?: number; data?: { message?: string } }; request?: unknown; message?: string };
       let errorMessage = 'Failed to delete course';
-      
-      if (err.response) {
+
+      if (apiErr.response) {
         // Server responded with error status
-        if (err.response.status === 401) {
+        if (apiErr.response.status === 401) {
           errorMessage = 'Authentication required. Please log in again.';
-        } else if (err.response.status === 403) {
+        } else if (apiErr.response.status === 403) {
           errorMessage = 'Access denied. Admin privileges required.';
-        } else if (err.response.status === 404) {
+        } else if (apiErr.response.status === 404) {
           errorMessage = 'Course not found.';
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
+        } else if (apiErr.response.data?.message) {
+          errorMessage = apiErr.response.data.message;
         }
-      } else if (err.request) {
+      } else if (apiErr.request) {
         // Network error
         errorMessage = 'Network error. Please check your connection.';
-      } else if (err.message) {
+      } else if (apiErr.message) {
         // Other error
-        errorMessage = err.message;
+        errorMessage = apiErr.message;
       }
 
       setError(errorMessage);

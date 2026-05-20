@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
@@ -86,16 +86,13 @@ app.use(security.rateLimiter);
 app.use(security.securityMonitoring);
 app.use(security.antiBotProtection);
 
-console.log('🔧 CORS Allowed Origins:', allowedOrigins);
 
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('🔧 CORS Request from origin:', origin);
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) {
-      console.log('✅ Allowing request with no origin');
       return callback(null, true);
     }
 
@@ -103,17 +100,13 @@ app.use(cors({
     if (process.env.NODE_ENV === 'development') {
       const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
       if (isLocalhost) {
-        console.log('✅ Development: Allowing localhost origin:', origin);
         return callback(null, true);
       }
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('✅ Origin allowed:', origin);
       callback(null, true);
     } else {
-      console.log('❌ Origin blocked:', origin);
-      console.log('❌ Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -165,7 +158,6 @@ app.use(passport.session());
 // Handle OPTIONS requests for CORS preflight
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log('🔧 OPTIONS preflight request from origin:', origin);
   
   // Check if origin is allowed
   if (!origin || allowedOrigins.indexOf(origin) !== -1 || 
@@ -177,11 +169,9 @@ app.options('*', (req, res) => {
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400'); // 24 hours
     
-    console.log('✅ Preflight request allowed for origin:', origin);
     return res.status(200).end();
   }
   
-  console.log('❌ Preflight request blocked for origin:', origin);
   return res.status(403).json({ error: 'CORS policy violation' });
 });
 
@@ -500,40 +490,24 @@ mongoose.connect(MONGODB_URI, {
   // These are no longer needed in MongoDB Driver 4.0+
 })
   .then(() => {
-    console.log('✅ Connected to MongoDB');
     
     // Start auto-archive scheduler only after MongoDB is connected
     const { startAutoArchiveScheduler } = require('./utils/autoArchiveScheduler');
     startAutoArchiveScheduler();
   })
   .catch((error) => {
-    console.error('❌ MongoDB connection error:', error.message);
+    console.error('âŒ MongoDB connection error:', error.message);
     
     // Provide specific help for MongoDB Atlas connection issues
     if (error.message && error.message.includes('Atlas')) {
-      console.log('\n🔒 MongoDB Atlas Connection Issue Detected');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📋 To fix this, you need to whitelist your IP address:');
-      console.log('   1. Go to: https://cloud.mongodb.com/');
-      console.log('   2. Select your cluster');
-      console.log('   3. Click "Network Access" in the left sidebar');
-      console.log('   4. Click "Add IP Address"');
-      console.log('   5. Click "Add Current IP Address" (or enter 0.0.0.0/0 for all IPs - less secure)');
-      console.log('   6. Wait 1-2 minutes for changes to propagate');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     } else if (MONGODB_URI && MONGODB_URI.includes('localhost')) {
-      console.log('💡 Make sure MongoDB is running locally');
-      console.log('   Start MongoDB: mongod (or use MongoDB service)');
     } else {
-      console.log('💡 Check your MONGODB_URI in .env file');
-      console.log('   Make sure the connection string is correct');
     }
     
     // In development, don't exit on MongoDB connection failure
     if (process.env.NODE_ENV === 'production') {
       process.exit(1);
     } else {
-      console.log('⚠️  Continuing without MongoDB connection in development mode');
     }
   });
 
@@ -619,7 +593,6 @@ app.get('/api/admin/data-quality', adminAuthMiddleware, async (req, res) => {
     const Review = require('./models/Review');
     const Announcement = require('./models/Announcement');
 
-    console.log('🔍 Running data quality check...');
 
     const issues = [];
 
@@ -695,7 +668,6 @@ app.get('/api/admin/data-quality', adminAuthMiddleware, async (req, res) => {
       status: issues.length === 0 ? 'healthy' : issues.filter(i => i.severity === 'high').length > 0 ? 'critical' : 'warning'
     };
 
-    console.log('✅ Data quality check completed:', { healthScore, issueCount: issues.length });
 
     res.json({
       success: true,
@@ -703,7 +675,7 @@ app.get('/api/admin/data-quality', adminAuthMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Data quality check error:', error);
+    console.error('âŒ Data quality check error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check data quality',
@@ -718,7 +690,6 @@ app.post('/api/admin/auto-cleanup', adminAuthMiddleware, async (req, res) => {
     const Video = require('./models/Video');
     const Course = require('./models/Course');
 
-    console.log('🧹 Starting auto-cleanup...');
 
     // Only clean orphaned videos (safe operation)
     const orphanedResult = await Video.deleteMany({
@@ -744,7 +715,6 @@ app.post('/api/admin/auto-cleanup', adminAuthMiddleware, async (req, res) => {
       timestamp: new Date().toISOString()
     };
 
-    console.log('✅ Auto-cleanup completed:', cleanupResult);
 
     res.json({
       success: true,
@@ -753,7 +723,7 @@ app.post('/api/admin/auto-cleanup', adminAuthMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Auto-cleanup error:', error);
+    console.error('âŒ Auto-cleanup error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to perform auto-cleanup',
@@ -772,7 +742,6 @@ app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
     const Review = require('./models/Review');
     const Announcement = require('./models/Announcement');
 
-    console.log(' Fetching accurate admin stats...');
 
     // Get comprehensive counts with strict filtering (no orphaned documents)
     const [
@@ -952,12 +921,6 @@ app.get('/api/admin/stats', adminAuthMiddleware, async (req, res) => {
       lastUpdated: new Date().toISOString()
     };
 
-    console.log(' Admin stats calculated successfully:', {
-      totalUsers,
-      totalCourses, 
-      totalVideos,
-      dataQuality: stats.dataQuality
-    });
 
     res.json({
       success: true,
@@ -1021,20 +984,15 @@ const missingRequiredVars = requiredEnvVars.filter(varName => !process.env[varNa
 const missingOptionalVars = optionalEnvVars.filter(varName => !process.env[varName]);
 
 if (missingRequiredVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingRequiredVars);
-  console.log('💡 Create a .env file with the required variables');
-  console.log('💡 For development, these will be set to default values');
+  console.error('âŒ Missing required environment variables:', missingRequiredVars);
   
   // In development, set default values instead of exiting
   if (process.env.NODE_ENV !== 'production') {
-    console.log('🔄 Setting default values for development...');
     if (!process.env.MONGODB_URI) {
       process.env.MONGODB_URI = 'mongodb://localhost:27017/ibyet-investing';
-      console.log('   MONGODB_URI set to default');
     }
     if (!process.env.JWT_SECRET) {
       process.env.JWT_SECRET = 'dev-jwt-secret-change-in-production';
-      console.log('   JWT_SECRET set to default');
     }
   } else {
     process.exit(1);
@@ -1042,16 +1000,12 @@ if (missingRequiredVars.length > 0) {
 }
 
 if (missingOptionalVars.length > 0 && process.env.NODE_ENV !== 'production') {
-  console.warn('⚠️  Missing optional environment variables:', missingOptionalVars);
-  console.log('💡 These features will be disabled:');
+  console.warn('âš ï¸  Missing optional environment variables:', missingOptionalVars);
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    console.log('   - Google OAuth authentication');
   }
   if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-    console.log('   - Profile photo uploads to S3');
   }
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-    console.log('   - Email verification system');
   }
 }
 
@@ -1099,7 +1053,6 @@ const connectedUsers = new Map();
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log(`🔌 User connected: ${socket.id}`);
   
   // Handle user authentication
   socket.on('authenticate', (userData) => {
@@ -1108,12 +1061,10 @@ io.on('connection', (socket) => {
       role: userData.role,
       socketId: socket.id
     });
-    console.log(`👤 User authenticated: ${userData.userId} (${userData.role})`);
   });
 
   // Handle disconnection
   socket.on('disconnect', () => {
-    console.log(`🔌 User disconnected: ${socket.id}`);
     connectedUsers.delete(socket.id);
   });
 });
@@ -1130,14 +1081,10 @@ socketService.setConnectedUsers(connectedUsers);
 app.set('socketService', socketService);
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   
   // Note: Auto-archive scheduler is started after MongoDB connection is established
   
   // Check S3 configuration on startup
-  console.log('\n🔍 Checking S3 configuration...');
   const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
   
   const region = process.env.AWS_REGION || 'us-east-1';
@@ -1146,15 +1093,7 @@ server.listen(PORT, () => {
   const bucket = process.env.AWS_S3_BUCKET;
   
   if (!accessKeyId || !secretAccessKey || !bucket) {
-    console.log('⚠️  S3 not configured - uploads will use local storage');
-    console.log('💡 To enable S3, add these to your .env file:');
-    console.log('   AWS_ACCESS_KEY_ID=your_access_key');
-    console.log('   AWS_SECRET_ACCESS_KEY=your_secret_key');
-    console.log('   AWS_S3_BUCKET=your_bucket_name');
   } else {
-    console.log('✅ S3 environment variables found');
-    console.log(`   - Bucket: ${bucket}`);
-    console.log(`   - Region: ${region}`);
     
     // Test S3 connection by listing objects in the specific bucket (requires only s3:ListBucket on that bucket)
     const testS3Client = new S3Client({
@@ -1164,66 +1103,37 @@ server.listen(PORT, () => {
     
     testS3Client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: 1 }))
       .then(() => {
-        console.log('✅ S3 connection successful - uploads will use S3');
       })
       .catch((error) => {
-        console.log('❌ S3 connection failed - uploads will use local storage');
-        console.log(`   Error: ${error.message}`);
-        console.log('💡 Check your AWS credentials and bucket permissions');
       });
   }
 
   // Check email configuration on startup
-  console.log('\n📧 Checking email configuration...');
   if (emailService.isEmailConfigured()) {
-    console.log('✅ Email service configured - verification emails will be sent');
   } else {
-    console.log('⚠️  Email service not configured - verification emails will be skipped');
-    console.log('💡 To enable email verification, add these to your .env file:');
-    console.log('   SMTP_HOST=smtp.gmail.com');
-    console.log('   SMTP_USER=your-email@gmail.com');
-    console.log('   SMTP_PASSWORD=your-app-password');
   }
 
   // Check Stripe configuration on startup
-  console.log('\n💳 Checking Stripe configuration...');
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   
   if (stripeSecretKey) {
     if (stripeSecretKey.startsWith('sk_test_')) {
-      console.log('✅ Stripe TEST MODE configured - payments will use Stripe Checkout (test mode)');
-      console.log('   - Payments will redirect to Stripe\'s hosted payment page');
-      console.log('   - Use test cards: 4242 4242 4242 4242');
     } else if (stripeSecretKey.startsWith('sk_live_')) {
-      console.log('⚠️  Stripe LIVE MODE configured - REAL payments will be processed!');
-      console.log('   - Payments will redirect to Stripe\'s hosted payment page');
     } else {
-      console.log('⚠️  Stripe key format unrecognized');
     }
     
     if (!stripeWebhookSecret) {
-      console.log('⚠️  STRIPE_WEBHOOK_SECRET not set - webhooks may not work');
-      console.log('💡 For local development, run: npm run stripe:listen');
-      console.log('💡 For production, add webhook secret from Stripe Dashboard');
     } else {
-      console.log('✅ Stripe webhook secret configured');
     }
   } else {
-    console.log('⚠️  Stripe not configured - using development mode (no real payments)');
-    console.log('💡 To enable Stripe Checkout, add to your .env file:');
-    console.log('   STRIPE_SECRET_KEY=sk_test_your_test_key_here');
-    console.log('   STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here');
-    console.log('💡 Get your keys from: https://dashboard.stripe.com/test/apikeys');
   }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
   try {
     await mongoose.connection.close();
-    console.log('MongoDB connection closed');
     process.exit(0);
   } catch (error) {
     console.error('Error closing MongoDB connection:', error);
@@ -1232,10 +1142,8 @@ process.on('SIGTERM', async () => {
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully');
   try {
     await mongoose.connection.close();
-    console.log('MongoDB connection closed');
     process.exit(0);
   } catch (error) {
     console.error('Error closing MongoDB connection:', error);

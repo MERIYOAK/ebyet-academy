@@ -14,103 +14,42 @@ const getSocketService = (req) => {
 
 // Helper function to ensure thumbnail is publicly accessible
 const ensureThumbnailPublic = async (course) => {
-  console.log(`\n🔧 [LEGACY] ensureThumbnailPublic called for course: "${course.title}"`);
-  console.log(`   - Input thumbnailURL: ${course.thumbnailURL || 'NULL'}`);
-  
-  if (!course.thumbnailURL) {
-    console.log(`   ❌ No thumbnail URL found, returning course as-is`);
-    return course;
-  }
-  
-  // If the thumbnail URL doesn't look like a public S3 URL, try to fix it
+  if (!course.thumbnailURL) return course;
   if (!course.thumbnailURL.includes('s3.amazonaws.com')) {
-    console.log(`   🔄 Attempting to generate public URL for: ${course.thumbnailURL}`);
     const publicUrl = getThumbnailPublicUrl(course.thumbnailURL);
-    console.log(`   📝 Generated public URL: ${publicUrl}`);
-    
     if (publicUrl) {
-      console.log(`   💾 Updating course thumbnail URL in database...`);
       course.thumbnailURL = publicUrl;
       await course.save();
-      console.log(`   ✅ Successfully updated thumbnail URL to: ${publicUrl}`);
-    } else {
-      console.log(`   ⚠️  Could not generate public URL`);
     }
-  } else {
-    console.log(`   ✅ Already a public S3 URL: ${course.thumbnailURL}`);
   }
-  
-  console.log(`   🏁 Final thumbnailURL: ${course.thumbnailURL || 'NULL'}`);
   return course;
 };
 
 exports.getCourses = async (req, res) => {
   try {
-    console.log('🔍 [getCourses] Called');
-    
-    // Check if user is authenticated
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const isAuthenticated = !!userId;
-    
-    console.log(`🔍 [getCourses] User authentication:`, {
-      userId: userId || 'public',
-      isAuthenticated,
-      userRole: req.user?.role
-    });
-    
-    // Get all courses
+
     const allCourses = await Course.find().populate('videos');
-    console.log(`📚 [getCourses] Found ${allCourses.length} total courses from database`);
-    
-    // Get user's purchased courses to add purchase status (Udemy-style: show all courses)
+
     let purchasedCourseIds = [];
     if (isAuthenticated) {
       const User = require('../models/User');
       const user = await User.findById(userId);
-      
       if (user && user.purchasedCourses && user.purchasedCourses.length > 0) {
         purchasedCourseIds = user.purchasedCourses.map(id => id.toString());
-        console.log(`🔍 [getCourses] User has ${purchasedCourseIds.length} purchased courses:`, purchasedCourseIds);
-      } else {
-        console.log(`🔍 [getCourses] User has no purchased courses`);
       }
-    } else {
-      console.log(`🔍 [getCourses] Public user, showing all ${allCourses.length} courses without purchase status`);
     }
-    
-    // Add purchase status to all courses (don't filter - Udemy approach)
-    const filteredCourses = allCourses;
-    
-    // Debug: Log each course's thumbnail before processing
-    filteredCourses.forEach((course, index) => {
-      console.log(`📸 [getCourses] Course ${index + 1}: "${course.title}"`);
-      console.log(`   - Original thumbnailURL: ${course.thumbnailURL || 'NULL'}`);
-      console.log(`   - Course ID: ${course._id}`);
-    });
-    
-    // Ensure all thumbnails are publicly accessible
-    console.log('🔧 [getCourses] Processing thumbnails for public access...');
+
     const coursesWithPublicThumbnails = await Promise.all(
-      filteredCourses.map(async (course, index) => {
-        console.log(`\n🔄 [getCourses] Processing course ${index + 1}: "${course.title}"`);
+      allCourses.map(async (course) => {
         const processedCourse = await ensureThumbnailPublic(course);
-        console.log(`   ✅ [getCourses] Processed thumbnailURL: ${processedCourse.thumbnailURL || 'NULL'}`);
-        
-        // Add purchase status (Udemy-style: show all courses with purchase indicator)
         const courseObj = processedCourse.toObject ? processedCourse.toObject() : processedCourse;
         courseObj.isPurchased = purchasedCourseIds.includes(course._id.toString());
-        
         return courseObj;
       })
     );
 
-    console.log('\n📋 [getCourses] Final course thumbnails:');
-    coursesWithPublicThumbnails.forEach((course, index) => {
-      console.log(`   ${index + 1}. "${course.title}": ${course.thumbnailURL || 'NULL'}`);
-    });
-    
-    console.log(`✅ [getCourses] Returning ${coursesWithPublicThumbnails.length} courses to ${isAuthenticated ? 'authenticated' : 'public'} user`);
-    
     res.json(coursesWithPublicThumbnails);
   } catch (error) {
     console.error('❌ [getCourses] Error:', error);
@@ -216,12 +155,6 @@ exports.updateThumbnail = async (req, res) => {
     const oldThumbnailURL = course.thumbnailURL;
     const oldS3Key = oldThumbnailURL ? oldThumbnailURL.split('.amazonaws.com/')[1] : null;
     
-    console.log(`🔄 Updating thumbnail for course: ${course.title}`);
-    if (oldS3Key) {
-      console.log(`📁 Preserving old thumbnail in S3: ${oldS3Key}`);
-      // Note: We're keeping the old thumbnail in S3 for potential future use
-      // No deletion needed - the admin might want to revert or reuse it
-    }
     
     // Upload new thumbnail with versioned path structure (use currentVersion or default to 1)
     const version = course.currentVersion || 1;
@@ -231,9 +164,6 @@ exports.updateThumbnail = async (req, res) => {
     course.thumbnailURL = publicUrl;
     await course.save();
     
-    console.log(`✅ Thumbnail updated successfully`);
-    console.log(`   - New thumbnail: ${publicUrl}`);
-    console.log(`   - Old thumbnail preserved: ${oldS3Key || 'None'}`);
     
     res.json({ 
       thumbnailURL: publicUrl, 
@@ -280,12 +210,6 @@ const generateGroupToken = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('🔍 [WhatsApp] Checking purchase status:', {
-      userId,
-      courseId,
-      purchasedCoursesCount: user.purchasedCourses?.length || 0,
-      purchasedCourseIds: user.purchasedCourses?.map(id => id.toString()) || []
-    });
 
     // Check if course is in user's purchasedCourses array
     // Handle both ObjectId and string comparisons
@@ -298,41 +222,19 @@ const generateGroupToken = async (req, res) => {
              purchasedId === courseId;
     });
 
-    console.log('🔍 [WhatsApp] Purchase check result:', {
-      hasPurchased,
-      courseIdString: courseId.toString(),
-      courseIdType: typeof courseId
-    });
-
     if (!hasPurchased) {
-      // Also check enrollment - if user is enrolled, they have access
       const enrollment = course.getStudentEnrollment(userId);
-      console.log('🔍 [WhatsApp] Enrollment check:', {
-        hasEnrollment: !!enrollment,
-        coursePrice: course.price
-      });
-
       if (enrollment) {
-        // User is enrolled, grant access (enrollment happens on purchase)
-        console.log('✅ [WhatsApp] User is enrolled, granting access');
+        // enrolled — grant access
       } else {
         // Not enrolled and not in purchasedCourses - deny access
         return res.status(403).json({ message: 'You must purchase this course to access the WhatsApp group' });
       }
-    } else {
-      console.log('✅ [WhatsApp] User has purchased course, granting access');
     }
 
     // Generate temporary WhatsApp group link (expires in 5 minutes)
     const tempLinkData = await GroupAccessToken.generateTemporaryGroupLink(courseId, userId);
     
-    console.log('🔍 [WhatsApp] Generated token data:', {
-      courseId,
-      userId,
-      tempToken: tempLinkData.tempToken,
-      expiresAt: tempLinkData.expiresAt,
-      joinUrl: `/api/courses/${courseId}/join?token=${tempLinkData.tempToken}`
-    });
     
     res.json({
       success: true,
@@ -365,13 +267,6 @@ const joinGroup = async (req, res) => {
       req.get('User-Agent')
     );
 
-    console.log('🔍 [WhatsApp] Token validation result:', {
-      valid: validation.valid,
-      courseId: validation.courseId,
-      courseIdType: typeof validation.courseId,
-      requestedCourseId: courseId,
-      error: validation.error
-    });
 
     if (!validation.valid) {
       return res.status(403).json({ 
@@ -383,10 +278,6 @@ const joinGroup = async (req, res) => {
     // Verify the course ID matches (handle both ObjectId and string)
     const validationCourseId = validation.courseId._id ? validation.courseId._id.toString() : validation.courseId.toString();
     if (validationCourseId !== courseId) {
-      console.log('❌ [WhatsApp] Course ID mismatch:', {
-        validationCourseId,
-        requestedCourseId: courseId
-      });
       return res.status(403).json({ message: 'Token is not valid for this course' });
     }
 

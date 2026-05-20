@@ -1,4 +1,4 @@
-const authService = require('../services/authService');
+﻿const authService = require('../services/authService');
 const s3Service = require('../services/s3Service');
 
 /**
@@ -63,7 +63,7 @@ const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Registration error:', error);
+    console.error('âŒ Registration error:', error);
     res.status(400).json({
       success: false,
       message: error.message || 'Registration failed'
@@ -98,7 +98,7 @@ const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Email verification error:', error);
+    console.error('âŒ Email verification error:', error);
     
     // Handle specific error cases
     if (error.message.includes('expired')) {
@@ -150,7 +150,7 @@ const resendVerification = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Resend verification error:', error);
+    console.error('âŒ Resend verification error:', error);
     res.status(400).json({
       success: false,
       message: error.message || 'Failed to resend verification email'
@@ -183,7 +183,7 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Login error:', error);
+    console.error('âŒ Login error:', error);
     
     // Handle specific error cases
     if (error.message.includes('verify your email')) {
@@ -246,7 +246,7 @@ const verifyToken = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Token verification error:', error);
+    console.error('âŒ Token verification error:', error);
     res.status(401).json({
       success: false,
       message: 'Invalid token'
@@ -288,7 +288,7 @@ const getCurrentUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get current user error:', error);
+    console.error('âŒ Get current user error:', error);
     res.status(404).json({
       success: false,
       message: error.message || 'User not found'
@@ -307,12 +307,6 @@ const updateProfile = async (req, res) => {
     } = req.body;
     const profilePhoto = req.file;
 
-    console.log('🔧 [Profile Update] Request received:', {
-      hasProfilePhoto: !!profilePhoto,
-      profilePhotoName: profilePhoto?.originalname,
-      profilePhotoSize: profilePhoto?.size,
-      fields: { firstName, lastName, age, sex, address, phoneNumber, country, city }
-    });
 
     // Validate at least one field to update
     if (!firstName && !lastName && !age && !sex && !address && !phoneNumber && !country && !city && !profilePhoto) {
@@ -351,11 +345,6 @@ const updateProfile = async (req, res) => {
     if (req.body.country !== undefined) updateData.country = req.body.country || null;
     if (req.body.city !== undefined) updateData.city = req.body.city || null;
 
-    console.log('🔧 [Profile Update] Calling authService.updateProfile with:', {
-      userId: req.user.userId,
-      updateData,
-      hasProfilePhoto: !!profilePhoto
-    });
 
     const updatedUser = await authService.updateProfile(
       req.user.userId,
@@ -363,10 +352,19 @@ const updateProfile = async (req, res) => {
       profilePhoto
     );
 
-    console.log('✅ [Profile Update] Successfully updated user profile:', {
-      userId: updatedUser._id,
-      hasProfilePhotoKey: !!updatedUser.profilePhotoKey
-    });
+    // Notify admin views (or any other listener) that this user changed.
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        socketService.notifyUserUpdated({
+          id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email
+        });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast USER_UPDATED:', socketError);
+    }
 
     res.json({
       success: true,
@@ -375,7 +373,7 @@ const updateProfile = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Update profile error:', error);
+    console.error('âŒ Update profile error:', error);
     res.status(400).json({
       success: false,
       message: error.message || 'Profile update failed'
@@ -416,7 +414,7 @@ const changePassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Change password error:', error);
+    console.error('âŒ Change password error:', error);
     res.status(400).json({
       success: false,
       message: error.message || 'Password change failed'
@@ -450,7 +448,7 @@ const getProfilePhoto = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get profile photo error:', error);
+    console.error('âŒ Get profile photo error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to get profile photo'
@@ -464,9 +462,21 @@ const getProfilePhoto = async (req, res) => {
  */
 const deleteProfilePhoto = async (req, res) => {
   try {
-    console.log(`🗑️  [AuthController] Delete profile photo requested for user: ${req.user.userId}`);
 
     const result = await authService.deleteProfilePhoto(req.user.userId);
+
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService && result.user) {
+        socketService.notifyUserUpdated({
+          id: result.user._id || result.user.id,
+          name: result.user.name,
+          email: result.user.email
+        });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast USER_UPDATED:', socketError);
+    }
 
     res.json({
       success: true,
@@ -475,7 +485,7 @@ const deleteProfilePhoto = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Delete profile photo error:', error);
+    console.error('âŒ Delete profile photo error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to delete profile photo'
@@ -492,13 +502,6 @@ const uploadProfilePhoto = async (req, res) => {
     const profilePhoto = req.file;
     const userId = req.user.userId;
 
-    console.log('🔧 [Profile Photo Upload] Request received:', {
-      userId,
-      hasProfilePhoto: !!profilePhoto,
-      profilePhotoName: profilePhoto?.originalname,
-      profilePhotoSize: profilePhoto?.size
-    });
-
     if (!profilePhoto) {
       return res.status(400).json({
         success: false,
@@ -508,10 +511,18 @@ const uploadProfilePhoto = async (req, res) => {
 
     const updatedUser = await authService.updateProfilePhotoOnly(userId, profilePhoto);
 
-    console.log('✅ [Profile Photo Upload] Successfully updated profile photo:', {
-      userId: updatedUser._id,
-      hasProfilePhotoKey: !!updatedUser.profilePhotoKey
-    });
+    try {
+      const socketService = req.app.get('socketService');
+      if (socketService) {
+        socketService.notifyUserUpdated({
+          id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email
+        });
+      }
+    } catch (socketError) {
+      console.warn('Failed to broadcast USER_UPDATED:', socketError);
+    }
 
     res.json({
       success: true,
@@ -527,7 +538,7 @@ const uploadProfilePhoto = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Upload profile photo error:', error);
+    console.error('âŒ Upload profile photo error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to upload profile photo'
@@ -541,7 +552,6 @@ const uploadProfilePhoto = async (req, res) => {
  */
 const googleCallback = async (req, res) => {
   try {
-    console.log('🔧 Google callback - FRONTEND_URL env var:', process.env.FRONTEND_URL);
     
     const result = await authService.handleGoogleAuth(req.user);
 
@@ -550,33 +560,26 @@ const googleCallback = async (req, res) => {
     if (!frontendUrl.startsWith('http://') && !frontendUrl.startsWith('https://')) {
       frontendUrl = `https://${frontendUrl}`;
     }
-    console.log('🔧 Normalized frontendUrl:', frontendUrl);
 
     // Check if phone number is required
     if (result.phoneNumberRequired) {
       // Redirect to phone number collection page
-      console.log('🔧 Phone number required - frontendUrl:', frontendUrl);
       const redirectUrl = `${frontendUrl}/complete-google-registration?userId=${result.user._id}&email=${encodeURIComponent(result.user.email)}&name=${encodeURIComponent(result.user.name)}`;
-      console.log('🔧 Phone redirect URL:', redirectUrl);
       res.redirect(redirectUrl);
       return;
     }
 
     // Redirect to frontend with token for successful authentication
-    console.log('🔧 Success - frontendUrl:', frontendUrl);
     const redirectUrl = `${frontendUrl}/auth/google-callback?token=${result.token}`;
-    console.log('🔧 Success redirect URL:', redirectUrl);
     res.redirect(redirectUrl);
 
   } catch (error) {
-    console.error('❌ Google callback error:', error);
+    console.error('âŒ Google callback error:', error);
     let frontendUrl = process.env.FRONTEND_URL || 'https://www.ibyet.com';
     if (!frontendUrl.startsWith('http://') && !frontendUrl.startsWith('https://')) {
       frontendUrl = `https://${frontendUrl}`;
     }
-    console.log('🔧 Error - frontendUrl:', frontendUrl);
     const errorUrl = `${frontendUrl}/auth/google-callback?error=${encodeURIComponent(error.message)}`;
-    console.log('🔧 Error redirect URL:', errorUrl);
     res.redirect(errorUrl);
   }
 };
@@ -608,7 +611,7 @@ const completeGoogleRegistration = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Complete Google registration error:', error);
+    console.error('âŒ Complete Google registration error:', error);
     res.status(400).json({
       success: false,
       message: error.message || 'Failed to complete registration'
@@ -630,7 +633,7 @@ const logout = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Logout error:', error);
+    console.error('âŒ Logout error:', error);
     res.status(500).json({
       success: false,
       message: 'Logout failed'
@@ -663,7 +666,7 @@ const checkEmailAvailability = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Email availability check error:', error);
+    console.error('âŒ Email availability check error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to check email availability'
@@ -696,7 +699,7 @@ const forgotPassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Forgot password error:', error);
+    console.error('âŒ Forgot password error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send password reset email'
@@ -736,7 +739,7 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Reset password error:', error);
+    console.error('âŒ Reset password error:', error);
     
     // Handle specific error cases
     if (error.message.includes('expired')) {

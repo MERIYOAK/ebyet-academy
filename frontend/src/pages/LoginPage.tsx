@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import AuthForm from '../components/AuthForm';
 import AccountSuspendedModal from '../components/AccountSuspendedModal';
 import { buildApiUrl } from '../config/environment';

@@ -67,6 +67,7 @@ const Toast: React.FC<ToastProps> = ({
                 setIsVisible(false);
                 setTimeout(onClose, 300);
               }}
+              aria-label="Dismiss"
               className="text-gray-400 hover:text-gray-300 transition-colors"
             >
               <X className="h-4 w-4" />

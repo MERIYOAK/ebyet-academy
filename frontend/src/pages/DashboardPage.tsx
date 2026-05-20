@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Search, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import CourseCard from '../components/CourseCard';
+import BundleCard from '../components/BundleCard';
 import LoadingMessage from '../components/LoadingMessage';
 import { buildApiUrl } from '../config/environment';
-import { getValidImageUrl } from '../utils/imageUrlHelper';
+
 
 interface UserData {
   name: string;
@@ -38,15 +39,31 @@ interface EnrolledCourse extends Course {
   isPublic?: boolean;
 }
 
+interface PurchasedBundle {
+  _id: string;
+  title: string | { en: string; tg: string };
+  description: string | { en: string; tg: string };
+  longDescription?: string | { en: string; tg: string };
+  price: number;
+  originalValue?: number;
+  courseIds: Array<{ _id: string } | string>;
+  thumbnailURL?: string;
+  category?: string;
+  featured?: boolean;
+  maxEnrollments?: number;
+  totalEnrollments?: number;
+  hasReachedMaxEnrollments?: boolean;
+}
+
 const DashboardPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+  const [purchasedBundles, setPurchasedBundles] = useState<PurchasedBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'in-progress' | 'completed'>('all');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,87 +79,105 @@ const DashboardPage = () => {
   }, [userData?.name, userData?.email]);
 
   // Fetch user data and enrolled courses
-  useEffect(() => {
-    const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const [userResponse, progressResponse] = await Promise.all([
+        fetch(buildApiUrl('/api/auth/me'), { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(buildApiUrl('/api/progress/dashboard'), { headers: { 'Authorization': `Bearer ${token}` } }),
+      ]);
+
+      if (!userResponse.ok) throw new Error(t('dashboard.failed_fetch_user'));
+      if (!progressResponse.ok) throw new Error(t('dashboard.failed_fetch_progress'));
+
+      const userResult = await userResponse.json();
+      setUserData(userResult?.data?.user || userResult?.data || null);
+
+      const progressResult = await progressResponse.json();
+      setEnrolledCourses(Array.isArray(progressResult?.data?.courses) ? progressResult.data.courses : []);
+
       try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
-        // Fetch user data
-        const userResponse = await fetch(buildApiUrl('/api/auth/me'), {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        const bundlesResponse = await fetch(buildApiUrl('/api/bundles/my-bundles'), {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-
-        if (!userResponse.ok) {
-          throw new Error(t('dashboard.failed_fetch_user'));
+        if (bundlesResponse.ok) {
+          const bundlesResult = await bundlesResponse.json();
+          setPurchasedBundles(bundlesResult?.data?.bundles || []);
         }
+      } catch {
+        // bundles fetch failed — dashboard still works without them
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      if (!silent) setError(error instanceof Error ? error.message : t('dashboard.failed_load_dashboard'));
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
-        const userResult = await userResponse.json();
-        const me = userResult?.data?.user || userResult?.data || null;
-        setUserData(me);
+  // Initial load
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-        // Fetch dashboard progress data
-        const progressResponse = await fetch(buildApiUrl('/api/progress/dashboard'), {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-        if (!progressResponse.ok) {
-          throw new Error(t('dashboard.failed_fetch_progress'));
-        }
+  // Silent refetch when admin makes content changes
+  useEffect(() => {
+    const RELEVANT_EVENTS = new Set([
+      'COURSE_UPDATED', 'NEW_COURSE', 'COURSE_DELETED',
+      'BUNDLE_UPDATED', 'NEW_BUNDLE', 'BUNDLE_DELETED',
+      'NEW_VIDEO', 'VIDEO_UPDATED', 'VIDEO_DELETED',
+    ]);
 
-        const progressResult = await progressResponse.json();
-        const courses = Array.isArray(progressResult?.data?.courses) ? progressResult.data.courses : [];
-        
-        // Debug: Log course data (simplified without progress tracking)
-        console.log('📊 [Dashboard] Course data:', courses.map((c: any) => ({
-          id: c._id,
-          title: c.title,
-          category: c.category,
-          level: c.level,
-          status: c.status
-        })));
-        
-        setEnrolledCourses(courses);
-
-          } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        setError(error instanceof Error ? error.message : t('dashboard.failed_load_dashboard'));
-      } finally {
-        setLoading(false);
+    const handleSocketUpdate = (e: Event) => {
+      const { type } = (e as CustomEvent).detail;
+      if (RELEVANT_EVENTS.has(type)) {
+        fetchDashboardData(true); // silent = no loading spinner
       }
     };
 
-    fetchDashboardData();
-  }, [navigate]);
+    window.addEventListener('socketContentUpdate', handleSocketUpdate);
+    return () => window.removeEventListener('socketContentUpdate', handleSocketUpdate);
+  }, [fetchDashboardData]);
 
-  // Filter courses based on search term only (progress tracking removed)
-  const filteredCourses = useMemo(() => {
-    let filtered = enrolledCourses;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(course =>
-        course.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const getTitle = (title: unknown): string => {
+    if (typeof title === 'object' && title !== null) {
+      const t = title as { en?: string; tg?: string };
+      return `${t.en || ''} ${t.tg || ''}`;
     }
+    return String(title || '');
+  };
 
-    // Status filtering removed - no progress tracking
-    return filtered;
+  // Filter courses by search term
+  const filteredCourses = useMemo(() => {
+    if (!searchTerm) return enrolledCourses;
+    const term = searchTerm.toLowerCase();
+    return enrolledCourses.filter(course =>
+      getTitle(course.title).toLowerCase().includes(term)
+    );
   }, [enrolledCourses, searchTerm]);
 
-  // Reset to first page when filters change
+  // Filter bundles by search term
+  const filteredBundles = useMemo(() => {
+    if (!searchTerm) return purchasedBundles;
+    const term = searchTerm.toLowerCase();
+    return purchasedBundles.filter(bundle =>
+      getTitle(bundle.title).toLowerCase().includes(term) ||
+      getTitle(bundle.description).toLowerCase().includes(term)
+    );
+  }, [purchasedBundles, searchTerm]);
+
+  // Reset to first page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus]);
+  }, [searchTerm]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
@@ -240,17 +275,6 @@ const DashboardPage = () => {
                         className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none text-sm xxs:text-base"
                       />
                     </div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value as 'all' | 'in-progress' | 'completed')}
-                      className="w-full sm:w-auto px-4 xxs:px-5 py-3 bg-white dark:bg-gray-900/60 border-2 border-gray-300 dark:border-gray-700/40 text-gray-900 dark:text-white rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-sm xxs:text-base transition-all duration-300"
-                    >
-                      <option value="all">{t('dashboard.all_courses')}</option>
-                      <option value="in-progress">{t('dashboard.in_progress')}</option>
-                      <option value="completed">{t('dashboard.completed')}</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -376,6 +400,54 @@ const DashboardPage = () => {
                 </>
               )}
             </div>
+
+          {/* Purchased Bundles Section */}
+          {filteredBundles.length > 0 && (
+            <div className="space-y-4 xxs:space-y-6">
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-gray-700/50" />
+
+              {/* Section Header */}
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-cyan-100 dark:bg-cyan-500/10 rounded-xl">
+                  <Package className="h-5 w-5 xxs:h-6 xxs:w-6 text-cyan-600 dark:text-cyan-400" />
+                </div>
+                <h2 className="text-xl xxs:text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('dashboard.my_bundles', 'My Bundles')}
+                </h2>
+                <span className="ml-auto text-sm text-gray-500 dark:text-gray-400 font-medium">
+                  {filteredBundles.length} {filteredBundles.length === 1 ? t('dashboard.bundle', 'bundle') : t('dashboard.bundles', 'bundles')}
+                </span>
+              </div>
+
+              {/* Bundle Grid — single column, full width per card (matches bundles page layout) */}
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                {filteredBundles.map((bundle) => (
+                  <BundleCard
+                    key={bundle._id}
+                    bundle={{
+                      id: bundle._id,
+                      title: bundle.title,
+                      description: bundle.description,
+                      longDescription: bundle.longDescription,
+                      price: bundle.price,
+                      originalValue: bundle.originalValue,
+                      courseIds: (bundle.courseIds || []).map(c =>
+                        typeof c === 'string' ? c : (c as { _id: string })._id
+                      ),
+                      thumbnailURL: bundle.thumbnailURL,
+                      category: bundle.category,
+                      featured: bundle.featured,
+                      maxEnrollments: bundle.maxEnrollments,
+                      totalEnrollments: bundle.totalEnrollments,
+                      hasReachedMaxEnrollments: bundle.hasReachedMaxEnrollments,
+                      isPurchased: true,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

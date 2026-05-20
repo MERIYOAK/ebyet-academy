@@ -14,7 +14,7 @@ interface DeploymentInfo {
 
 class DeploymentNotificationService {
   private currentDeployment: DeploymentInfo | null = null;
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private readonly CHECK_INTERVAL = 2 * 60 * 1000; // Check every 2 minutes
   private readonly NOTIFIED_DEPLOYMENTS_KEY = 'notifiedDeployments';
 
@@ -85,10 +85,7 @@ class DeploymentNotificationService {
     try {
       if (!this.currentDeployment) return;
 
-      // In development, use mock version endpoint for testing
-      const versionUrl = import.meta.env.DEV 
-        ? '/mock-version.json'
-        : `${config.API_BASE_URL}/api/version`;
+      const versionUrl = `${config.API_BASE_URL}/api/version`;
         
       console.log('🔍 Checking deployment at:', versionUrl);
       

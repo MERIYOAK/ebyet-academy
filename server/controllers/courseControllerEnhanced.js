@@ -95,12 +95,17 @@ const createCourse = async (req, res) => {
 
     await course.save();
 
-    console.log(`✅ Course created: ${typeof title === 'object' ? title.en || title.tg || 'course' : title} by ${adminEmail}`);
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyNewCourse({
+        id: course._id,
+        title: course.title,
+        category: course.category,
+        status: course.status
+      });
+    }
 
-    // Note: Socket.IO event will be emitted when videos are uploaded, not when course is initially saved
-    // This prevents course card from appearing in user UI before all videos are uploaded
-
-    const responseData = {
+    res.status(201).json({
       success: true,
       message: 'Course created successfully',
       data: {
@@ -109,11 +114,7 @@ const createCourse = async (req, res) => {
         slug: course.slug,
         status: course.status
       }
-    };
-    
-    console.log('🔍 Response data being sent:', JSON.stringify(responseData, null, 2));
-    
-    res.status(201).json(responseData);
+    });
   } catch (error) {
     console.error('❌ Create course error:', error);
     
@@ -149,8 +150,6 @@ const createCourse = async (req, res) => {
  */
 const uploadThumbnail = async (req, res) => {
   try {
-    console.log('\n🖼️  Thumbnail upload request received...');
-    
     const { courseId } = req.params;
     const adminEmail = req.admin?.email || req.user?.email || 'admin';
 
@@ -183,8 +182,6 @@ const uploadThumbnail = async (req, res) => {
     // Store old thumbnail URL for potential future use
     const oldCourseThumbnailURL = course.thumbnailURL;
     
-    console.log('📁 Preserving old thumbnail URL:', oldCourseThumbnailURL);
-    
     // Upload thumbnail to S3 using the original working approach
     const uploadResult = await uploadFileWithOrganization(req.file, 'thumbnail', {
       courseName: course.title
@@ -200,14 +197,10 @@ const uploadThumbnail = async (req, res) => {
     // Generate presigned URL for thumbnail (works without public access)
     let thumbnailURL;
     try {
-      console.log('🔍 [uploadThumbnail] Generating presigned URL for thumbnail...');
       thumbnailURL = await getThumbnailUrl(uploadResult.s3Key);
-      console.log(`✅ [uploadThumbnail] Generated presigned URL: ${thumbnailURL?.substring(0, 100)}...`);
     } catch (error) {
-      console.error('❌ [uploadThumbnail] Error generating presigned URL:', error);
-      // Fallback to public URL if presigned URL generation fails
+      console.error('Error generating presigned URL for thumbnail:', error);
       thumbnailURL = uploadResult.publicUrl || getPublicUrl(uploadResult.s3Key);
-      console.log(`⚠️ [uploadThumbnail] Using fallback public URL: ${thumbnailURL?.substring(0, 100)}...`);
     }
 
     // Update course with thumbnail URL
@@ -216,7 +209,6 @@ const uploadThumbnail = async (req, res) => {
     course.lastModifiedBy = adminEmail;
     await course.save();
 
-    console.log(`✅ Thumbnail upload completed for course: ${course.title} by ${adminEmail}`);
 
     res.json({
       success: true,
@@ -297,7 +289,6 @@ const uploadVideo = async (req, res) => {
     course.lastModifiedBy = adminEmail;
     await course.save();
 
-    console.log(`✅ Video uploaded for course: ${course.title} by ${adminEmail}`);
 
     // Don't emit Socket.IO event yet - course is still private until all content uploaded
     // Event will be emitted when admin marks course as complete
@@ -345,7 +336,6 @@ const markCourseComplete = async (req, res) => {
       course.lastModifiedBy = adminEmail;
       await course.save();
 
-      console.log(`📢 Course "${course.title}" marked as complete and made active`);
 
       // Emit Socket.IO event for real-time update
       const socketService = getSocketService(req);
@@ -410,7 +400,6 @@ const updateCourse = async (req, res) => {
       }
     } catch (e) {
       // If parsing fails, treat as regular string (backward compatibility)
-      console.log('[updateCourse] Title/description not JSON, using as string');
     }
 
     const course = await Course.findById(id);
@@ -458,7 +447,6 @@ const updateCourse = async (req, res) => {
       // Automatically set isPublic to true when status is set to active
       if (status === 'active') {
         course.isPublic = true;
-        console.log(`🔓 Course ${course._id} set to active and public`);
       }
     }
     if (typeof isPublic === 'boolean') course.isPublic = isPublic;
@@ -490,18 +478,9 @@ const updateCourse = async (req, res) => {
     course.lastModifiedBy = adminEmail;
     await course.save();
 
-    console.log(`✅ Course updated: ${course.title} by ${adminEmail}`);
-
     // Emit Socket.IO event for real-time update
     const socketServiceUpdate = getSocketService(req);
     if (socketServiceUpdate) {
-      console.log('📢 Emitting Socket.IO event for course update:', {
-        id: course._id,
-        title: course.title,
-        status: course.status,
-        isPublic: course.isPublic
-      });
-      
       socketServiceUpdate.notifyCourseUpdate({
         id: course._id,
         title: course.title,
@@ -514,9 +493,6 @@ const updateCourse = async (req, res) => {
         status: course.status
       });
       
-      console.log('✅ Socket.IO event emitted successfully');
-    } else {
-      console.log('❌ Socket.IO service not available');
     }
 
     res.json({
@@ -560,7 +536,6 @@ const deactivateCourse = async (req, res) => {
     // Deactivate the course
     await course.deactivate(reason || 'Admin request');
 
-    console.log(`✅ Course deactivated: ${course.title} by ${adminEmail}`);
 
     res.json({
       success: true,
@@ -611,7 +586,6 @@ const reactivateCourse = async (req, res) => {
     // Reactivate the course
     await course.reactivate();
 
-    console.log(`✅ Course reactivated: ${course.title} by ${adminEmail}`);
 
     res.json({
       success: true,
@@ -674,15 +648,11 @@ const deleteCourse = async (req, res) => {
       if (video.s3Key) {
         try {
           await deleteFileFromS3(video.s3Key);
-          console.log(`🗑️ Deleted video from S3: ${video.s3Key}`);
         } catch (s3Error) {
-          console.error(`❌ Failed to delete video from S3: ${video.s3Key}`, s3Error);
+          console.error(`Failed to delete video from S3: ${video.s3Key}`, s3Error);
         }
       }
-      
-      // Delete video record from database
       await Video.findByIdAndDelete(video._id);
-      console.log(`🗑️ Deleted video record: ${video.title}`);
     }
 
     // Delete all materials from S3
@@ -690,31 +660,29 @@ const deleteCourse = async (req, res) => {
       if (material.s3Key) {
         try {
           await deleteFileFromS3(material.s3Key);
-          console.log(`🗑️ Deleted material from S3: ${material.s3Key}`);
         } catch (s3Error) {
-          console.error(`❌ Failed to delete material from S3: ${material.s3Key}`, s3Error);
+          console.error(`Failed to delete material from S3: ${material.s3Key}`, s3Error);
         }
       }
-      
-      // Delete material record from database
       await Material.findByIdAndDelete(material._id);
-      console.log(`🗑️ Deleted material record: ${material.title}`);
     }
 
     // Delete course thumbnail from S3
     if (course.thumbnailS3Key) {
       try {
         await deleteFileFromS3(course.thumbnailS3Key);
-        console.log(`🗑️ Deleted thumbnail from S3: ${course.thumbnailS3Key}`);
       } catch (s3Error) {
-        console.error(`❌ Failed to delete thumbnail from S3: ${course.thumbnailS3Key}`, s3Error);
+        console.error(`Failed to delete thumbnail from S3: ${course.thumbnailS3Key}`, s3Error);
       }
     }
 
     // Delete course from database
     await Course.findByIdAndDelete(id);
 
-    console.log(`✅ Course deletion completed by ${adminEmail}`);
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('COURSE_DELETED', { id, courseId: id });
+    }
 
     res.json({
       success: true,
@@ -740,7 +708,6 @@ const deleteCourse = async (req, res) => {
  */
 const getAllCourses = async (req, res) => {
   try {
-    console.log('🔍 getAllCourses called with query params:', req.query);
     const { 
       page = 1, 
       limit = 10, 
@@ -755,20 +722,6 @@ const getAllCourses = async (req, res) => {
       sortOrder
     } = req.query;
 
-    console.log('🔍 Parsed parameters:', {
-      page,
-      limit,
-      category,
-      level,
-      search,
-      featured,
-      isPublic,
-      includeInactive,
-      status,
-      sortBy,
-      sortOrder
-    });
-    
     // Set defaults for sortBy and sortOrder if not provided
     const finalSortBy = sortBy || 'createdAt';
     const finalSortOrder = sortOrder || 'desc';
@@ -782,36 +735,13 @@ const getAllCourses = async (req, res) => {
     if (isPublic !== undefined) filter.isPublic = isPublic === 'true';
     
     // Handle status filtering
-    console.log('🔍 Status filtering logic - status:', status, '(type:', typeof status, ')', 'includeInactive:', includeInactive, '(type:', typeof includeInactive, ')');
-    
     if (status && status !== 'all') {
-      // Filter by specific status (active, inactive, archived)
       filter.status = status;
-      console.log('🔍 Applied specific status filter:', status, '(type:', typeof status, ')');
-    } else if (status === 'all' && includeInactive === 'true') {
-      // Show all courses regardless of status - don't set any status filter
-      // This allows admin to see all courses (active, inactive, archived)
-      console.log('🔍 Showing all courses - no status filter applied');
-    } else if (!includeInactive || includeInactive !== 'true') {
-      // Only show active courses by default for regular users
-      filter.status = 'active';
-      console.log('🔍 Applied default active filter for regular users (includeInactive:', includeInactive, ')');
+    } else if (!(status === 'all' && includeInactive === 'true')) {
+      if (!includeInactive || includeInactive !== 'true') {
+        filter.status = 'active';
+      }
     }
-
-    console.log('🔍 Built filter object:', filter);
-
-    // Debug: Check all courses in database and their statuses
-    console.log('🔍 Checking all courses in database:');
-    const allDbCourses = await Course.find().select('title status').lean().limit(10);
-    allDbCourses.forEach((course, index) => {
-      console.log(`   DB ${index + 1}. "${course.title}" - Status: "${course.status}"`);
-    });
-
-    // Debug: Count courses by status
-    const activeCount = await Course.countDocuments({ status: 'active' });
-    const inactiveCount = await Course.countDocuments({ status: 'inactive' });
-    const archivedCount = await Course.countDocuments({ status: 'archived' });
-    console.log(`🔍 Course counts in DB: Active=${activeCount}, Inactive=${inactiveCount}, Archived=${archivedCount}`);
 
     // Search functionality
     let searchQuery = {};
@@ -832,9 +762,6 @@ const getAllCourses = async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // Execute query
-    console.log('🔍 Executing query with filter:', JSON.stringify({ ...filter, ...searchQuery }, null, 2));
-    
     // Build the final query object properly
     let finalQuery = {};
     
@@ -848,20 +775,12 @@ const getAllCourses = async (req, res) => {
       finalQuery = filter;
     }
     
-    console.log('🔍 Final query:', JSON.stringify(finalQuery, null, 2));
-    
     // Build sort object
     const sort = {};
-    console.log('🔍 Sort parameters received:', { sortBy: finalSortBy, sortOrder: finalSortOrder, types: { sortByType: typeof finalSortBy, sortOrderType: typeof finalSortOrder } });
-    
     if (finalSortBy) {
-      const sortDirection = finalSortOrder === 'asc' ? 1 : -1;
-      sort[finalSortBy] = sortDirection;
-      console.log('🔍 Applied dynamic sort:', { field: finalSortBy, direction: finalSortOrder, numeric: sortDirection, result: sort });
+      sort[finalSortBy] = finalSortOrder === 'asc' ? 1 : -1;
     } else {
-      // Default sort by createdAt desc
       sort.createdAt = -1;
-      console.log('🔍 Applied default sort: createdAt desc');
     }
     
     const courses = await Course.find(finalQuery)
@@ -872,10 +791,6 @@ const getAllCourses = async (req, res) => {
       .populate('videos', 'title s3Key order fileSize duration')
       .lean();
 
-    console.log('🔍 Found courses:');
-    courses.forEach((course, index) => {
-      console.log(`   ${index + 1}. "${course.title}" - Status: ${course.status}`);
-    });
 
     // Get total count for pagination
     const total = await Course.countDocuments(finalQuery);
@@ -966,22 +881,9 @@ const getCourseById = async (req, res) => {
     // But allow admins to access any course for editing (including inactive ones)
     const isAdmin = req.admin || (req.user && req.user.role === 'admin');
     
-    console.log(`🔍 [getCourseById] Course access check:`, {
-      courseId: id,
-      isPublic: course.isPublic,
-      status: course.status,
-      isAdmin: !!isAdmin,
-      hasUser: !!req.user,
-      userRole: req.user?.role,
-      adminFromReq: !!req.admin,
-      adminFromUser: req.user?.role === 'admin'
-    });
-    
     const courseWithFreshThumbnail = await attachFreshThumbnailUrl(course);
 
-    // For public active courses, allow access to anyone
     if (course.isPublic && course.status === 'active') {
-      console.log(`✅ [getCourseById] Public active course, allowing access`);
       return res.json({
         success: true,
         data: {
@@ -990,9 +892,7 @@ const getCourseById = async (req, res) => {
       });
     }
     
-    // For admins, allow access to any course (including inactive ones)
     if (isAdmin) {
-      console.log(`✅ [getCourseById] Admin access granted to ${course.status} course`);
       return res.json({
         success: true,
         data: {
@@ -1001,9 +901,7 @@ const getCourseById = async (req, res) => {
       });
     }
     
-    // Special case: If user has admin role but req.admin is not set, still allow access
     if (req.user && req.user.role === 'admin') {
-      console.log(`✅ [getCourseById] Admin role user access granted to ${course.status} course`);
       return res.json({
         success: true,
         data: {
@@ -1012,9 +910,7 @@ const getCourseById = async (req, res) => {
       });
     }
     
-    // For regular users, only allow access to public active courses
     if (!course.isPublic || course.status !== 'active') {
-      console.log(`❌ [getCourseById] Course not available for regular user`);
       return res.status(403).json({
         success: false,
         message: 'Course not available'
@@ -1141,7 +1037,10 @@ const archiveCourse = async (req, res) => {
     // Archive the course
     await course.archive(reason || 'Admin request', gracePeriodMonths);
 
-    console.log(`✅ Course archived: ${course.title} by ${adminEmail}`);
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.broadcastContentUpdate('COURSE_DELETED', { id: course._id, courseId: course._id });
+    }
 
     res.json({
       success: true,
@@ -1189,7 +1088,10 @@ const unarchiveCourse = async (req, res) => {
     // Unarchive the course
     await course.unarchive();
 
-    console.log(`✅ Course unarchived: ${course.title} by ${adminEmail}`);
+    const socketService = getSocketService(req);
+    if (socketService) {
+      socketService.notifyCourseUpdate({ id: course._id, title: course.title, status: course.status });
+    }
 
     res.json({
       success: true,
@@ -1362,27 +1264,6 @@ const debugCourseAuth = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log('\n🔍 === AUTHENTICATION DEBUG ===');
-    console.log('📋 Request Headers:', {
-      authorization: req.headers.authorization ? 'present' : 'missing',
-      contentType: req.headers['content-type'],
-      userAgent: req.headers['user-agent'],
-      origin: req.headers.origin
-    });
-
-    console.log('👤 Request User:', {
-      hasUser: !!req.user,
-      user: req.user ? {
-        id: req.user.id,
-        email: req.user.email,
-        role: req.user.role
-      } : null,
-      hasAdmin: !!req.admin,
-      admin: req.admin ? {
-        email: req.admin.email,
-        role: req.admin.role
-      } : null
-    });
 
     // Get course info
     const course = await Course.findById(id);
@@ -1393,22 +1274,7 @@ const debugCourseAuth = async (req, res) => {
       });
     }
 
-    console.log('📚 Course Info:', {
-      id: course._id,
-      title: course.title?.en || course.title,
-      status: course.status,
-      isPublic: course.isPublic
-    });
-
-    // Test access logic
     const isAdmin = req.admin || (req.user && req.user.role === 'admin');
-    
-    console.log('🔐 Access Decision:', {
-      isAdmin: !!isAdmin,
-      shouldAllowAccess: isAdmin || (course.isPublic && course.status === 'active'),
-      finalDecision: isAdmin ? 'admin-access' : 
-                   (course.isPublic && course.status === 'active') ? 'public-access' : 'denied'
-    });
 
     res.json({
       success: true,

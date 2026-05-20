@@ -11,7 +11,7 @@ export const useRateLimit = () => {
     isVisible: false
   });
 
-  const checkForRateLimit = useCallback((error: any) => {
+  const checkForRateLimit = useCallback((error: { status?: number; response?: { status?: number; data?: { resetTime?: string; retryAfter?: number } }; data?: { resetTime?: string; retryAfter?: number } }) => {
     if (error?.status === 429 || error?.response?.status === 429) {
       const data = error?.response?.data || error?.data || {};
       

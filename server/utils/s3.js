@@ -1,4 +1,4 @@
-const AWS = require('aws-sdk');
+﻿const AWS = require('aws-sdk');
 
 const S3_ROOT_PREFIX = process.env.S3_ROOT_PREFIX || 'ibyet-investing-folder';
 
@@ -17,14 +17,9 @@ const getSignedUrl = (key, expiresIn = 60 * 5) => {
   });
 };
 
-const uploadToS3 = (file, key, acl = 'private') => {
+const uploadToS3 = (file, key) => {
   const fs = require('fs');
   
-  console.log('🔧 [uploadToS3] Starting upload...');
-  console.log('🔧 [uploadToS3] File path:', file.path);
-  console.log('🔧 [uploadToS3] File size:', file.size);
-  console.log('🔧 [uploadToS3] S3 Key:', key);
-  console.log('🔧 [uploadToS3] Bucket:', process.env.AWS_S3_BUCKET);
   
   return new Promise((resolve, reject) => {
     let fileStream;
@@ -32,19 +27,16 @@ const uploadToS3 = (file, key, acl = 'private') => {
     try {
       // Create file stream with error handling
       if (file.path) {
-        console.log('🔧 [uploadToS3] Creating file stream from path...');
         fileStream = fs.createReadStream(file.path);
         
         fileStream.on('error', (error) => {
-          console.error('🔧 [uploadToS3] File stream error:', error);
+          console.error('ðŸ”§ [uploadToS3] File stream error:', error);
           reject(error);
         });
         
         fileStream.on('open', () => {
-          console.log('🔧 [uploadToS3] File stream opened successfully');
         });
       } else {
-        console.log('🔧 [uploadToS3] Using file buffer');
         fileStream = file.buffer;
       }
       
@@ -53,20 +45,17 @@ const uploadToS3 = (file, key, acl = 'private') => {
         Key: key,
         Body: fileStream,
         ContentType: file.mimetype,
-        ACL: acl,
         // Optimize for large files (500MB+)
         partSize: 50 * 1024 * 1024, // 50MB parts for faster uploads
         queueSize: 6, // Upload 6 parts concurrently
       };
       
-      console.log('🔧 [uploadToS3] Upload params prepared, body type:', file.path ? 'file stream' : 'buffer');
-      console.log('🔧 [uploadToS3] Calling s3.upload()...');
       
       const upload = s3.upload(uploadParams);
       
       // Add timeout to the upload (10 minutes for large files)
       const uploadTimeout = setTimeout(() => {
-        console.error('🔧 [uploadToS3] Upload timeout after 10 minutes');
+        console.error('ðŸ”§ [uploadToS3] Upload timeout after 10 minutes');
         if (fileStream && fileStream.destroy) {
           fileStream.destroy();
         }
@@ -74,19 +63,17 @@ const uploadToS3 = (file, key, acl = 'private') => {
       }, 25 * 60 * 1000); // 25 minutes for large files
       
       upload.on('httpUploadProgress', (progress) => {
-        console.log('🔧 [uploadToS3] Upload progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
       });
       
       upload.promise().then((result) => {
         clearTimeout(uploadTimeout);
-        console.log('🔧 [uploadToS3] s3.upload() completed successfully');
         if (fileStream && fileStream.destroy) {
           fileStream.destroy();
         }
         resolve(result);
       }).catch((error) => {
         clearTimeout(uploadTimeout);
-        console.error('🔧 [uploadToS3] s3.upload() failed:', error.message);
+        console.error('ðŸ”§ [uploadToS3] s3.upload() failed:', error.message);
         if (fileStream && fileStream.destroy) {
           fileStream.destroy();
         }
@@ -94,7 +81,7 @@ const uploadToS3 = (file, key, acl = 'private') => {
       });
       
     } catch (error) {
-      console.error('🔧 [uploadToS3] Setup error:', error);
+      console.error('ðŸ”§ [uploadToS3] Setup error:', error);
       if (fileStream && fileStream.destroy) {
         fileStream.destroy();
       }
@@ -204,34 +191,14 @@ const uploadFileWithOrganization = async (file, fileType, context = {}) => {
   const contextObj = typeof context === 'string' ? { bundleIdentifier: context } : context;
   const s3Key = generateS3Key(fileType, file.originalname, contextObj);
   
-  // Determine desired ACL - thumbnails, bundle-thumbnails, and certificates should be public-read
-  const desiredAcl = (fileType === 'thumbnail' || fileType === 'bundle-thumbnails' || fileType === 'certificate') ? 'public-read' : 'private';
-
-  let usedAcl = desiredAcl;
   try {
-    const result = await uploadToS3(file, s3Key, usedAcl);
+    const result = await uploadToS3(file, s3Key);
     return {
       s3Key,
       url: result.Location,
-      publicUrl: usedAcl === 'public-read' ? result.Location : null,
+      publicUrl: (fileType === 'thumbnail' || fileType === 'bundle-thumbnails' || fileType === 'certificate') ? getPublicUrl(s3Key) : null,
     };
   } catch (error) {
-    // If bucket has Object Ownership (ACLs disabled) or blocks public ACLs,
-    // retry without ACL for thumbnails, bundle-thumbnails, and certificates.
-    const looksLikeAclIssue = /ACL|AccessControlList|InvalidArgument|AccessDenied/i.test(error?.message || '');
-    if ((fileType === 'thumbnail' || fileType === 'bundle-thumbnails' || fileType === 'certificate') && looksLikeAclIssue) {
-      try {
-        usedAcl = undefined; // omit ACL
-        const result = await uploadToS3(file, s3Key, undefined);
-        return {
-          s3Key,
-          url: result.Location,
-          publicUrl: null, // object will not be public
-        };
-      } catch (retryError) {
-        throw retryError;
-      }
-    }
     throw error;
   }
 };

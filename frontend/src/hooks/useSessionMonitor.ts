@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildApiUrl } from '../config/environment';
 
@@ -14,7 +14,7 @@ export const useSessionMonitor = () => {
   const [showSuspendedModal, setShowSuspendedModal] = useState(false);
   const navigate = useNavigate();
 
-  const checkSessionStatus = async () => {
+  const checkSessionStatus = useCallback(async () => {
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -59,7 +59,7 @@ export const useSessionMonitor = () => {
               const decoded = JSON.parse(atob(token.split('.')[1]));
               userEmail = decoded.email;
             }
-          } catch (e) {
+          } catch {
             // Token parsing failed, no email available
           }
           
@@ -100,7 +100,7 @@ export const useSessionMonitor = () => {
         error: 'Network error' 
       });
     }
-  };
+  }, [navigate]);
 
   // Check session status on mount and periodically
   useEffect(() => {
@@ -121,7 +121,7 @@ export const useSessionMonitor = () => {
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [checkSessionStatus]);
 
   const handleCloseSuspendedModal = () => {
     setShowSuspendedModal(false);
