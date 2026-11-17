@@ -184,7 +184,7 @@ const Footer: React.FC<FooterProps> = ({ className = '', openCookieSettingsRef }
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
               <span>Developed by</span>
               <a
-                href="https://www.meronvault.com"
+                href="https://www.meronabrha.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-cyan-500 dark:text-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 transition-colors duration-300"
