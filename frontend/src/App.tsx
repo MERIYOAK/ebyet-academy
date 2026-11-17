@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import './i18n'; // Initialize i18n configuration
 import { queryClient, initializePersistentCache, saveCacheData } from './lib/queryClient';
-import './utils/cacheMigration'; // Auto-migrate old cache entries
+import './utils/cacheMigration'; // Auto-migrate old cache entri
 import './utils/cacheTester'; // Cache testing utilities
 import './utils/userCacheVerifier'; // User data cache verification
 import './utils/cachePersistence'; // Enhanced cache persistence
